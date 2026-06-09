@@ -1,0 +1,37 @@
+{
+    "core": {
+        "magic": "APF_VER_1",
+        "metadata": {
+            "platform_ids": [
+                "blakestone"
+            ],
+            "shortname": "BlakeStone",
+            "description": "Blake Stone (ECWolf) on openfpgaOS",
+            "author": "TheDiscordian",
+            "url": "https://github.com/openfpgaOS/Wolfenstein",
+            "version": "1.0.0",
+            "date_release": "2026-06-08"
+        },
+        "framework": {
+            "target_product": "Analogue Pocket",
+            "version_required": "2.2",
+            "sleep_supported": false,
+            "dock": {
+                "supported": true,
+                "analog_output": false
+            },
+            "hardware": {
+                "link_port": true,
+                "cartridge_adapter": 0
+            }
+        },
+        "cores": [
+            {
+                "name": "default",
+                "id": 0,
+                "filename": "bitstream.rbf_r",
+                "chip32_vm": "loader.bin"
+            }
+        ]
+    }
+}

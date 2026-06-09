@@ -1,0 +1,111 @@
+{
+    "instance": {
+        "magic": "APF_VER_1",
+        "variant_select": {
+            "id": 666,
+            "select": false
+        },
+        "data_slots": [
+            {
+                "id": 1,
+                "filename": "os.bin"
+            },
+            {
+                "id": 2,
+                "filename": "aog.ini"
+            },
+            {
+                "id": 3,
+                "filename": "blakestone.elf"
+            },
+            {
+                "id": 4,
+                "filename": "wolfmidi.zip"
+            },
+            {
+                "id": 5,
+                "filename": "AUDIOHED.BS6"
+            },
+            {
+                "id": 6,
+                "filename": "AUDIOT.BS6"
+            },
+            {
+                "id": 7,
+                "filename": "bank.ofsf"
+            },
+            {
+                "id": 8,
+                "filename": "ecwolf.cfg"
+            },
+            {
+                "id": 10,
+                "filename": "AliensOfGold_0.sav"
+            },
+            {
+                "id": 11,
+                "filename": "AliensOfGold_1.sav"
+            },
+            {
+                "id": 12,
+                "filename": "AliensOfGold_2.sav"
+            },
+            {
+                "id": 13,
+                "filename": "AliensOfGold_3.sav"
+            },
+            {
+                "id": 14,
+                "filename": "AliensOfGold_4.sav"
+            },
+            {
+                "id": 15,
+                "filename": "AliensOfGold_5.sav"
+            },
+            {
+                "id": 16,
+                "filename": "AliensOfGold_6.sav"
+            },
+            {
+                "id": 17,
+                "filename": "AliensOfGold_7.sav"
+            },
+            {
+                "id": 18,
+                "filename": "AliensOfGold_8.sav"
+            },
+            {
+                "id": 19,
+                "filename": "AliensOfGold_9.sav"
+            },
+            {
+                "id": 20,
+                "filename": "MAPHEAD.BS6"
+            },
+            {
+                "id": 21,
+                "filename": "VGADICT.BS6"
+            },
+            {
+                "id": 22,
+                "filename": "VGAGRAPH.BS6"
+            },
+            {
+                "id": 23,
+                "filename": "VGAHEAD.BS6"
+            },
+            {
+                "id": 24,
+                "filename": "VSWAP.BS6"
+            },
+            {
+                "id": 25,
+                "filename": "MAPTEMP.BS6"
+            },
+            {
+                "id": 26,
+                "filename": "sfxcache.ofx"
+            }
+        ]
+    }
+}

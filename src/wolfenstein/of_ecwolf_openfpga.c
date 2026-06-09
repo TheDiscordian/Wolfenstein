@@ -181,6 +181,10 @@ static void of_ecwolf_openfpga_init(void)
         snprintf(name, sizeof(name), "savegam%d.sav", i);
         of_file_slot_register((uint32_t)(10 + i), name);
     }
+
+#ifdef OF_BOOT_MARKERS
+    printf("BOOT: of_ecwolf_openfpga_init constructor done\n");
+#endif
 }
 
 #else

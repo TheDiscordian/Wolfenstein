@@ -74,6 +74,16 @@ CXXFLAGS += -MMD -MP
 CFLAGS += -falign-functions=16 -falign-loops=16
 CXXFLAGS += -falign-functions=16 -falign-loops=16
 
+# Boot diagnostics: `make DEBUG_BOOT=1` instruments the early-startup path
+# (main(), the of_ecwolf_openfpga constructor, and OF_EarlyStartupScreen) with
+# console "BOOT:" markers and full-screen colour fills at each splash milestone,
+# so a frozen device screen reveals exactly how far boot got.  Re-build clean
+# when toggling: `make clean && make DEBUG_BOOT=1`.
+ifdef DEBUG_BOOT
+CFLAGS   += -DOF_BOOT_MARKERS
+CXXFLAGS += -DOF_BOOT_MARKERS
+endif
+
 # Preserve ECWolf's SDL-facing platform layer.  The openfpgaOS-specific
 # implementation lives in the SDK SDL shim, not in the engine sources.
 # port/ and wadsrc/ are symlinks into ../wolfenstein; find -L descends them

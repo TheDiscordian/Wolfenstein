@@ -89,6 +89,12 @@
 #define VIEWHEIGHT      144
 
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+#ifdef OF_BOOT_MARKERS
+#include <cstdio>
+#define OF_BOOT_MARK(...) printf(__VA_ARGS__)
+#else
+#define OF_BOOT_MARK(...) ((void)0)
+#endif
 struct OFEarlyStartupState
 {
 	bool videoReady;
@@ -197,8 +203,61 @@ static bool OFEarlyDrawSolidIndex(int drawIdx, int pitch, int width,
 	return true;
 }
 
+#ifdef OF_BOOT_MARKERS
+// Debug-only: paint the whole screen one solid colour and present it, so the
+// frozen final frame on a hung/black device boot shows how far this function
+// got.  setMinimalPalette uploads a small known palette (for colours shown
+// before the real palette is ready); pass false to fill with an index from the
+// already-uploaded real palette without disturbing it.
+static void OF_EarlyBootMarker(byte colorIndex, bool setMinimalPalette)
+{
+	of_video_mode_t mode;
+	of_video_get_mode(&mode);
+	if(mode.color_mode != OF_VIDEO_MODE_8BIT || mode.width == 0 || mode.height == 0)
+		return;
+	const int width = mode.width;
+	const int height = mode.height;
+	const int pitch = mode.stride ? mode.stride : mode.width;
+	uint32_t frameBytes = 0;
+	if(pitch > 0 && pitch <= OF_VIDEO_MAX_STRIDE &&
+		height > 0 && height <= OF_VIDEO_MAX_HEIGHT)
+	{
+		frameBytes = (uint32_t)pitch * (uint32_t)height;
+	}
+
+	if(setMinimalPalette)
+	{
+		uint32_t palette[256];
+		memset(palette, 0, sizeof(palette));
+		palette[1] = 0xff0000; // red
+		palette[2] = 0x00ff00; // green
+		palette[3] = 0x4060ff; // blue
+		of_video_palette_bulk(palette, 256);
+	}
+
+	for(int i = 0;i < 3;++i)
+	{
+		const int acquireIdx = ofEarlyStartup.haveFlip ? ofEarlyStartup.lastFlipIdx : -1;
+		const uint32_t acquireToken = ofEarlyStartup.haveFlip ? ofEarlyStartup.lastFlipToken : 0;
+		const int drawIdx = of_video_acquire_next(acquireIdx, acquireToken);
+		if(drawIdx < 0)
+			return;
+		if(!OFEarlyDrawSolidIndex(drawIdx, pitch, width, height, colorIndex, frameBytes))
+			return;
+		uint32_t flipToken = 0;
+		if(!OF_WolfGPU_FlipVideoBuffer(drawIdx, &flipToken))
+			return;
+		ofEarlyStartup.lastFlipToken = flipToken;
+		of_video_wait_flip();
+		ofEarlyStartup.lastFlipIdx = drawIdx;
+		ofEarlyStartup.haveFlip = true;
+	}
+}
+#endif
+
 void OF_EarlyStartupScreen(int progress)
 {
+	OF_BOOT_MARK("BOOT: OF_EarlyStartupScreen enter progress=%d\n", progress);
 	if(progress < 0)
 		progress = 0;
 	else if(progress > 100)
@@ -206,16 +265,19 @@ void OF_EarlyStartupScreen(int progress)
 
 	if(!ofEarlyStartup.videoReady)
 	{
+		OF_BOOT_MARK("BOOT: of_video_init\n");
 		of_video_init();
 		ofEarlyStartup.videoReady = true;
 	}
 	if(!ofEarlyStartup.displayReady)
 	{
+		OF_BOOT_MARK("BOOT: of_video_set_display_mode(FRAMEBUFFER)\n");
 		of_video_set_display_mode(OF_DISPLAY_FRAMEBUFFER);
 		ofEarlyStartup.displayReady = true;
 	}
 	if(!ofEarlyStartup.gpuReady)
 	{
+		OF_BOOT_MARK("BOOT: OF_WolfGPU_Init\n");
 		OF_WolfGPU_Init();
 		OF_WolfGPU_ApplyRefreshPolicy();
 		ofEarlyStartup.gpuReady = true;
@@ -231,6 +293,7 @@ void OF_EarlyStartupScreen(int progress)
 		want.width = 320;
 		want.height = 200;
 		want.color_mode = OF_VIDEO_MODE_8BIT;
+		OF_BOOT_MARK("BOOT: of_video_set_mode 320x200x8\n");
 		of_video_set_mode(&want);
 		OF_WolfGPU_ApplyRefreshPolicy();
 
@@ -252,6 +315,12 @@ void OF_EarlyStartupScreen(int progress)
 	const int height = mode.height;
 	const int pitch = mode.stride ? mode.stride : mode.width;
 
+#ifdef OF_BOOT_MARKERS
+	OF_BOOT_MARK("BOOT: video mode up w=%d h=%d stride=%d cm=%d -> RED fill\n",
+		mode.width, mode.height, mode.stride, mode.color_mode);
+	OF_EarlyBootMarker(1, true); // RED fullscreen: video mode is up, fill+flip works
+#endif
+
 	if(!ofEarlyStartup.paletteReady)
 	{
 		uint32_t palette[256];
@@ -267,6 +336,11 @@ void OF_EarlyStartupScreen(int progress)
 		of_video_palette_bulk(palette, 256);
 		ofEarlyStartup.paletteReady = true;
 	}
+
+#ifdef OF_BOOT_MARKERS
+	OF_BOOT_MARK("BOOT: palette uploaded -> GRAY fill (pre-logo)\n");
+	OF_EarlyBootMarker(2, false); // GRAY fullscreen via real palette index 2, just before the logo draw
+#endif
 
 	uint32_t frameBytes = 0;
 	if(pitch > 0 && pitch <= OF_VIDEO_MAX_STRIDE &&

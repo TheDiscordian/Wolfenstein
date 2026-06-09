@@ -36,6 +36,9 @@
 
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 extern void OF_EarlyStartupScreen(int progress);
+#ifdef OF_BOOT_MARKERS
+#include <cstdio>
+#endif
 #endif
 
 #ifndef NO_GTK
@@ -46,6 +49,9 @@ bool GtkAvailable;
 int main(int argc, char *argv[])
 {
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+#ifdef OF_BOOT_MARKERS
+	printf("BOOT: main() entered — all global constructors completed\n");
+#endif
 	OF_EarlyStartupScreen(1);
 #endif
 

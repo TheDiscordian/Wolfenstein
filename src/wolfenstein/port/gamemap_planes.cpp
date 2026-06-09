@@ -1214,6 +1214,7 @@ void GameMap::ReadPlanesData()
 				ambushSpots.Push(0xFFFF); // Prevent uninitialized value errors.
 
 				TArray<HolowallProducer> holowallThings;
+				TArray<unsigned int> doorLinkSrc, doorLinkDst;
 
 				unsigned int i = 0;
 				for(;i < size;++i)
@@ -1356,6 +1357,34 @@ void GameMap::ReadPlanesData()
 							continue;
 					}
 
+					// Blake Stone linked doors: a coordinate word under a door
+					// chains it to the door at those coordinates so the chain
+					// opens and closes together. Collect the links here; they
+					// are grouped under shared tags after the scan.
+					if((FeatureFlags & Xlat::FF_GLOBALMETA) &&
+						(oldplane[i]>>8) != 0 && (oldplane[i]>>8) < header.width &&
+						(oldplane[i]&0xFF) != 0 && (oldplane[i]&0xFF) < header.height)
+					{
+						const unsigned int target = (oldplane[i]&0xFF)*header.width + (oldplane[i]>>8);
+						bool srcDoor = false, dstDoor = false;
+						for(unsigned int t = 0;t < triggers.Size();++t)
+						{
+							if(triggers[t].action != Specials::Door_Open)
+								continue;
+							const unsigned int cell = triggers[t].y*header.width + triggers[t].x;
+							if(cell == i)
+								srcDoor = true;
+							else if(cell == target)
+								dstDoor = true;
+						}
+						if(srcDoor && dstDoor)
+						{
+							doorLinkSrc.Push(i);
+							doorLinkDst.Push(target);
+							continue;
+						}
+					}
+
 					Thing thing;
 					Trigger trigger;
 					uint32_t flags = 0;
@@ -1403,6 +1432,55 @@ void GameMap::ReadPlanesData()
 				}
 
 				HolowallProducer::Produce(holowallThings, things);
+
+				// Resolve the linked door chains: give every door in a chain
+				// the same tag so Door_Open activates them as one.
+				if(doorLinkSrc.Size())
+				{
+					TMap<unsigned int, unsigned int> linkTag;
+					for(unsigned int l = 0;l < doorLinkSrc.Size();++l)
+					{
+						const unsigned int s = doorLinkSrc[l], d = doorLinkDst[l];
+						const unsigned int *st = linkTag.CheckKey(s), *dt = linkTag.CheckKey(d);
+						unsigned int tag;
+						if(st)
+						{
+							tag = *st;
+							if(dt && *dt != tag)
+							{
+								// Two chains joined; merge the tags.
+								const unsigned int old = *dt;
+								TMap<unsigned int, unsigned int>::Iterator iter(linkTag);
+								TMap<unsigned int, unsigned int>::Pair *pair;
+								while(iter.NextPair(pair))
+								{
+									if(pair->Value == old)
+										pair->Value = tag;
+								}
+							}
+						}
+						else if(dt)
+							tag = *dt;
+						else
+							tag = ((s%header.width)<<8)|(s/header.width);
+						linkTag[s] = tag;
+						linkTag[d] = tag;
+					}
+
+					TMap<unsigned int, unsigned int>::ConstIterator iter(linkTag);
+					TMap<unsigned int, unsigned int>::ConstPair *pair;
+					while(iter.NextPair(pair))
+					{
+						const unsigned int x = pair->Key%header.width, y = pair->Key/header.width;
+						SetSpotTag(GetSpot(x, y, 0), pair->Value);
+						for(unsigned int t = 0;t < triggers.Size();++t)
+						{
+							if(triggers[t].action == Specials::Door_Open &&
+								triggers[t].x == x && triggers[t].y == y)
+								triggers[t].arg[0] = pair->Value;
+						}
+					}
+				}
 				break;
 			}
 

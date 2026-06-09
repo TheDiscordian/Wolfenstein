@@ -38,6 +38,7 @@
 #endif
 #include "config.h"
 #include "c_cvars.h"
+#include "doomerrors.h"
 #include "farchive.h"
 #include "filesys.h"
 #include "g_mapinfo.h"
@@ -676,7 +677,11 @@ MENU_LISTENER(LoadSaveGame)
 		return false;
 
 	loadedgame = true;
-	Load(SaveFile::files[menuItem->slotIndex].filename);
+	if(!Load(SaveFile::files[menuItem->slotIndex].filename))
+	{
+		loadedgame = false;
+		return false;
+	}
 
 	if(!quickSaveLoad)
 	{
@@ -805,17 +810,42 @@ bool Load(const FString &filename)
 	SaveProdVersion = (DWORD)atoll(prodver);
 	delete[] prodver;
 
-	M_GetPNGText(png, "Current Map", gamestate.mapname, 8);
-	SetupGameLevel();
+	char oldmap[9];
+	memcpy(oldmap, gamestate.mapname, sizeof(oldmap));
 
+	try
 	{
-		unsigned int chunkLength = M_FindPNGChunk(png, SNAP_ID);
-		FPNGChunkArchive arc(fileh, SNAP_ID, chunkLength);
-		FCompressedMemFile snapshot;
-		snapshot.Serialize(arc);
-		snapshot.Reopen();
-		FArchive snarc(snapshot);
-		Serialize(snarc);
+		M_GetPNGText(png, "Current Map", gamestate.mapname, 8);
+		SetupGameLevel();
+
+		{
+			unsigned int chunkLength = M_FindPNGChunk(png, SNAP_ID);
+			FPNGChunkArchive arc(fileh, SNAP_ID, chunkLength);
+			FCompressedMemFile snapshot;
+			snapshot.Serialize(arc);
+			snapshot.Reopen();
+			FArchive snarc(snapshot);
+			Serialize(snarc);
+		}
+	}
+	catch(CRecoverableError &error)
+	{
+		// Corrupt save.  SetupGameLevel already replaced the world, so
+		// rebuild the current level fresh instead of resuming over
+		// half-loaded state.
+		delete png;
+		fclose(fileh);
+		printf("Load failed: %s\n", error.GetMessage());
+
+		memcpy(gamestate.mapname, oldmap, sizeof(oldmap));
+		loadedgame = false;
+		if(ingame)
+			SetupGameLevel();
+
+		Message(language["STR_FAILREAD"]);
+		IN_ClearKeysDown ();
+		IN_Ack (ACK_Local);
+		return false;
 	}
 
 	FRandom::StaticReadRNGState(png);
@@ -938,7 +968,24 @@ bool Save(const FString &filename, const FString &title)
 	}
 
 	M_FinishPNG(fileh);
-	fclose(fileh);
+
+	// Catch accumulated write errors and, on device, the 0x40000 slot cap
+	// (a larger file would be truncated by the kernel).
+	long written = ftell(fileh);
+	bool ok = !ferror(fileh) && written > 0;
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+	ok = ok && written <= 0x40000;
+#endif
+	if(fclose(fileh) != 0)
+		ok = false;
+	if(!ok)
+	{
+		Message(language["STR_FAILWRITE"]);
+		printf("Save failed for %s (%ld bytes).\n", GetFullSaveFileName(filename).GetChars(), written);
+		IN_ClearKeysDown ();
+		IN_Ack (ACK_Local);
+		return false;
+	}
 	return true;
 }
 

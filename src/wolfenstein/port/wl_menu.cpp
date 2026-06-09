@@ -780,6 +780,12 @@ void US_ControlPanel (ScanCode scancode)
 	}
 	while (!Menu::areMenusClosed());
 
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+	// No clean process exit on the Pocket (the user powers off), so persist
+	// settings whenever the menus close instead of only at Quit.
+	WriteConfig();
+#endif
+
 	//
 	// DEALLOCATE EVERYTHING
 	//

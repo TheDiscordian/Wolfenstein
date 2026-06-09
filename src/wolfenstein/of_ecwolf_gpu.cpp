@@ -42,6 +42,10 @@ static int gpu_video_preserve_skip_y0;
 static int gpu_video_preserve_skip_y1;
 static bool gpu_video_clean_first_begin;
 static bool gpu_video_compat_logged;
+/* One hardware set-mode attempt per video reset: re-armed by
+ * OF_WolfGPU_ResetVideoFrames so a resync can be recovered from, but a
+ * persistent mismatch never hammers of_video_set_mode per frame. */
+static bool gpu_video_mode_attempted;
 /* Last (width, height, pitch) validated against the hardware video mode.
  * Lets the per-frame acquire skip the analogizer/refresh/get-mode service
  * calls (of_video_set_refresh_vtotal also resets the kernel's adaptive
@@ -859,6 +863,7 @@ void OF_WolfGPU_ResetVideoFrames(void)
 	gpu_video_pace_us = 0;
 	gpu_video_pace_valid = false;
 	gpu_video_clean_first_begin = false;
+	gpu_video_mode_attempted = false;
 	gpu_track_base = NULL;
 	gpu_track_bytes = 0;
 	gpu_track_pitch = 0;
@@ -894,10 +899,9 @@ bool OF_WolfGPU_CanUseVideoFrames(int width, int height)
 	if(mode.width != (uint16_t)width || mode.height != (uint16_t)height ||
 		mode.color_mode != OF_VIDEO_MODE_8BIT)
 	{
-		static bool tried_set_mode = false;
-		if(!tried_set_mode)
+		if(!gpu_video_mode_attempted)
 		{
-			tried_set_mode = true;
+			gpu_video_mode_attempted = true;
 			of_video_mode_t want;
 			memset(&want, 0, sizeof(want));
 			want.width = (uint16_t)width;

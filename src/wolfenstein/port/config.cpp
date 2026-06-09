@@ -89,16 +89,23 @@ void Config::ReadConfig()
 	if(stream)
 	{
 		if(fseek(stream, 0, SEEK_END))
+		{
+			fclose(stream);
 			return;
+		}
 		unsigned int size = static_cast<unsigned int>(ftell(stream));
 		if(fseek(stream, 0, SEEK_SET))
+		{
+			fclose(stream);
 			return;
+		}
 		char* data = new char[size];
 		fread(data, 1, size, stream);
 		// The eof flag seems to trigger fail on windows.
 		if(!feof(stream) && ferror(stream))
 		{
 			delete[] data;
+			fclose(stream);
 			return;
 		}
 		fclose(stream);
@@ -162,7 +169,7 @@ void Config::SaveConfig()
 		{
 			fwrite(pair->Key, 1, strlen(pair->Key), stream);
 			if(ferror(stream))
-				return;
+				break;
 			SettingsData *data = pair->Value;
 			if(data->GetType() == SettingsData::ST_INT)
 			{
@@ -176,7 +183,7 @@ void Config::SaveConfig()
 				fwrite(value, 1, strlen(value), stream);
 				delete[] value;
 				if(ferror(stream))
-					return;
+					break;
 			}
 			else if(data->GetType() == SettingsData::ST_FLOAT)
 			{
@@ -184,7 +191,7 @@ void Config::SaveConfig()
 				value.Format(" = %f;\n", data->GetFloat());
 				fwrite(value.GetChars(), 1, value.Len(), stream);
 				if(ferror(stream))
-					return;
+					break;
 			}
 			else
 			{
@@ -195,7 +202,7 @@ void Config::SaveConfig()
 				fwrite(value, 1, str.Len() + 7, stream);
 				delete[] value;
 				if(ferror(stream))
-					return;
+					break;
 			}
 		}
 		fclose(stream);

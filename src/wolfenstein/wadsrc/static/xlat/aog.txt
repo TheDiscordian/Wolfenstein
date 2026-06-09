@@ -1,0 +1,55 @@
+include "xlat/planet.txt"
+
+// Blake Stone: Aliens of Gold. Same object codes as Planet Strike, but the
+// guard/key/static art differs per game. Overrides must keep the oldnum and
+// angle span of the planet.txt entry they replace.
+things
+{
+	// Access cards (PS: access keys / anti-plasma cannon / yellow box)
+	{55,  RedAccessCard,            0, 0, 0}
+	{56,  YellowAccessCard,         0, 0, 0}
+	{57,  GreenAccessCard,          0, 0, 0}
+	{58,  BlueAccessCard,           0, 0, 0}
+	{59,  GoldAccessCard,           0, 0, 0}
+
+	// Sector Patrol (PS: Sector Guard)
+	{108, RentACop,                 4, 0, 0}
+	{112, RentACop,                 4, PATHING, 0}
+	{144, RentACop,                 4, 0, 2}
+	{148, RentACop,                 4, PATHING, 2}
+	{180, RentACop,                 4, 0, 3}
+	{184, RentACop,                 4, PATHING, 3}
+	{516, RentACop,                 4, PATHING, 0}
+	{534, RentACop,                 4, PATHING, 2}
+	{552, RentACop,                 4, PATHING, 3}
+
+	// STAR Sentinel (PS: Tech Warrior)
+	{126, ProGuard,                 4, 0, 0}
+	{130, ProGuard,                 4, PATHING, 0}
+	{162, ProGuard,                 4, 0, 2}
+	{166, ProGuard,                 4, PATHING, 2}
+	{198, ProGuard,                 4, 0, 3}
+	{202, ProGuard,                 4, PATHING, 3}
+	{558, ProGuard,                 4, PATHING, 0}
+	{576, ProGuard,                 4, PATHING, 2}
+	{594, ProGuard,                 4, PATHING, 3}
+
+	// STAR Trooper (PS: Alien Protector)
+	{216, STARTrooper,              4, 0, 0}
+	{220, STARTrooper,              4, PATHING, 0}
+	{234, STARTrooper,              4, 0, 2}
+	{238, STARTrooper,              4, PATHING, 2}
+	{252, STARTrooper,              4, 0, 3}
+	{256, STARTrooper,              4, PATHING, 3}
+	{504, STARTrooper,              4, PATHING, 0}
+	{522, STARTrooper,              4, PATHING, 2}
+	{540, STARTrooper,              4, PATHING, 3}
+
+	// Projection generator (PS: rotating security cube)
+	{177, ProjectionGenerator,      0, 0, 0}
+
+	// Dead troopers (PS: dead PS troopers)
+	{411, DeadSectorPatrol,         0, 0, 0}
+	{412, DeadStarSentinel,         0, 0, 0}
+	{413, DeadStarTrooper,          0, 0, 0}
+}

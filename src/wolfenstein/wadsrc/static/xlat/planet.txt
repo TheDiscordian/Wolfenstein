@@ -1073,7 +1073,7 @@ things
 	// No 176
 	{177, SecurityCube,             0, 0, 0}
 	{178, SteamGrate,               0, 0, 0}
-	{179, AlienCeilingLight,        0, 0, 0}
+	{179, ActiveSteamPipe,          0, 0, 0}
 	{180, SectorGuard,              4, 0, 3}
 	{184, SectorGuard,              4, PATHING, 3}
 	{188, GeneralScientist,         4, 0, 3}

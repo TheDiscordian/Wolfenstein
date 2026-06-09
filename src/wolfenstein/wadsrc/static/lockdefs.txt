@@ -52,26 +52,37 @@ Lock 101 Noah
 	ArkSilverKeyRing
 }
 
-// Blake Stone Planet Strike
+// Blake Stone (PS keys / AOG cards)
 
 Lock 1 Blake
 {
-	RedAccessKey
+	Any { RedAccessKey RedAccessCard }
 }
 
 Lock 2 Blake
 {
-	YellowAccessKey
+	Any { YellowAccessKey YellowAccessCard }
 }
 
 Lock 3 Blake
 {
-	BlueAccessKey
+	Any { BlueAccessKey BlueAccessCard }
+}
+
+// AOG only
+Lock 4 Blake
+{
+	GreenAccessCard
+}
+
+Lock 5 Blake
+{
+	GoldAccessCard
 }
 
 Lock 101 Blake
 {
-	RedAccessKey
-	YellowAccessKey
-	BlueAccessKey
+	Any { RedAccessKey RedAccessCard }
+	Any { YellowAccessKey YellowAccessCard }
+	Any { BlueAccessKey BlueAccessCard }
 }

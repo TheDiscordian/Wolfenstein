@@ -2,7 +2,7 @@ gameinfo
 {
 	gamecolormap = "BLAKCMAP"
 	gamepalette = "BLAKEPAL"
-	translator = "xlat/planet.txt"
+	translator = "xlat/aog.txt"
 	playerclasses = "BlakePlayer"
 	titlepage = "TITLEPIC"
 	titlepalette = "TITLEPAL"

@@ -30,3 +30,60 @@ actor BlueAccessKey : Key
 			stop
 	}
 }
+
+// Aliens of Gold access cards
+
+actor RedAccessCard : Key
+{
+	+INVENTORY.ALWAYSPICKUP
+	states
+	{
+		Spawn:
+			RCRD A -1
+			stop
+	}
+}
+
+actor YellowAccessCard : Key
+{
+	+INVENTORY.ALWAYSPICKUP
+	states
+	{
+		Spawn:
+			YCRD A -1
+			stop
+	}
+}
+
+actor GreenAccessCard : Key
+{
+	+INVENTORY.ALWAYSPICKUP
+	states
+	{
+		Spawn:
+			GCRD A -1
+			stop
+	}
+}
+
+actor BlueAccessCard : Key
+{
+	+INVENTORY.ALWAYSPICKUP
+	states
+	{
+		Spawn:
+			BCRD A -1
+			stop
+	}
+}
+
+actor GoldAccessCard : Key
+{
+	+INVENTORY.ALWAYSPICKUP
+	states
+	{
+		Spawn:
+			OCRD A -1
+			stop
+	}
+}

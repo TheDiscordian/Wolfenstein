@@ -327,7 +327,7 @@ actor EmptyWaterBowl
 	states
 	{
 		Spawn:
-			EBWL A -1
+			WBWL B -1
 			stop
 	}
 }
@@ -337,7 +337,7 @@ actor ChickenBone
 	states
 	{
 		Spawn:
-			CKBN A -1
+			CKLG B -1
 			stop
 	}
 }
@@ -347,7 +347,7 @@ actor HamBone
 	states
 	{
 		Spawn:
-			HAMB A -1
+			HAMM B -1
 			stop
 	}
 }
@@ -789,7 +789,7 @@ actor DeadAlienProtector
 	states
 	{
 		Spawn:
-			PROT T -1
+			PROT S -1
 			stop
 	}
 }
@@ -967,7 +967,21 @@ actor DeadStarTrooper
 	states
 	{
 		Spawn:
-			SWAT T -1
+			SWAT S -1
+			stop
+	}
+}
+
+// AOG security cube projection generator. Destruction wiring comes with the
+// episode 6 win counting.
+actor ProjectionGenerator
+{
+	radius 32
+	+SOLID
+	states
+	{
+		Spawn:
+			EXDE A -1
 			stop
 	}
 }
@@ -1006,17 +1020,17 @@ actor SteamGrate
 	}
 }
 
-actor AlienCeilingLight
+actor ActiveSteamPipe
 {
 	states
 	{
 		Spawn:
-			ALCL A 120
+			PIPE A 120
 		Release:
-			ALCL B 0.5 A_Scream
-			ALCL CDCD 7
-			ALCL E 8
-			ALCL A 0.5 A_SetTics(random(0, 255)<<2)
+			PIPE B 0.5 A_Scream
+			PIPE CDCD 7
+			PIPE E 8
+			PIPE A 0.5 A_SetTics(random(0, 255)<<2)
 			loop
 	}
 }

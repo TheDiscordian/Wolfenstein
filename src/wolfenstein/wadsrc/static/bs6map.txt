@@ -115,7 +115,7 @@ sprites
 	"OCHRA0", // Office Chair
 	"SDSKA0", // Security Desk
 	"WBWLA0", // Water Bowl
-	"WBWLA0", // - Empty
+	"WBWLB0", // - Empty
 	"CKLGA0", // Raw Meat
 	"CKLGB0", // - Eaten
 	"HAMMA0", // Steak
@@ -174,11 +174,11 @@ sprites
 	"GRATC0",
 	"GRATD0",
 	"GRATE0",
-	"ALCLA0", // Alien Ceiling Light
-	"ALCLB0", // - Dimming
-	"ALCLC0",
-	"ALCLD0",
-	"ALCLE0", // - Shut Off
+	"PIPEA0", // Steam Pipe
+	"PIPEB0", // - Blowing Steam
+	"PIPEC0",
+	"PIPED0",
+	"PIPEE0",
 
 	// Sector Patrol
 	"RENTA1", // Stand
@@ -536,9 +536,9 @@ sprites
 	"EXPLD0",
 	"EXPLE0",
 
-	// Explosive Device? (Unused?)
-	"EXDEA0", // Normal?
-	"EXDEB0", // Explode
+	// Projection Generator
+	"EXDEA0", // Stand
+	"EXDEB0", // Die
 	"EXDEC0",
 	"EXDED0",
 	"EXDEE0",
@@ -546,10 +546,10 @@ sprites
 	"EXDEG0",
 	"EXDEH0",
 	"EXDEI0",
-	"EXDEJ0",
+	"EXDEJ0", // Dead
 	"EXDEK0",
 	"EXDEL0",
-	"EXDEM0", // Pain?
+	"EXDEM0", // Ouch
 
 	// Security Light
 	"SECLA0", // Off

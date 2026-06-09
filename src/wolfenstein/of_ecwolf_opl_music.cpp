@@ -37,6 +37,7 @@
 #include "id_sd.h"
 #include "dosbox/dbopl.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -103,9 +104,105 @@ struct OPLMusic
 
 	volatile bool active;
 	bool          pumpInstalled;
+
+	// Pre-rendered music cache stream (muscache.ofx hit): PCM is read from
+	// the pack file instead of synthesized, leaving the DBOPL state unused.
+	bool          streamMode;
+	uint32_t      streamBase;     // first PCM byte of this song's entry
+	uint32_t      streamSamples;  // total mono samples in the entry
+	uint32_t      streamPos;      // mono samples consumed this pass
 };
 
 OPLMusic M;
+
+// Optional pre-rendered cache: scripts/muscache.sh renders every IMF song
+// at the OPL2's native 49716 Hz on the host, sinc-band-limits it to 48 kHz,
+// and writes the standalone "muscache.ofx" pack (its own data slot, id 27),
+// keyed by FNV-1a hash of the IMF event bytes.  A miss (no pack, modded or
+// changed song) falls back to the on-device DBOPL render below, so the
+// cache can never be stale or required.  Only the small hash index is
+// resident; each song streams its PCM straight from the file.
+FILE     *musCacheFile;
+bool      musCacheProbed;
+uint8_t  *musCacheIndex;     // count * 16-byte entries
+uint32_t  musCacheCount;
+uint32_t  musCacheMakeupQ16; // residual RMS gain from the pack header (0 = 1.0)
+
+uint64_t MusCache_Hash(const uint8_t *data, uint32_t n)
+{
+	uint64_t h = 14695981039346656037ull;
+	for(uint32_t i = 0; i < n; ++i)
+	{
+		h ^= data[i];
+		h *= 1099511628211ull;
+	}
+	return h;
+}
+
+void MusCache_Probe()
+{
+	if (musCacheProbed)
+		return;
+	musCacheProbed = true;
+
+	FILE *f = fopen("muscache.ofx", "rb");
+	if (f == NULL)
+		return;
+
+	uint8_t header[16];
+	if (fread(header, 1, 16, f) != 16 || memcmp(header, "OFM1", 4) != 0)
+	{
+		fclose(f);
+		return;
+	}
+	const uint32_t count = ReadLittleLong(header + 4);
+	const uint32_t rate = ReadLittleLong(header + 8);
+	// The PCM feeds of_audio_write directly, so a pack at any other rate
+	// would play at the wrong pitch -- refuse it.
+	if (count == 0 || count > 100000 || rate != (uint32_t)OF_AUDIO_RATE)
+	{
+		fclose(f);
+		return;
+	}
+
+	uint8_t *index = (uint8_t *)malloc(count * 16);
+	if (index == NULL)
+	{
+		fclose(f);
+		return;
+	}
+	if (fread(index, 1, count * 16, f) != count * 16)
+	{
+		free(index);
+		fclose(f);
+		return;
+	}
+
+	musCacheFile = f;
+	musCacheIndex = index;
+	musCacheCount = count;
+	musCacheMakeupQ16 = ReadLittleLong(header + 12);
+	if (musCacheMakeupQ16 == 0)
+		musCacheMakeupQ16 = 65536;  // older packs: no makeup field
+	printf("OpenFPGA: music cache indexed (%u songs).\n", (unsigned)count);
+}
+
+// Look the song hash up in the resident index; false = miss.
+bool MusCache_Lookup(uint64_t hash, uint32_t *base, uint32_t *samples)
+{
+	for (uint32_t i = 0; i < musCacheCount; i++)
+	{
+		const uint8_t *e = musCacheIndex + i * 16;
+		const uint64_t ehash = (uint64_t)ReadLittleLong(e) |
+			((uint64_t)ReadLittleLong(e + 4) << 32);
+		if (ehash != hash)
+			continue;
+		*base = ReadLittleLong(e + 8);
+		*samples = ReadLittleLong(e + 12);
+		return *samples != 0;
+	}
+	return false;
+}
 
 // Mirror of alOutMusic(): write one OPL register/value to the music chip.
 inline void OPL_Write(byte reg, byte val)
@@ -192,12 +289,87 @@ bool OPL_ServiceTick()
 	return true;
 }
 
+// Stream pre-rendered PCM from the music cache into the mixer: the cache-hit
+// twin of the DBOPL render below.  The pack is rendered at MAX_VOLUME, so
+// MULTIPLY_VOLUME(MusicVolume) -- the same per-sample curve the emulators
+// apply -- is baked into a Q15 gain here, scaled by the pack's RMS makeup
+// (the DBOPL fallback saturates, so the clean pack PCM sits below its
+// loudness); hits and misses track the volume setting identically, and the
+// per-sample clamp clips only where the fallback itself would.
+void OPL_FeedStream(int maxFrames, uint32_t budgetUs)
+{
+	M.volume = MusicVolume;
+	// makeup can exceed 1.0, so gain can exceed 32768 -- the sample multiply
+	// below needs an int64 intermediate and an explicit s16 clamp.
+	const int32_t gain = (int32_t)(MULTIPLY_VOLUME(M.volume) *
+		((float)musCacheMakeupQ16 / 65536.0f) * 32768.0f + 0.5f);
+
+	const uint32_t startUs = OPL_NowUs();
+	int produced = 0;
+	int16_t mono[256];
+	int16_t block[256 * 2];
+
+	while (produced < maxFrames)
+	{
+		uint32_t remaining = M.streamSamples - M.streamPos;
+		if (remaining == 0)
+		{
+			if (!M.loop)
+			{
+				M.active = false;
+				return;
+			}
+			if (fseek(musCacheFile, (long)M.streamBase, SEEK_SET) != 0)
+			{
+				printf("OpenFPGA: music cache seek failed; music stopped.\n");
+				M.active = false;
+				return;
+			}
+			M.streamPos = 0;
+			remaining = M.streamSamples;
+		}
+
+		int want = maxFrames - produced;
+		if (want > 256) want = 256;
+		if ((uint32_t)want > remaining) want = (int)remaining;
+
+		if (fread(mono, 2, want, musCacheFile) != (size_t)want)
+		{
+			printf("OpenFPGA: music cache read failed; music stopped.\n");
+			M.active = false;
+			return;
+		}
+		for (int i = 0; i < want; ++i)
+		{
+			int32_t v = (int32_t)(((int64_t)(int16_t)LittleShort(mono[i]) * gain) >> 15);
+			if (v > 32767) v = 32767;
+			else if (v < -32768) v = -32768;
+			const int16_t s = (int16_t)v;
+			block[i * 2]     = s;
+			block[i * 2 + 1] = s;
+		}
+
+		of_audio_write(block, want);
+		produced += want;
+		M.streamPos += (uint32_t)want;
+
+		if ((uint32_t)(OPL_NowUs() - startUs) > budgetUs)
+			break;
+	}
+}
+
 // Produce and push up to `maxFrames` stereo frames into the mixer, honoring a
 // wall-clock budget.  Shared by the main-loop pump (device) and PostMix (PC).
 void OPL_Feed(int maxFrames, uint32_t budgetUs)
 {
 	if (!M.active)
 		return;
+
+	if (M.streamMode)
+	{
+		OPL_FeedStream(maxFrames, budgetUs);
+		return;
+	}
 
 	M.volume = MusicVolume;
 
@@ -330,6 +502,44 @@ bool OPLMusic_Start(const uint8_t *imf, int len, bool loop)
 
 	OPLMusic_Stop();
 
+	// Pre-rendered cache hit?  Locate the event stream in the caller's
+	// buffer (same parse as the miss path below) and look its hash up; on a
+	// hit the song streams from the pack and the emulator never runs.
+	MusCache_Probe();
+	if (musCacheIndex != NULL)
+	{
+		const uint8_t *hseq = imf;
+		int hashBytes;
+		if (ReadLittleShort(imf) == 0)
+			hashBytes = len;
+		else
+		{
+			hashBytes = ReadLittleShort(imf);
+			hseq += 2;
+			if (hashBytes > len - 2)
+				hashBytes = len - 2;
+		}
+		hashBytes &= ~3;
+
+		uint32_t base, samples;
+		if (hashBytes > 0 &&
+			MusCache_Lookup(MusCache_Hash(hseq, (uint32_t)hashBytes), &base, &samples) &&
+			fseek(musCacheFile, (long)base, SEEK_SET) == 0)
+		{
+			M.loop    = loop;
+			M.volume  = MusicVolume;
+			M.streamMode    = true;
+			M.streamBase    = base;
+			M.streamSamples = samples;
+			M.streamPos     = 0;
+
+			of_audio_init();
+			M.active = true;
+			OPL_InstallPump();
+			return true;
+		}
+	}
+
 	// Own a copy of the IMF bytes; the caller's lump buffer is transient.
 	uint8_t *copy = (uint8_t *)malloc(len);
 	if (copy == NULL)
@@ -399,6 +609,10 @@ void OPLMusic_Stop(void)
 	M.timeCount = M.nextEventTime = 0;
 	M.samplesLeftInTick = 0;
 	M.sampleAcc = 0;
+	// The cache file and index stay open across songs; only the stream
+	// position is per-song state.
+	M.streamMode = false;
+	M.streamBase = M.streamSamples = M.streamPos = 0;
 }
 
 void OPLMusic_Pump(void)

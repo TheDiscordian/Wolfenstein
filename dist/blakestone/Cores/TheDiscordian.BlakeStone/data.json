@@ -375,6 +375,16 @@
                     "ofx"
                 ],
                 "deferload": true
+            },
+            {
+                "id": 27,
+                "name": "Music Cache",
+                "required": false,
+                "parameters": 0,
+                "extensions": [
+                    "ofx"
+                ],
+                "deferload": true
             }
         ]
     }

@@ -105,6 +105,10 @@
             {
                 "id": 26,
                 "filename": "sfxcache.ofx"
+            },
+            {
+                "id": 27,
+                "filename": "muscache.ofx"
             }
         ]
     }

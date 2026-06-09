@@ -1836,6 +1836,12 @@ int WL_Main (int argc, char *argv[])
 		fprintf(stderr, "%s\n", error.GetMessage());
 #endif
 
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+		// Make the death visible: nothing else restores the display.
+		printf("Fatal: %s\n", error.GetMessage());
+		of_video_set_display_mode(OF_DISPLAY_TERMINAL);
+#endif
+
 #ifdef _WIN32
 		I_AcknowledgeError();
 #endif
@@ -1846,6 +1852,10 @@ int WL_Main (int argc, char *argv[])
 	{
 		CallTerminateFunctions();
 		fprintf(stderr, "Unhandled C++ exception.\n");
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+		printf("Fatal: unhandled C++ exception.\n");
+		of_video_set_display_mode(OF_DISPLAY_TERMINAL);
+#endif
 		return 1;
 	}
 	return 1;

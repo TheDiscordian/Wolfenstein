@@ -4,9 +4,22 @@
 #include "of_mount.h"
 #include "of_services.h"
 #include "of_smp_bank.h"
+#include "of_video.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+
+/* Replaces musl's abort(), whose endpoint stores to address 0 -- live BRAM
+ * on the Pocket -- before trapping.  Show the terminal so the last console
+ * line is readable, then break. */
+_Noreturn void abort(void)
+{
+    printf("abort() called.\n");
+    if (OF_SVC && OF_SVC->magic == OF_SVC_MAGIC)
+        of_video_set_display_mode(OF_DISPLAY_TERMINAL);
+    for (;;)
+        __asm__ volatile("ebreak");
+}
 
 static void of_ecwolf_setenv_default(const char *name, const char *value)
 {

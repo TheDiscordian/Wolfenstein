@@ -27,6 +27,7 @@
 #include "config.h"
 #include "wl_net.h"
 #include "wl_play.h"
+#include "of_ecwolf_opl_music.h"
 
 
 #if !SDL_VERSION_ATLEAST(2,0,0)
@@ -556,6 +557,11 @@ void IN_WaitAndProcessEvents()
 void IN_ProcessEvents()
 {
 	SDL_Event event;
+
+#ifdef OF_ECWOLF_OPENFPGA
+	// Keep music fed during input waits that never present a frame.
+	OPLMusic_Pump();
+#endif
 
 #ifdef __ANDROID__
 	if(ShadowingEnabled)

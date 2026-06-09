@@ -23,6 +23,10 @@ bool OPLMusic_Start(const uint8_t *imf, int len, bool loop);
 // Stop playback, detach the pump, and silence the chip.
 void OPLMusic_Stop(void);
 
+// Render pending music into the audio ring; called from the main loop once
+// per frame on device.  No-op on PC (the SDL_mixer PostMix hook drives it).
+void OPLMusic_Pump(void);
+
 // True while an IMF sequence is active.
 bool OPLMusic_Playing(void);
 

@@ -7,6 +7,7 @@
 #include "id_vl.h"
 #include "id_vh.h"
 #include "of_ecwolf_gpu.h"
+#include "of_ecwolf_opl_music.h"
 #include "w_wad.h"
 #include "v_font.h"
 #include "v_palette.h"
@@ -160,6 +161,9 @@ void VH_UpdateScreen(bool reacquire)
 	OF_WolfPerf_Add(OF_WOLF_PERF_PRESENT, perfStart);
 	perfStart = OF_WolfPerf_NowUS();
 	SD_PumpSoundLoads();
+#ifdef OF_ECWOLF_OPENFPGA
+	OPLMusic_Pump();
+#endif
 	OF_WolfPerf_Add(OF_WOLF_PERF_SOUND, perfStart);
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 	if(!reacquire)

@@ -20,10 +20,11 @@
 //  other.  The chip is built once (Setup() brute-force calibrates the
 //  envelope tables and costs seconds on this CPU) and reused across songs.
 //
-//  Pump: on device a periodic timer callback (of_timer) tops up the audio
-//  ring; on the desktop test of_timer is a no-op, so the SDL_mixer PostMix
-//  hook (audio-thread rate, real SDL_mixer) drives the same render.  Both
-//  paths throttle on of_audio_free() and a wall-clock budget so the
+//  Pump: on device the main loop calls OPLMusic_Pump() (dbopl rendering is
+//  far too heavy for the timer ISR, and of_timer's single callback slot
+//  belongs to the SDK MIDI player); on the desktop test the SDL_mixer
+//  PostMix hook (audio-thread rate, real SDL_mixer) drives the same render.
+//  Both paths throttle on of_audio_free() and a wall-clock budget so the
 //  continuous dbopl render can never monopolise the CPU.
 //
 
@@ -41,7 +42,7 @@
 
 extern "C" {
 #include "of_audio.h"   // OF_AUDIO_RATE, of_audio_write/free/init
-#include "of_timer.h"   // of_timer_set_callback, of_time_us
+#include "of_timer.h"   // of_time_us
 }
 
 #ifdef OF_PC
@@ -55,9 +56,8 @@ extern "C" {
 #define OPL_MUSIC_RATE   OF_AUDIO_RATE
 #define OPL_IMF_HZ       700
 
-// On device the pump runs in the timer ISR, where of_time_us()'s ECALL would
-// trigger a nested trap (see of_midi.c).  Read the monotonic timer through the
-// direct service-table pointer instead; on PC fall back to the plain extern.
+// Monotonic time; the direct service-table read is cheaper than the ECALL
+// path and this runs once per render block.
 static inline uint32_t OPL_NowUs(void)
 {
 #ifdef OF_PC
@@ -193,7 +193,7 @@ bool OPL_ServiceTick()
 }
 
 // Produce and push up to `maxFrames` stereo frames into the mixer, honoring a
-// wall-clock budget.  Shared by the timer (device) and PostMix (PC) drivers.
+// wall-clock budget.  Shared by the main-loop pump (device) and PostMix (PC).
 void OPL_Feed(int maxFrames, uint32_t budgetUs)
 {
 	if (!M.active)
@@ -214,9 +214,9 @@ void OPL_Feed(int maxFrames, uint32_t budgetUs)
 			if (!OPL_ServiceTick())
 			{
 				// Non-looping sequence ended.  Just go inactive here -- never
-				// detach the pump from inside it (the device pump runs in an
-				// ISR; tearing down the timer from within it is unsafe).  Full
-				// teardown happens later via SD_MusicOff -> OPLMusic_Stop.
+				// detach the pump from inside it (on PC this runs in the
+				// PostMix audio thread).  Full teardown happens later via
+				// SD_MusicOff -> OPLMusic_Stop.
 				M.active = false;
 				return;
 			}
@@ -263,7 +263,7 @@ void OPL_Feed(int maxFrames, uint32_t budgetUs)
 
 // --- Pump drivers ---------------------------------------------------------
 
-void OPL_TimerPump(void)
+void OPL_Pump(void)
 {
 	if (!M.active)
 		return;
@@ -283,18 +283,18 @@ void OPL_PostMix(void *udata, Uint8 *stream, int len)
 	// PostMix runs in SDL's audio thread on the desktop test; use it purely
 	// as a tick to keep of_audio_write's ring fed (it drains to a separate
 	// SDL device).  No wall-clock cap needed off-device.
-	OPL_TimerPump();
+	OPL_Pump();
 }
 #endif
 
+// On device there is nothing to install: the main loop drives OPLMusic_Pump()
+// and M.active gates it.
 void OPL_InstallPump()
 {
 	if (M.pumpInstalled)
 		return;
 #ifdef OF_PC
 	Mix_SetPostMix(OPL_PostMix, NULL);
-#else
-	of_timer_set_callback(OPL_TimerPump, 50);
 #endif
 	M.pumpInstalled = true;
 }
@@ -305,8 +305,6 @@ void OPL_RemovePump()
 		return;
 #ifdef OF_PC
 	Mix_SetPostMix(NULL, NULL);
-#else
-	of_timer_set_callback(NULL, 0);
 #endif
 	M.pumpInstalled = false;
 }
@@ -387,6 +385,13 @@ void OPLMusic_Stop(void)
 	M.timeCount = M.nextEventTime = 0;
 	M.samplesLeftInTick = 0;
 	M.sampleAcc = 0;
+}
+
+void OPLMusic_Pump(void)
+{
+#ifndef OF_PC
+	OPL_Pump();
+#endif
 }
 
 bool OPLMusic_Playing(void)

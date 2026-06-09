@@ -615,7 +615,7 @@ static FResourceFile *SD_OpenMusicPack()
 		}
 	}
 	if(MusicPack == NULL)
-		printf("OpenFPGA: wolfmidi.zip was not found; music disabled.\n");
+		printf("OpenFPGA: wolfmidi.zip was not found; using native OPL music.\n");
 
 	return MusicPack;
 }
@@ -650,6 +650,9 @@ static Mix_Music *SD_LoadMusicPackMIDI(const char *chunk)
 
 	if(loaded != NULL)
 		printf("OpenFPGA: using wolfmidi.zip replacement %s.\n", chunk);
+	else
+		printf("OpenFPGA: wolfmidi.zip has %s but it failed to decode (%s); "
+			"using native OPL music.\n", chunk, Mix_GetError());
 	return loaded;
 }
 
@@ -2099,6 +2102,33 @@ SD_StartMusic(const char* chunk)
 	musicchunk = -1;
 	OpenFPGAMusicChunk = "";
 
+	// Load the native IMF lump up front: it serves both the pre-rendered
+	// cache check and the DBOPL fallback.
+	TUniquePtr<byte[]> imf;
+	int imfLen = 0;
+	int lumpNum = SoundInfo.GetMusicLumpNum(chunk);
+	if(lumpNum != -1)
+	{
+		const int len = Wads.LumpLength(lumpNum);
+		if(len > 4)
+		{
+			FWadLump lump = Wads.OpenLumpNum(lumpNum);
+			imf.Reset(new byte[len]);
+			lump.Read(imf.Get(), len);
+			imfLen = len;
+		}
+	}
+
+	// Music priority: a pre-rendered muscache.ofx is a deliberate setup
+	// step, so a cache hit outranks the shipped MIDI pack; the MIDI pack
+	// in turn outranks the CPU-heavy on-device DBOPL render.
+	if(imf.Get() != NULL && OPLMusic_CacheHit(imf.Get(), imfLen) &&
+		OPLMusic_Start(imf.Get(), imfLen, true))
+	{
+		OpenFPGAMusicChunk = chunk;
+		return;
+	}
+
 	music = SD_LoadExternalMIDI(chunk);
 	if(music != NULL)
 	{
@@ -2109,31 +2139,18 @@ SD_StartMusic(const char* chunk)
 			OpenFPGAMusicChunk = chunk;
 		SDL_UnlockMutex(audioMutex);
 	}
-	else
+	else if(imf.Get() != NULL)
 	{
 		// No MIDI replacement in the pack: play the game's native IMF (the
-		// original DOS AdLib music) through the DBOPL OPL2 emulator.  This is
-		// how games without a MIDI pack (e.g. Blake Stone) get music.
-		int lumpNum = SoundInfo.GetMusicLumpNum(chunk);
-		if(lumpNum != -1)
-		{
-			const int len = Wads.LumpLength(lumpNum);
-			if(len > 4)
-			{
-				FWadLump lump = Wads.OpenLumpNum(lumpNum);
-				TUniquePtr<byte[]> imf(new byte[len]);
-				lump.Read(imf.Get(), len);
-
-				if(OPLMusic_Start(imf.Get(), len, true))
-					OpenFPGAMusicChunk = chunk;
-				else
-					printf("OpenFPGA: failed to start native IMF for %s.\n", chunk);
-			}
-		}
+		// original DOS AdLib music) through the DBOPL OPL2 emulator.
+		if(OPLMusic_Start(imf.Get(), imfLen, true))
+			OpenFPGAMusicChunk = chunk;
 		else
-		{
-			printf("OpenFPGA: no music lump for %s; music disabled.\n", chunk);
-		}
+			printf("OpenFPGA: failed to start native IMF for %s.\n", chunk);
+	}
+	else
+	{
+		printf("OpenFPGA: no music lump for %s; music disabled.\n", chunk);
 	}
 	return;
 #else

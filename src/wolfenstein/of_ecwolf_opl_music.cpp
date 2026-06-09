@@ -4,9 +4,9 @@
 //  Renders a game's native IMF (the "sqHack" OPL register script stored in
 //  AUDIOT) through the DBOPL emulator and feeds the resulting 48 kHz stereo
 //  PCM into the openfpgaOS mixer (of_audio_write).  This is the genuine DOS
-//  AdLib sound, used for games that ship no Standard-MIDI replacement pack
-//  (Blake Stone) -- SD_StartMusic falls through to here when the music pack
-//  has no MIDI for the requested song.
+//  AdLib sound.  SD_StartMusic comes here first when the pre-rendered cache
+//  (muscache.ofx) holds the song, and falls through to here when the music
+//  pack has no MIDI for the requested song.
 //
 //  The IMF format (matching id_sd.cpp's sqHack handling):
 //    optional leading u16 = data length in bytes (0 => length is the lump size)
@@ -516,6 +516,34 @@ void OPL_FreeData()
 }
 
 } // namespace
+
+bool OPLMusic_CacheHit(const uint8_t *imf, int len)
+{
+	if (imf == NULL || len <= 4)
+		return false;
+
+	MusCache_Probe();
+	if (musCacheIndex == NULL)
+		return false;
+
+	// Same event-stream parse as OPLMusic_Start's hash block below.
+	const uint8_t *hseq = imf;
+	int hashBytes;
+	if (ReadLittleShort(imf) == 0)
+		hashBytes = len;
+	else
+	{
+		hashBytes = ReadLittleShort(imf);
+		hseq += 2;
+		if (hashBytes > len - 2)
+			hashBytes = len - 2;
+	}
+	hashBytes &= ~3;
+
+	uint32_t base, samples;
+	return hashBytes > 0 &&
+		MusCache_Lookup(MusCache_Hash(hseq, (uint32_t)hashBytes), &base, &samples);
+}
 
 bool OPLMusic_Start(const uint8_t *imf, int len, bool loop)
 {

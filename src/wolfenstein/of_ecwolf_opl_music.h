@@ -4,8 +4,8 @@
 //
 //  Plays a game's native IMF (sqHack OPL register script) through the DBOPL
 //  emulator, the same DOS AdLib sound the engine produced on real hardware.
-//  Used when no Standard-MIDI replacement exists in the music pack (e.g.
-//  Blake Stone, which ships no MIDI pack).
+//  Used when the pre-rendered music cache (muscache.ofx) holds the song, or
+//  when no Standard-MIDI replacement exists in the music pack.
 //
 
 #ifndef OF_ECWOLF_OPL_MUSIC_H
@@ -19,6 +19,11 @@
 // The data is copied internally, so the caller may free its buffer after.
 // loop = restart the sequence when it ends.  Returns true on success.
 bool OPLMusic_Start(const uint8_t *imf, int len, bool loop);
+
+// True when the pre-rendered music cache (muscache.ofx) holds this song.
+// SD_StartMusic asks before trying the MIDI pack, so a deliberately
+// generated cache outranks the shipped MIDI rendition.
+bool OPLMusic_CacheHit(const uint8_t *imf, int len);
 
 // Stop playback, detach the pump, and silence the chip.
 void OPLMusic_Stop(void);

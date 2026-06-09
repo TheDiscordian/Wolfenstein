@@ -364,8 +364,10 @@ static inline void _gpu_select_batch_buffer(uint32_t index) {
 
 static inline void _gpu_wait_dma_idle_debug(void) {
     uint32_t dma_spins = 0;
-    while (GPU_STATUS & GPU_STATUS_DMA_BUSY)
-        dma_spins++;
+    while (GPU_STATUS & GPU_STATUS_DMA_BUSY) {
+        if (++dma_spins == 50000000u)
+            __builtin_trap();  /* doorbell DMA wedged — bounded like of_gpu_wait() */
+    }
     _gpu_batch_inflight_mask = 0;
     if (dma_spins) {
         _gpu_dbg_dma_waits++;
@@ -375,8 +377,10 @@ static inline void _gpu_wait_dma_idle_debug(void) {
 
 static inline void _gpu_wait_dma_desc_slot_debug(void) {
     uint32_t dma_spins = 0;
-    while (GPU_STATUS & GPU_STATUS_DMA_DESC_FULL)
-        dma_spins++;
+    while (GPU_STATUS & GPU_STATUS_DMA_DESC_FULL) {
+        if (++dma_spins == 50000000u)
+            __builtin_trap();  /* descriptor FIFO stuck full — bounded like of_gpu_wait() */
+    }
     if (dma_spins) {
         _gpu_dbg_dma_waits++;
         _gpu_dbg_dma_spin_iters += dma_spins;
@@ -488,7 +492,8 @@ static inline void _gpu_ring_ensure(uint32_t bytes) {
             _gpu_note_ring_free(ring_free);
             if (ring_free >= bytes)
                 break;
-            ring_spins++;
+            if (++ring_spins == 50000000u)
+                __builtin_trap();  /* ring never drains — bounded like of_gpu_wait() */
         } while (1);
         _gpu_dbg_ring_waits++;
         _gpu_dbg_ring_spin_iters += ring_spins;

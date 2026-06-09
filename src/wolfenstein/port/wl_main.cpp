@@ -140,6 +140,21 @@ static void OFEarlyFillRect(byte *fb, int pitch, int width, int height,
 		memset(fb + (y + row) * pitch + x, color, w);
 }
 
+// The OS terminal/overlay text renders through the VGA-bright region
+// (240..255) of the shared palette RAM, so every early palette upload must
+// keep those entries populated or terminal text goes black-on-black.
+static void OFEarlyFillTerminalPalette(uint32_t *palette)
+{
+	static const uint32_t vga16[16] = {
+		0x000000, 0x0000aa, 0x00aa00, 0x00aaaa,
+		0xaa0000, 0xaa00aa, 0xaa5500, 0xaaaaaa,
+		0x555555, 0x5555ff, 0x55ff55, 0x55ffff,
+		0xff5555, 0xff55ff, 0xffff55, 0xffffff
+	};
+	for(int i = 0;i < 16;++i)
+		palette[240 + i] = vga16[i];
+}
+
 static void OFEarlyDrawLogo(byte *fb, int pitch, int width, int height)
 {
 	if(fb == NULL || pitch <= 0 || width <= 0 || height <= 0)
@@ -256,7 +271,9 @@ static void OF_EarlyBootMarker(byte colorIndex, bool setMinimalPalette)
 		palette[1] = 0xff0000; // red
 		palette[2] = 0x00ff00; // green
 		palette[3] = 0x4060ff; // blue
+		OFEarlyFillTerminalPalette(palette);
 		of_video_palette_bulk(palette, 256);
+		printf("BOOT2: marker palette_bulk done\n");
 	}
 
 	for(int i = 0;i < 3;++i)
@@ -266,13 +283,16 @@ static void OF_EarlyBootMarker(byte colorIndex, bool setMinimalPalette)
 		const int drawIdx = of_video_acquire_next(acquireIdx, acquireToken);
 		if(drawIdx < 0)
 			OF_BOOT_FAIL("BOOT2-FAIL: marker acquire_next=%d (i=%d)\n", drawIdx, i);
+		printf("BOOT2: marker i=%d acquired idx=%d\n", i, drawIdx);
 		if(!OFEarlyDrawSolidIndex(drawIdx, pitch, width, height, colorIndex, frameBytes))
 			OF_BOOT_FAIL("BOOT2-FAIL: marker draw failed idx=%d (i=%d)\n", drawIdx, i);
 		uint32_t flipToken = 0;
 		if(!OF_WolfGPU_FlipVideoBuffer(drawIdx, &flipToken))
 			OF_BOOT_FAIL("BOOT2-FAIL: marker flip failed idx=%d (i=%d)\n", drawIdx, i);
+		printf("BOOT2: marker i=%d flip kicked token=%u\n", i, (unsigned)flipToken);
 		ofEarlyStartup.lastFlipToken = flipToken;
 		of_video_wait_flip();
+		printf("BOOT2: marker i=%d presented\n", i);
 		ofEarlyStartup.lastFlipIdx = drawIdx;
 		ofEarlyStartup.haveFlip = true;
 	}
@@ -372,6 +392,7 @@ void OF_EarlyStartupScreen(int progress)
 		palette[5] = 0xff4040;
 		for(int i = 0;i < OF_BOOT_LOGO_PALETTE_COUNT;++i)
 			palette[OF_BOOT_LOGO_PALETTE_BASE + i] = OFBootLogoPalette[i];
+		OFEarlyFillTerminalPalette(palette);
 		of_video_palette_bulk(palette, 256);
 		ofEarlyStartup.paletteReady = true;
 #ifdef OF_BOOT_MARKERS

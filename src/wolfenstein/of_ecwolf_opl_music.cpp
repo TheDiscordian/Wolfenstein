@@ -73,7 +73,11 @@ namespace {
 
 struct OPLMusic
 {
-	DBOPL::Chip   chip;
+	// Pointer, not a value: DBOPL::Chip's ctor runs InitTables() (pow/sin/log
+	// FP math).  A global value member would run that at C++ static-init, before
+	// the RISC-V FPU/runtime is up -> trap before main().  Construct lazily at
+	// first play (FPU ready), mirroring the SFX chip.
+	DBOPL::Chip  *chip;
 	bool          chipReady;
 
 	// The chip stores a pointer to the volume int (Chip::SetVolume keeps a
@@ -106,8 +110,8 @@ OPLMusic M;
 // Mirror of alOutMusic(): write one OPL register/value to the music chip.
 inline void OPL_Write(byte reg, byte val)
 {
-	M.chip.SetVolume(M.volume);
-	M.chip.WriteReg(reg, val);
+	M.chip->SetVolume(M.volume);
+	M.chip->WriteReg(reg, val);
 }
 
 // Mirror of id_sd.cpp's SDL_AlSetChanInst for the music chip.
@@ -147,10 +151,10 @@ const Instrument kChannelRelease = {
 
 void OPL_ResetChip()
 {
-	M.chip.SetVolume(M.volume);
+	M.chip->SetVolume(M.volume);
 	for (Bit32u r = 0x20; r <= 0xF5; r++)
-		M.chip.WriteReg(r, 0);
-	M.chip.WriteReg(1, 0x20);  // WSE = 1 (waveform select enable)
+		M.chip->WriteReg(r, 0);
+	M.chip->WriteReg(1, 0x20);  // WSE = 1 (waveform select enable)
 	for (int i = 0; i < OPL_CHANNELS; ++i)
 		OPL_SetChanInst(&kChannelRelease, i);
 }
@@ -235,8 +239,8 @@ void OPL_Feed(int maxFrames, uint32_t budgetUs)
 		{
 			int chunk = want - rendered;
 			if (chunk > 256) chunk = 256;
-			M.chip.SetVolume(M.volume);
-			M.chip.GenerateBlock2((Bitu)chunk, buf);
+			M.chip->SetVolume(M.volume);
+			M.chip->GenerateBlock2((Bitu)chunk, buf);
 			for (int i = 0; i < chunk; ++i)
 			{
 				Bit32s s = buf[i] << 2;
@@ -353,9 +357,13 @@ bool OPLMusic_Start(const uint8_t *imf, int len, bool loop)
 	M.sampleAcc         = 0;
 
 	// Build/calibrate the chip once; reset register + channel state per song.
+	// Construct the chip HERE (runtime, FPU up), never at static-init -- its
+	// ctor runs InitTables()' FP math, which traps pre-main on the RISC-V.
+	if (M.chip == NULL)
+		M.chip = new DBOPL::Chip();
 	if (!M.chipReady)
 	{
-		M.chip.Setup(OPL_MUSIC_RATE);
+		M.chip->Setup(OPL_MUSIC_RATE);
 		M.chipReady = true;
 	}
 	OPL_ResetChip();

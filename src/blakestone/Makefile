@@ -195,6 +195,8 @@ $(PCOBJ)/%.cpp.o: %.cpp
 	@mkdir -p $(dir $@)
 	$(PC_CXX) $(PC_CXX_BUILD) -c -o $@ $<
 
+-include $(PC_C_OBJS:.o=.d) $(PC_CXX_OBJS:.o=.d)
+
 test: app_pc_ecwolf
 app_pc_ecwolf: $(PC_C_OBJS) $(PC_CXX_OBJS)
 	$(PC_CXX) $(PC_C_OBJS) $(PC_CXX_OBJS) $(SDL_LIBS) $(PC_EXTRA_LIBS) -lm -o app_pc

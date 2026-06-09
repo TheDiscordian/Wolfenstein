@@ -127,10 +127,11 @@ void Language::SetupBlakeStrings(const char* lumpname, const char* prefix)
 	unsigned int pos = 0;
 	unsigned int start = 0;
 	const char* data = reinterpret_cast<const char*>(wadLump.GetMem());
-	static const WORD endToken = ('X'<<8)|'X'; // Since both chars are the same this should be endian safe
 	while(pos+2 < wadLump.GetSize())
 	{
-		if(data[pos] == '^' && *(WORD*)(data+pos+1) == endToken)
+		// Byte-wise compare: data+pos+1 is usually unaligned and a 16-bit
+		// load traps on strict-alignment targets.
+		if(data[pos] == '^' && data[pos+1] == 'X' && data[pos+2] == 'X')
 		{
 			FString name;
 			FString str(data+start, pos-start);
@@ -139,7 +140,7 @@ void Language::SetupBlakeStrings(const char* lumpname, const char* prefix)
 			strings[name] = str;
 
 			pos += 3;
-			while((data[pos] == '\n' || data[pos] == '\r') && pos < wadLump.GetSize())
+			while(pos < wadLump.GetSize() && (data[pos] == '\n' || data[pos] == '\r'))
 				++pos;
 			start = pos;
 		}

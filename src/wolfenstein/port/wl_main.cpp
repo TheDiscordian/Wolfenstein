@@ -50,7 +50,11 @@
 
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 #include "of_ecwolf_gpu.h"
+#ifdef OF_BOOT_LOGO_BLAKE
+#include "of_ecwolf_boot_logo_blake.h"
+#else
 #include "of_ecwolf_boot_logo.h"
+#endif
 #include "of_cache.h"
 #include "of_video.h"
 #endif

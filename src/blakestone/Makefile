@@ -57,7 +57,7 @@ CFLAGS   += -Wno-old-style-definition -Wno-implicit-fallthrough \
 	-Wno-unused-parameter -Wno-unused-function -Wno-unused-variable \
 	-Wno-unused-but-set-variable
 CXXFLAGS += -DOF_SDL2_EXTERNAL -DOF_ECWOLF_OPENFPGA \
-	-DNO_GTK=1 -DUSE_GPL -DOF_ECWOLF_PERF_DISABLED
+	-DNO_GTK=1 -DUSE_GPL -DOF_ECWOLF_PERF_DISABLED -DOF_BOOT_LOGO_BLAKE
 CXXFLAGS += -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp
 CXXFLAGS += -DBZ_NO_STDIO -Icxx_compat $(ECWOLF_INCLUDES) -I$(ZLIB_SRC_DIR) \
 	-I$(LZMA_SRC_DIR) -I$(BZIP2_SRC_DIR) -std=gnu++11 -fexceptions

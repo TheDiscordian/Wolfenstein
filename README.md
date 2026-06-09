@@ -127,3 +127,5 @@ slot map, renderer notes).
 - [ECWolf](https://github.com/ECWolfEngine/ECWolf) by Braden "Blzut3" Obrzut,
   built on Wolf4SDL, Wolfenstein 3D by id Software.
 - openfpgaOS and the Pocket port by ThinkElastic.
+- Blake Stone: Aliens of Gold & Planet Strike by JAM Productions / Apogee.
+  Blake Stone core by TheDiscordian; Aliens of Gold banner art by dyreschlock.

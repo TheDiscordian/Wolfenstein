@@ -92,9 +92,19 @@
 #ifdef OF_BOOT_MARKERS
 #include <cstdio>
 #include "of_timer.h"
-#define OF_BOOT_MARK(...) printf(__VA_ARGS__)
+static void OF_BootHold(unsigned int ms);
+// Each marker holds ~2s so the line is readable on-device; failure paths
+// restore the terminal, print the reason, and freeze instead of returning
+// silently to a black screen.
+#define OF_BOOT_MARK(...) do { printf(__VA_ARGS__); OF_BootHold(2000); } while(0)
+#define OF_BOOT_FAIL(...) do { \
+	printf(__VA_ARGS__); \
+	of_video_set_display_mode(OF_DISPLAY_TERMINAL); \
+	for(;;) OF_BootHold(1000); \
+} while(0)
 #else
 #define OF_BOOT_MARK(...) ((void)0)
+#define OF_BOOT_FAIL(...) ((void)0)
 #endif
 struct OFEarlyStartupState
 {
@@ -224,7 +234,11 @@ static void OF_EarlyBootMarker(byte colorIndex, bool setMinimalPalette)
 	of_video_mode_t mode;
 	of_video_get_mode(&mode);
 	if(mode.color_mode != OF_VIDEO_MODE_8BIT || mode.width == 0 || mode.height == 0)
+	{
+		OF_BOOT_FAIL("BOOT2-FAIL: marker bad mode w=%d h=%d cm=%d\n",
+			mode.width, mode.height, mode.color_mode);
 		return;
+	}
 	const int width = mode.width;
 	const int height = mode.height;
 	const int pitch = mode.stride ? mode.stride : mode.width;
@@ -251,12 +265,12 @@ static void OF_EarlyBootMarker(byte colorIndex, bool setMinimalPalette)
 		const uint32_t acquireToken = ofEarlyStartup.haveFlip ? ofEarlyStartup.lastFlipToken : 0;
 		const int drawIdx = of_video_acquire_next(acquireIdx, acquireToken);
 		if(drawIdx < 0)
-			return;
+			OF_BOOT_FAIL("BOOT2-FAIL: marker acquire_next=%d (i=%d)\n", drawIdx, i);
 		if(!OFEarlyDrawSolidIndex(drawIdx, pitch, width, height, colorIndex, frameBytes))
-			return;
+			OF_BOOT_FAIL("BOOT2-FAIL: marker draw failed idx=%d (i=%d)\n", drawIdx, i);
 		uint32_t flipToken = 0;
 		if(!OF_WolfGPU_FlipVideoBuffer(drawIdx, &flipToken))
-			return;
+			OF_BOOT_FAIL("BOOT2-FAIL: marker flip failed idx=%d (i=%d)\n", drawIdx, i);
 		ofEarlyStartup.lastFlipToken = flipToken;
 		of_video_wait_flip();
 		ofEarlyStartup.lastFlipIdx = drawIdx;
@@ -268,7 +282,7 @@ static void OF_EarlyBootMarker(byte colorIndex, bool setMinimalPalette)
 
 void OF_EarlyStartupScreen(int progress)
 {
-	OF_BOOT_MARK("BOOT: OF_EarlyStartupScreen enter progress=%d\n", progress);
+	OF_BOOT_MARK("BOOT2: OF_EarlyStartupScreen enter progress=%d\n", progress);
 	if(progress < 0)
 		progress = 0;
 	else if(progress > 100)
@@ -276,19 +290,25 @@ void OF_EarlyStartupScreen(int progress)
 
 	if(!ofEarlyStartup.videoReady)
 	{
-		OF_BOOT_MARK("BOOT: of_video_init\n");
+		OF_BOOT_MARK("BOOT2: of_video_init\n");
 		of_video_init();
 		ofEarlyStartup.videoReady = true;
 	}
 	if(!ofEarlyStartup.displayReady)
 	{
-		OF_BOOT_MARK("BOOT: of_video_set_display_mode(FRAMEBUFFER)\n");
+#ifdef OF_BOOT_MARKERS
+		// Overlay keeps terminal text visible over the framebuffer, so the
+		// last BOOT2 line stays readable even after the mode switch.
+		OF_BOOT_MARK("BOOT2: of_video_set_display_mode(OVERLAY)\n");
+		of_video_set_display_mode(OF_DISPLAY_OVERLAY);
+#else
 		of_video_set_display_mode(OF_DISPLAY_FRAMEBUFFER);
+#endif
 		ofEarlyStartup.displayReady = true;
 	}
 	if(!ofEarlyStartup.gpuReady)
 	{
-		OF_BOOT_MARK("BOOT: OF_WolfGPU_Init\n");
+		OF_BOOT_MARK("BOOT2: OF_WolfGPU_Init\n");
 		OF_WolfGPU_Init();
 		OF_WolfGPU_ApplyRefreshPolicy();
 		ofEarlyStartup.gpuReady = true;
@@ -304,11 +324,14 @@ void OF_EarlyStartupScreen(int progress)
 		want.width = 320;
 		want.height = 200;
 		want.color_mode = OF_VIDEO_MODE_8BIT;
-		OF_BOOT_MARK("BOOT: of_video_set_mode 320x200x8\n");
-		of_video_set_mode(&want);
+		OF_BOOT_MARK("BOOT2: of_video_set_mode 320x200x8\n");
+		int setModeRet = of_video_set_mode(&want);
+		(void)setModeRet;
 		OF_WolfGPU_ApplyRefreshPolicy();
 
 		of_video_get_mode(&mode);
+		OF_BOOT_MARK("BOOT2: set_mode ret=%d now w=%d h=%d stride=%d cm=%d\n",
+			setModeRet, mode.width, mode.height, mode.stride, mode.color_mode);
 		ofEarlyStartup.modeReady = mode.width == 320 && mode.height == 200 &&
 			mode.color_mode == OF_VIDEO_MODE_8BIT;
 		ofEarlyStartup.paletteReady = false;
@@ -320,7 +343,11 @@ void OF_EarlyStartupScreen(int progress)
 	}
 
 	if(mode.color_mode != OF_VIDEO_MODE_8BIT || mode.width == 0 || mode.height == 0)
+	{
+		OF_BOOT_FAIL("BOOT2-FAIL: bad mode w=%d h=%d cm=%d\n",
+			mode.width, mode.height, mode.color_mode);
 		return;
+	}
 
 	const int width = mode.width;
 	const int height = mode.height;
@@ -331,7 +358,7 @@ void OF_EarlyStartupScreen(int progress)
 #ifdef OF_BOOT_MARKERS
 		// First splash call only: RED proves the video mode is up and fill+flip
 		// works, GRAY proves the palette uploaded — each held so it is readable.
-		OF_BOOT_MARK("BOOT: video mode up w=%d h=%d stride=%d cm=%d -> RED hold\n",
+		OF_BOOT_MARK("BOOT2: video mode up w=%d h=%d stride=%d cm=%d -> RED hold\n",
 			mode.width, mode.height, mode.stride, mode.color_mode);
 		OF_EarlyBootMarker(1, true);
 #endif
@@ -348,7 +375,7 @@ void OF_EarlyStartupScreen(int progress)
 		of_video_palette_bulk(palette, 256);
 		ofEarlyStartup.paletteReady = true;
 #ifdef OF_BOOT_MARKERS
-		OF_BOOT_MARK("BOOT: palette uploaded -> GRAY hold (pre-logo)\n");
+		OF_BOOT_MARK("BOOT2: palette uploaded -> GRAY hold (pre-logo)\n");
 		OF_EarlyBootMarker(2, false);
 #endif
 	}
@@ -368,22 +395,37 @@ void OF_EarlyStartupScreen(int progress)
 	{
 		const int acquireIdx = ofEarlyStartup.haveFlip ? ofEarlyStartup.lastFlipIdx : -1;
 		const uint32_t acquireToken = ofEarlyStartup.haveFlip ? ofEarlyStartup.lastFlipToken : 0;
+#ifdef OF_BOOT_MARKERS
+		if(!ofEarlyStartup.buffersPrimed)
+			OF_BOOT_MARK("BOOT2: acquire frame %d\n", i);
+#endif
 		const int drawIdx = of_video_acquire_next(acquireIdx, acquireToken);
 		if(drawIdx < 0)
+		{
+			OF_BOOT_FAIL("BOOT2-FAIL: acquire_next=%d (frame %d)\n", drawIdx, i);
 			return;
+		}
 		if(!OFEarlyDrawStartupIndex(drawIdx, pitch, width, height,
 			progress, frameBytes))
 		{
+			OF_BOOT_FAIL("BOOT2-FAIL: draw failed idx=%d (frame %d)\n", drawIdx, i);
 			return;
 		}
 
 		uint32_t flipToken = 0;
 		if(!OF_WolfGPU_FlipVideoBuffer(drawIdx, &flipToken))
+		{
+			OF_BOOT_FAIL("BOOT2-FAIL: flip failed idx=%d (frame %d)\n", drawIdx, i);
 			return;
+		}
 		ofEarlyStartup.lastFlipToken = flipToken;
 		of_video_wait_flip();
 		ofEarlyStartup.lastFlipIdx = drawIdx;
 		ofEarlyStartup.haveFlip = true;
+#ifdef OF_BOOT_MARKERS
+		if(!ofEarlyStartup.buffersPrimed)
+			OF_BOOT_MARK("BOOT2: frame %d presented\n", i);
+#endif
 	}
 
 	ofEarlyStartup.buffersPrimed = true;

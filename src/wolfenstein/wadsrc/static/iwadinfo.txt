@@ -12,7 +12,14 @@ IWad
 	Name = "Planet Strike"
 	Mapinfo = "mapinfo/planet.txt"
 	MustContain = "APCPA0"
-	Flags = Preview
+	Game = "Blake"
+}
+
+IWad
+{
+	Name = "Aliens of Gold"
+	Mapinfo = "mapinfo/aog.txt"
+	MustContain = "BCRDA0"
 	Game = "Blake"
 }
 

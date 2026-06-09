@@ -1,0 +1,965 @@
+gameinfo
+{
+	gamecolormap = "BLAKCMAP"
+	gamepalette = "BLAKEPAL"
+	translator = "xlat/planet.txt"
+	playerclasses = "BlakePlayer"
+	titlepage = "TITLE1"
+	titlepalette = "TITLEPAL"
+	menumusic = "MEETINGA"
+	scoresmusic = "LEVELA"
+	titlemusic = "GOLDA"
+	menufade = "A2 B2 B2"
+	borderflat = "#002851"
+	border = inset, "00 14 2C", "04 45 8A", "00 14 2C"
+	menuwindowcolors = "00 45 00", "00 A6 00", "00 A6 00", "28 CF 00", "28 CF 00", "28 CF 0"
+	menucolors = "00 A6 00", "00 A6 00", "00 A6 00", "00 00 00", "00 00 00", "00 00 00"
+	messagecolors = "00 28 51", "04 45 8A", "00 14 2C"
+	messagefontcolor = "White"
+
+	finalemusic = "RHUMBAAS"
+	finaleflat = "#DCDCDC"
+	intermissionmusic = "MEETINGA"
+	titletime = 15
+	menufontcolor_title = "Green"
+	menufontcolor_label = "DarkGreen"
+	menufontcolor_selection = "Green"
+	menufontcolor_invalid = "DarkGreen"
+	menufontcolor_invalidselection = "Green"
+	menufontcolor_highlight = "Yellow"
+	menufontcolor_highlightselection = "Gold"
+	menufontcolor_disabled = "DarkGreen"
+	highscoresfontcolor = "White"
+	pageindexfontcolor = "DarkYellow"
+	advisorycolor = "71 04 04"
+	advisorypic = "PC13"
+	doorsoundsequence = "DoorNormal"
+	pushwallsoundsequence = "PushwallNormal"
+	gibfactor = 1
+	highscoresfont = "SmallFont"
+	quitmessages = "$ENDSTR01", "$ENDSTR02", "$ENDSTR03", "$ENDSTR04", "$ENDSTR05", "$ENDSTR06", "$ENDSTR07", "$ENDSTR08", "$ENDSTR09"
+	gamecolormap = "COLORMAP"
+	deathtransition = "Fizzle"
+}
+
+automap
+{
+	fontcolor = "White"
+	background = "55 55 55"
+	doorcolor = "10 C7 10"
+	floorcolor = "55 55 55"
+	wallcolor = "00 8E 00"
+	yourcolor = "FF 80 00"
+}
+
+skill baby
+{
+	name = "$STR_DADDY"
+	picname = "M_BABY"
+	spawnfilter = 1
+	damagefactor = 0.25
+}
+
+skill easy
+{
+	name = "$STR_HURTME"
+	picname = "M_EASY"
+	spawnfilter = 2
+}
+
+skill normal
+{
+	name = "$STR_BRINGEM"
+	picname = "M_NORMAL"
+	spawnfilter = 3
+}
+
+skill hard
+{
+	name = "$STR_DEATH"
+	picname = "M_HARD"
+	spawnfilter = 4
+}
+
+intermission DemoLoop
+{
+	Fader
+	{
+		Background = TitlePage
+		Time = 15
+		FadeType = FadeIn
+	}
+	Image
+	{
+		Time = TitleTime
+	}
+	Fader
+	{
+		Time = 15
+		FadeType = FadeOut
+	}
+	Fader
+	{
+		Background = "CREDITS", 0, "$GamePalette"
+		Time = 15
+		FadeType = FadeIn
+	}
+	Image
+	{
+		Time = -10
+	}
+	Fader
+	{
+		Time = 15
+		FadeType = FadeOut
+	}
+	Fader
+	{
+		Background = HighScores
+		Time = 15
+		FadeType = FadeIn
+	}
+	Image
+	{
+		Time = -10
+	}
+	Fader
+	{
+		Time = 15
+		FadeType = FadeOut
+	}
+}
+
+episode "MAP01"
+{
+}
+
+episode "MAP16"
+{
+}
+
+episode "MAP31"
+{
+}
+
+episode "MAP46"
+{
+}
+
+episode "MAP61"
+{
+}
+
+episode "MAP76"
+{
+}
+
+cluster 1
+{
+}
+
+cluster 2
+{
+}
+
+cluster 3
+{
+}
+
+cluster 4
+{
+}
+
+cluster 5
+{
+}
+
+cluster 6
+{
+}
+
+// ===== Episode 1 =====
+map "MAP01" lookup "BLAKE_AREA_1"
+{
+	music = "INCNRATN"
+	cluster = 1
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP02" lookup "BLAKE_AREA_2"
+{
+	music = "DRKHALLA"
+	cluster = 1
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP03" lookup "BLAKE_AREA_3"
+{
+	music = "JUNGLEA"
+	cluster = 1
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP04" lookup "BLAKE_AREA_4"
+{
+	music = "RACSHUFL"
+	cluster = 1
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP05" lookup "BLAKE_AREA_5"
+{
+	music = "DRKHALLA"
+	cluster = 1
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP06" lookup "BLAKE_AREA_6"
+{
+	music = "HIDINGA"
+	cluster = 1
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP07" lookup "BLAKE_AREA_7"
+{
+	music = "JUNGLEA"
+	cluster = 1
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP08" lookup "BLAKE_AREA_8"
+{
+	music = "RACSHUFL"
+	cluster = 1
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP09" lookup "BLAKE_AREA_9"
+{
+	music = "HIDINGA"
+	cluster = 1
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP10" lookup "BLAKE_AREA_10"
+{
+	music = "DRKHALLA"
+	cluster = 1
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP11" lookup "BLAKE_AREA_11"
+{
+	music = "INCNRATN"
+	cluster = 1
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP12" lookup "BLAKE_AREA_12"
+{
+	music = "INCNRATN"
+	cluster = 1
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP13" lookup "BLAKE_AREA_13"
+{
+	music = "DRKHALLA"
+	cluster = 1
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP14" lookup "BLAKE_AREA_14"
+{
+	music = "JUNGLEA"
+	cluster = 1
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP15" lookup "BLAKE_AREA_15"
+{
+	music = "RACSHUFL"
+	cluster = 1
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+// ===== Episode 2 =====
+map "MAP16" lookup "BLAKE_AREA_16"
+{
+	music = "FREEDOMA"
+	cluster = 2
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP17" lookup "BLAKE_AREA_17"
+{
+	music = "DRKHALLA"
+	cluster = 2
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP18" lookup "BLAKE_AREA_18"
+{
+	music = "STRUTA"
+	cluster = 2
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP19" lookup "BLAKE_AREA_19"
+{
+	music = "INTRIGEA"
+	cluster = 2
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP20" lookup "BLAKE_AREA_20"
+{
+	music = "MEETINGA"
+	cluster = 2
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP21" lookup "BLAKE_AREA_21"
+{
+	music = "DRKHALLA"
+	cluster = 2
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP22" lookup "BLAKE_AREA_22"
+{
+	music = "INCNRATN"
+	cluster = 2
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP23" lookup "BLAKE_AREA_23"
+{
+	music = "RACSHUFL"
+	cluster = 2
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP24" lookup "BLAKE_AREA_24"
+{
+	music = "JUNGLEA"
+	cluster = 2
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP25" lookup "BLAKE_AREA_25"
+{
+	music = "GENEFUNK"
+	cluster = 2
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP26" lookup "BLAKE_AREA_26"
+{
+	music = "THEME"
+	cluster = 2
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP27" lookup "BLAKE_AREA_27"
+{
+	music = "FREEDOMA"
+	cluster = 2
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP28" lookup "BLAKE_AREA_28"
+{
+	music = "DRKHALLA"
+	cluster = 2
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP29" lookup "BLAKE_AREA_29"
+{
+	music = "STRUTA"
+	cluster = 2
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP30" lookup "BLAKE_AREA_30"
+{
+	music = "INTRIGEA"
+	cluster = 2
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+// ===== Episode 3 =====
+map "MAP31" lookup "BLAKE_AREA_31"
+{
+	music = "LEVELA"
+	cluster = 3
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP32" lookup "BLAKE_AREA_32"
+{
+	music = "HIDINGA"
+	cluster = 3
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP33" lookup "BLAKE_AREA_33"
+{
+	music = "STRUTA"
+	cluster = 3
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP34" lookup "BLAKE_AREA_34"
+{
+	music = "THEME"
+	cluster = 3
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP35" lookup "BLAKE_AREA_35"
+{
+	music = "RACSHUFL"
+	cluster = 3
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP36" lookup "BLAKE_AREA_36"
+{
+	music = "INCNRATN"
+	cluster = 3
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP37" lookup "BLAKE_AREA_37"
+{
+	music = "GOLDA"
+	cluster = 3
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP38" lookup "BLAKE_AREA_38"
+{
+	music = "JUNGLEA"
+	cluster = 3
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP39" lookup "BLAKE_AREA_39"
+{
+	music = "DRKHALLA"
+	cluster = 3
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP40" lookup "BLAKE_AREA_40"
+{
+	music = "THEWAYA"
+	cluster = 3
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP41" lookup "BLAKE_AREA_41"
+{
+	music = "FREEDOMA"
+	cluster = 3
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP42" lookup "BLAKE_AREA_42"
+{
+	music = "LEVELA"
+	cluster = 3
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP43" lookup "BLAKE_AREA_43"
+{
+	music = "HIDINGA"
+	cluster = 3
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP44" lookup "BLAKE_AREA_44"
+{
+	music = "STRUTA"
+	cluster = 3
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP45" lookup "BLAKE_AREA_45"
+{
+	music = "THEME"
+	cluster = 3
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+// ===== Episode 4 =====
+map "MAP46" lookup "BLAKE_AREA_46"
+{
+	music = "HIDINGA"
+	cluster = 4
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP47" lookup "BLAKE_AREA_47"
+{
+	music = "DRKHALLA"
+	cluster = 4
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP48" lookup "BLAKE_AREA_48"
+{
+	music = "GENEFUNK"
+	cluster = 4
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP49" lookup "BLAKE_AREA_49"
+{
+	music = "JUNGLEA"
+	cluster = 4
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP50" lookup "BLAKE_AREA_50"
+{
+	music = "INCNRATN"
+	cluster = 4
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP51" lookup "BLAKE_AREA_51"
+{
+	music = "GOLDA"
+	cluster = 4
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP52" lookup "BLAKE_AREA_52"
+{
+	music = "HIDINGA"
+	cluster = 4
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP53" lookup "BLAKE_AREA_53"
+{
+	music = "JUNGLEA"
+	cluster = 4
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP54" lookup "BLAKE_AREA_54"
+{
+	music = "DRKHALLA"
+	cluster = 4
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP55" lookup "BLAKE_AREA_55"
+{
+	music = "THEWAYA"
+	cluster = 4
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP56" lookup "BLAKE_AREA_56"
+{
+	music = "RHUMBAAS"
+	cluster = 4
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP57" lookup "BLAKE_AREA_57"
+{
+	music = "HIDINGA"
+	cluster = 4
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP58" lookup "BLAKE_AREA_58"
+{
+	music = "DRKHALLA"
+	cluster = 4
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP59" lookup "BLAKE_AREA_59"
+{
+	music = "GENEFUNK"
+	cluster = 4
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP60" lookup "BLAKE_AREA_60"
+{
+	music = "JUNGLEA"
+	cluster = 4
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+// ===== Episode 5 =====
+map "MAP61" lookup "BLAKE_AREA_61"
+{
+	music = "RACSHUFL"
+	cluster = 5
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP62" lookup "BLAKE_AREA_62"
+{
+	music = "SEARCHNA"
+	cluster = 5
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP63" lookup "BLAKE_AREA_63"
+{
+	music = "JUNGLEA"
+	cluster = 5
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP64" lookup "BLAKE_AREA_64"
+{
+	music = "HIDINGA"
+	cluster = 5
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP65" lookup "BLAKE_AREA_65"
+{
+	music = "GENEFUNK"
+	cluster = 5
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP66" lookup "BLAKE_AREA_66"
+{
+	music = "MEETINGA"
+	cluster = 5
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP67" lookup "BLAKE_AREA_67"
+{
+	music = "2100A"
+	cluster = 5
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP68" lookup "BLAKE_AREA_68"
+{
+	music = "THEME"
+	cluster = 5
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP69" lookup "BLAKE_AREA_69"
+{
+	music = "INCNRATN"
+	cluster = 5
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP70" lookup "BLAKE_AREA_70"
+{
+	music = "DRKHALLA"
+	cluster = 5
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP71" lookup "BLAKE_AREA_71"
+{
+	music = "THEWAYA"
+	cluster = 5
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP72" lookup "BLAKE_AREA_72"
+{
+	music = "RACSHUFL"
+	cluster = 5
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP73" lookup "BLAKE_AREA_73"
+{
+	music = "SEARCHNA"
+	cluster = 5
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP74" lookup "BLAKE_AREA_74"
+{
+	music = "JUNGLEA"
+	cluster = 5
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP75" lookup "BLAKE_AREA_75"
+{
+	music = "HIDINGA"
+	cluster = 5
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+// ===== Episode 6 =====
+map "MAP76" lookup "BLAKE_AREA_76"
+{
+	music = "TIMEA"
+	cluster = 6
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP77" lookup "BLAKE_AREA_77"
+{
+	music = "RACSHUFL"
+	cluster = 6
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP78" lookup "BLAKE_AREA_78"
+{
+	music = "GENEFUNK"
+	cluster = 6
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP79" lookup "BLAKE_AREA_79"
+{
+	music = "HIDINGA"
+	cluster = 6
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP80" lookup "BLAKE_AREA_80"
+{
+	music = "2100A"
+	cluster = 6
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP81" lookup "BLAKE_AREA_81"
+{
+	music = "THEME"
+	cluster = 6
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP82" lookup "BLAKE_AREA_82"
+{
+	music = "THEWAYA"
+	cluster = 6
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP83" lookup "BLAKE_AREA_83"
+{
+	music = "JUNGLEA"
+	cluster = 6
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP84" lookup "BLAKE_AREA_84"
+{
+	music = "MEETINGA"
+	cluster = 6
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP85" lookup "BLAKE_AREA_85"
+{
+	music = "DRKHALLA"
+	cluster = 6
+	DefaultLighting = 178
+	DefaultVisibility = 7.0
+}
+
+map "MAP86" lookup "BLAKE_AREA_86"
+{
+	music = "INCNRATN"
+	cluster = 6
+	DefaultLighting = 165
+	DefaultVisibility = 48.0
+	DefaultMaxLightVis = 42.0
+}
+
+map "MAP87" lookup "BLAKE_AREA_87"
+{
+	music = "TIMEA"
+	cluster = 6
+	DefaultLighting = 124
+	DefaultVisibility = 24.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP88" lookup "BLAKE_AREA_88"
+{
+	music = "RACSHUFL"
+	cluster = 6
+	DefaultLighting = 128
+	DefaultVisibility = 35.0
+	DefaultMaxLightVis = 52.0
+}
+
+map "MAP89" lookup "BLAKE_AREA_89"
+{
+	music = "GENEFUNK"
+	cluster = 6
+	DefaultLighting = 210
+	DefaultVisibility = 8.0
+}
+
+map "MAP90" lookup "BLAKE_AREA_90"
+{
+	music = "HIDINGA"
+	cluster = 6
+	DefaultLighting = 140
+	DefaultVisibility = 22.0
+	DefaultMaxLightVis = 42.0
+}

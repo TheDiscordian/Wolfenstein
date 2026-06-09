@@ -320,6 +320,11 @@ static int GetOpenFPGAIWadType(const FString &extension)
 		return FindIWadTypeByName("Mission 3: Ultimate Challenge");
 	if(extension.CompareNoCase("n3d") == 0)
 		return FindIWadTypeByName("Super 3D Noah's Ark");
+	if(extension.CompareNoCase("vsi") == 0)
+		return FindIWadTypeByName("Planet Strike");
+	if(extension.CompareNoCase("bs6") == 0 || extension.CompareNoCase("bs3") == 0 ||
+		extension.CompareNoCase("bs1") == 0)
+		return FindIWadTypeByName("Aliens of Gold");
 	return -1;
 }
 

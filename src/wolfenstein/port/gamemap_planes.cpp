@@ -1336,6 +1336,26 @@ void GameMap::ReadPlanesData()
 						}
 					}
 
+					// Blake Stone door locks: an access key code under a door
+					// tile locks that door instead of spawning a pickup. In PS
+					// 57/59 are ordinary items and spawn even under doors.
+					if((FeatureFlags & Xlat::FF_GLOBALMETA) && oldplane[i] >= 55 && oldplane[i] <= 59 &&
+						((oldplane[i] != 57 && oldplane[i] != 59) || EpisodeInfo::GetNumEpisodes() > 1))
+					{
+						static const int doorLock[5] = {1, 2, 4, 3, 5};
+						bool locked = false;
+						for(unsigned int t = 0;t < triggers.Size();++t)
+						{
+							if(triggers[t].action != Specials::Door_Open ||
+								triggers[t].x != i%header.width || triggers[t].y != i/header.width)
+								continue;
+							triggers[t].arg[3] = doorLock[oldplane[i]-55];
+							locked = true;
+						}
+						if(locked)
+							continue;
+					}
+
 					Thing thing;
 					Trigger trigger;
 					uint32_t flags = 0;

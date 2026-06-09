@@ -91,6 +91,7 @@
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 #ifdef OF_BOOT_MARKERS
 #include <cstdio>
+#include "of_timer.h"
 #define OF_BOOT_MARK(...) printf(__VA_ARGS__)
 #else
 #define OF_BOOT_MARK(...) ((void)0)
@@ -204,6 +205,15 @@ static bool OFEarlyDrawSolidIndex(int drawIdx, int pitch, int width,
 }
 
 #ifdef OF_BOOT_MARKERS
+// Debug-only: busy-wait so a marker frame stays on screen long enough to read
+// (the boot path otherwise races past each milestone in a few milliseconds).
+static void OF_BootHold(unsigned int ms)
+{
+	unsigned int start = of_time_ms();
+	while((unsigned int)(of_time_ms() - start) < ms)
+		;
+}
+
 // Debug-only: paint the whole screen one solid colour and present it, so the
 // frozen final frame on a hung/black device boot shows how far this function
 // got.  setMinimalPalette uploads a small known palette (for colours shown
@@ -252,6 +262,7 @@ static void OF_EarlyBootMarker(byte colorIndex, bool setMinimalPalette)
 		ofEarlyStartup.lastFlipIdx = drawIdx;
 		ofEarlyStartup.haveFlip = true;
 	}
+	OF_BootHold(1200); // hold the colour ~1.2s so it is photographable
 }
 #endif
 
@@ -315,14 +326,15 @@ void OF_EarlyStartupScreen(int progress)
 	const int height = mode.height;
 	const int pitch = mode.stride ? mode.stride : mode.width;
 
-#ifdef OF_BOOT_MARKERS
-	OF_BOOT_MARK("BOOT: video mode up w=%d h=%d stride=%d cm=%d -> RED fill\n",
-		mode.width, mode.height, mode.stride, mode.color_mode);
-	OF_EarlyBootMarker(1, true); // RED fullscreen: video mode is up, fill+flip works
-#endif
-
 	if(!ofEarlyStartup.paletteReady)
 	{
+#ifdef OF_BOOT_MARKERS
+		// First splash call only: RED proves the video mode is up and fill+flip
+		// works, GRAY proves the palette uploaded — each held so it is readable.
+		OF_BOOT_MARK("BOOT: video mode up w=%d h=%d stride=%d cm=%d -> RED hold\n",
+			mode.width, mode.height, mode.stride, mode.color_mode);
+		OF_EarlyBootMarker(1, true);
+#endif
 		uint32_t palette[256];
 		memset(palette, 0, sizeof(palette));
 		palette[0] = 0x000000;
@@ -335,12 +347,11 @@ void OF_EarlyStartupScreen(int progress)
 			palette[OF_BOOT_LOGO_PALETTE_BASE + i] = OFBootLogoPalette[i];
 		of_video_palette_bulk(palette, 256);
 		ofEarlyStartup.paletteReady = true;
-	}
-
 #ifdef OF_BOOT_MARKERS
-	OF_BOOT_MARK("BOOT: palette uploaded -> GRAY fill (pre-logo)\n");
-	OF_EarlyBootMarker(2, false); // GRAY fullscreen via real palette index 2, just before the logo draw
+		OF_BOOT_MARK("BOOT: palette uploaded -> GRAY hold (pre-logo)\n");
+		OF_EarlyBootMarker(2, false);
 #endif
+	}
 
 	uint32_t frameBytes = 0;
 	if(pitch > 0 && pitch <= OF_VIDEO_MAX_STRIDE &&
@@ -377,6 +388,12 @@ void OF_EarlyStartupScreen(int progress)
 
 	ofEarlyStartup.buffersPrimed = true;
 	ofEarlyStartup.lastProgress = progress;
+
+#ifdef OF_BOOT_MARKERS
+	// Hold each distinct progress step so the bar climb is a watchable slideshow
+	// that freezes on whatever step boot dies at.
+	OF_BootHold(progress >= 100 ? 2500 : 900);
+#endif
 }
 
 static void OF_EarlyStartupBlackout()

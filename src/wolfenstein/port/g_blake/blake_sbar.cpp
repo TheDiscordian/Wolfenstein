@@ -122,9 +122,13 @@ void BlakeStatusBar::DrawStatusBar()
 	if(viewsize == 21 && ingame)
 		return;
 
-	static FFont *IndexFont = V_GetFont("INDEXFON");
+	// FONTTINY is VGAGRAPH font chunk 3, which upstream named INDEXFON.
+	static FFont *IndexFont = V_GetFont("FONTTINY");
 	static FFont *HealthFont = V_GetFont("BlakeHealthFont");
 	static FFont *ScoreFont = V_GetFont("BlakeScoreFont");
+	if(!IndexFont) IndexFont = SmallFont;
+	if(!HealthFont) HealthFont = SmallFont;
+	if(!ScoreFont) ScoreFont = SmallFont;
 
 	static FTextureID STBar = TexMan.GetTexture("STBAR", FTexture::TEX_Any);
 	static FTextureID STBarTop = TexMan.GetTexture("STTOP", FTexture::TEX_Any);
@@ -270,6 +274,9 @@ void BlakeStatusBar::DrawStatusBar()
 
 void BlakeStatusBar::DrawString(FFont *font, const char* string, double x, double y, bool shadow, EColorRange color, bool center) const
 {
+	if(!font)
+		return;
+
 	word strWidth, strHeight;
 	VW_MeasurePropString(font, string, strWidth, strHeight);
 

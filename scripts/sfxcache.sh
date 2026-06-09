@@ -31,7 +31,9 @@ shopt -s nullglob nocaseglob
 for hed in "$DIR"/AUDIOHED.*; do
     ext="${hed##*.}"
     for t in "$DIR"/AUDIOT.*; do
-        [ "${t##*.}" = "$ext" ] && pairs+=("$hed" "$t")
+        # case-insensitive: nocaseglob matches any case but [ = ] does not
+        text="${t##*.}"
+        [ "${text,,}" = "${ext,,}" ] && pairs+=("$hed" "$t")
     done
 done
 shopt -u nullglob nocaseglob

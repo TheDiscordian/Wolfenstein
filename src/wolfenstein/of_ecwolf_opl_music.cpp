@@ -157,9 +157,14 @@ void MusCache_Probe()
 	}
 	const uint32_t count = ReadLittleLong(header + 4);
 	const uint32_t rate = ReadLittleLong(header + 8);
+	uint32_t makeupQ16 = ReadLittleLong(header + 12);
+	if (makeupQ16 == 0)
+		makeupQ16 = 65536;  // older packs: no makeup field
 	// The PCM feeds of_audio_write directly, so a pack at any other rate
-	// would play at the wrong pitch -- refuse it.
-	if (count == 0 || count > 100000 || rate != (uint32_t)OF_AUDIO_RATE)
+	// would play at the wrong pitch -- refuse it.  The tool clamps makeup
+	// to 0.25..4.0, so a value outside that range is header corruption.
+	if (count == 0 || count > 100000 || rate != (uint32_t)OF_AUDIO_RATE ||
+	    makeupQ16 < 16384 || makeupQ16 > 262144)
 	{
 		fclose(f);
 		return;
@@ -178,12 +183,29 @@ void MusCache_Probe()
 		return;
 	}
 
+	// Reject a truncated pack (interrupted SD copy: header+index intact,
+	// PCM cut short) so every song falls back to DBOPL instead of dying
+	// mid-stream on a short read.
+	long fileSize = -1;
+	if (fseek(f, 0, SEEK_END) == 0)
+		fileSize = ftell(f);
+	for (uint32_t i = 0; i < count; i++)
+	{
+		const uint8_t *e = index + i * 16;
+		const uint64_t end = (uint64_t)ReadLittleLong(e + 8) +
+			(uint64_t)ReadLittleLong(e + 12) * 2;
+		if (fileSize < 0 || end > (uint64_t)fileSize)
+		{
+			free(index);
+			fclose(f);
+			return;
+		}
+	}
+
 	musCacheFile = f;
 	musCacheIndex = index;
 	musCacheCount = count;
-	musCacheMakeupQ16 = ReadLittleLong(header + 12);
-	if (musCacheMakeupQ16 == 0)
-		musCacheMakeupQ16 = 65536;  // older packs: no makeup field
+	musCacheMakeupQ16 = makeupQ16;
 	printf("OpenFPGA: music cache indexed (%u songs).\n", (unsigned)count);
 }
 

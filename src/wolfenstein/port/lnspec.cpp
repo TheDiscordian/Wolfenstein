@@ -49,6 +49,7 @@
 #include "wl_play.h"
 #include "g_mapinfo.h"
 #include "g_shared/a_keys.h"
+#include "textures/textures.h"
 #include "thingdef/thingdef.h"
 using namespace Specials;
 
@@ -388,6 +389,79 @@ FUNC(Door_Open)
 		}
 		return activated;
 	}
+	return 1;
+}
+
+// Toggles every Blake Stone barrier in the tagged group between its Active
+// and Inactive states and flips any wired switch walls to match.
+FUNC(Barrier_Toggle)
+{
+	static const char* const barrierClassNames[4] = {
+		"ElectricArcBarrier", "ElectricPostBarrier",
+		"VerticalSpikeActive", "VerticalPostActive"
+	};
+
+	bool on = false, haveState = false, activated = false;
+	MapSpot member = NULL;
+	while((member = map->GetSpotByTag(args[0], member)))
+	{
+		if(member->tile)
+			continue;
+
+		const unsigned int x = member->GetX(), y = member->GetY();
+		for(AActor::Iterator iter = AActor::GetIterator();iter.Next();)
+		{
+			AActor * const actor = iter;
+			if(actor->tilex != x || actor->tiley != y)
+				continue;
+
+			bool isBarrier = false;
+			for(unsigned int c = 0;c < 4 && !isBarrier;++c)
+			{
+				const ClassDef *cls = ClassDef::FindClass(barrierClassNames[c]);
+				isBarrier = cls && actor->GetClass()->IsDescendantOf(cls);
+			}
+			if(!isBarrier)
+				continue;
+
+			// The group toggles as one, so the first barrier found decides
+			// the direction for all of them.
+			if(!haveState)
+			{
+				on = !!(actor->flags & FL_SOLID);
+				haveState = true;
+			}
+
+			if(const Frame *state = actor->FindState(on ? "Inactive" : "Active"))
+			{
+				actor->SetState(state);
+				activated = true;
+			}
+		}
+	}
+
+	if(!activated)
+		return 0;
+
+	// Flip every switch wall wired to this group to show the new state.
+	static const char* const switchTex[2][2] = {
+		{"SWITCHI1", "SWITCHI2"}, {"SWITCHA1", "SWITCHA2"}
+	};
+	member = NULL;
+	while((member = map->GetSpotByTag(args[0], member)))
+	{
+		if(!member->tile)
+			continue;
+		for(unsigned int side = 0;side < 4;++side)
+		{
+			// North/south faces use the *1 texture, east/west the *2.
+			const bool ew = side == MapTile::East || side == MapTile::West;
+			member->SetTexture(static_cast<MapTile::Side>(side),
+				TexMan.GetTexture(switchTex[!on][ew], FTexture::TEX_Wall));
+		}
+	}
+
+	PlaySoundLocMapSpot("switches/normbutn", spot);
 	return 1;
 }
 

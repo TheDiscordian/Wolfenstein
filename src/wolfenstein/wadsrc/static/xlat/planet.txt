@@ -1212,8 +1212,8 @@ things
 	{422, DeadPODAlien,             0, 0, 0}
 	{423, ConcessionCoin,           0, 0, 0}
 	{424, ConcessionCoin5,          0, 0, 0}
-	{425, VerticalSpikeInactive,    0, 0, 0}
-	{426, VerticalSpikeActive,      0, 0, 0}
+	{425, VerticalSpikeDown,        0, 0, 0}
+	{426, VerticalSpikeUp,          0, 0, 0}
 	// No 427
 	{428, VerticalSpikeInactive,    0, 0, 0}
 	{429, VerticalSpikeInactive,    0, 0, 2}
@@ -1250,8 +1250,8 @@ things
 	{552, SectorGuard,              4, PATHING, 3}
 	// No 556-557
 	{558, TechWarrior,              4, PATHING, 0}
-	{562, VerticalPostInactive,     0, 0, 0}
-	{563, VerticalPostActive,       0, 0, 0}
+	{562, VerticalPostDown,         0, 0, 0}
+	{563, VerticalPostUp,           0, 0, 0}
 	// No 564
 	{565, VerticalPostInactive,     0, 0, 0}
 	{566, VerticalPostInactive,     0, 0, 2}

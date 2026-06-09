@@ -1004,6 +1004,9 @@ void GameMap::ReadPlanesData()
 	TArray<WORD> ambushSpots;
 	TArray<MapTrigger> triggers;
 	TMap<WORD, TArray<MapSpot> > elevatorSpots;
+	// Blake Stone barrier switch walls (tile 45=on, 57=off) noted in the
+	// tiles plane; the objects plane wires them to barrier groups.
+	TMap<unsigned int, WORD> switchCells;
 
 	// Read and store the info plane so we can reference it
 	TUniquePtr<WORD[]> infoplane(new WORD[size]);
@@ -1049,6 +1052,9 @@ void GameMap::ReadPlanesData()
 						mapPlane.map[i].SetTile(&tilePalette[oldplane[i]-tileStart]);
 					else
 						mapPlane.map[i].SetTile(NULL);
+
+					if((FeatureFlags & Xlat::FF_GLOBALMETA) && (oldplane[i] == 45 || oldplane[i] == 57))
+						switchCells[i] = oldplane[i];
 
 					Xlat::ModZone zone;
 					if(xlat.GetModZone(oldplane[i], zone))
@@ -1215,6 +1221,7 @@ void GameMap::ReadPlanesData()
 
 				TArray<HolowallProducer> holowallThings;
 				TArray<unsigned int> doorLinkSrc, doorLinkDst;
+				TArray<unsigned int> barrierCells, switchLinkSrc, switchLinkDst;
 
 				unsigned int i = 0;
 				for(;i < size;++i)
@@ -1259,9 +1266,26 @@ void GameMap::ReadPlanesData()
 							case 0xFC: // Food unit credits
 							case 0xFD: // Soda unit credits
 								continue;
-							case 0xF8: // Barrier switch link (level byte + next-word coordinate)
+							case 0xF8: // Barrier switch link (AOG): low byte is the floor, next word holds the target (x<<8)|y
+							{
+								if(i + 1 >= size)
+									continue;
+								const WORD coord = LittleShort(oldplane[i+1]);
+								const int level = oldplane[i]&0xFF;
+								// 0xFF targets the current floor. Cross-floor
+								// links need floor state persistence, which is
+								// not supported yet.
+								if(EpisodeInfo::GetNumEpisodes() > 1 &&
+									(level == 0xFF || level == ((int)levelInfo->LevelNumber-1)%15) &&
+									switchCells.CheckKey(i) &&
+									(coord>>8) < header.width && (coord&0xFF) < header.height)
+								{
+									switchLinkSrc.Push(i);
+									switchLinkDst.Push((coord&0xFF)*header.width + (coord>>8));
+								}
 								++i;
 								continue;
+							}
 							case 0xF4: // Interlevel transporter: low byte is the destination map index within the episode
 							{
 								Trigger trigger;
@@ -1357,6 +1381,18 @@ void GameMap::ReadPlanesData()
 							continue;
 					}
 
+					// Blake Stone barrier switches (PS): the object word at a
+					// switch wall holds the (x<<8)|y of one barrier in the
+					// group it toggles. AOG uses 0xF8 pairs handled above.
+					if((FeatureFlags & Xlat::FF_GLOBALMETA) && EpisodeInfo::GetNumEpisodes() == 1 &&
+						switchCells.CheckKey(i) &&
+						(oldplane[i]>>8) < header.width && (oldplane[i]&0xFF) < header.height)
+					{
+						switchLinkSrc.Push(i);
+						switchLinkDst.Push((oldplane[i]&0xFF)*header.width + (oldplane[i]>>8));
+						continue;
+					}
+
 					// Blake Stone linked doors: a coordinate word under a door
 					// chains it to the door at those coordinates so the chain
 					// opens and closes together. Collect the links here; they
@@ -1382,6 +1418,24 @@ void GameMap::ReadPlanesData()
 							doorLinkSrc.Push(i);
 							doorLinkDst.Push(target);
 							continue;
+						}
+					}
+
+					// Record barrier spawn cells for the switch flood fill.
+					// They still spawn things through the xlat below.
+					if(FeatureFlags & Xlat::FF_GLOBALMETA)
+					{
+						switch(oldplane[i])
+						{
+							default:
+								break;
+							case 174: case 175: // Both games
+								barrierCells.Push(i);
+								break;
+							case 138: case 139: case 425: case 426: case 562: case 563: // PS only
+								if(EpisodeInfo::GetNumEpisodes() == 1)
+									barrierCells.Push(i);
+								break;
 						}
 					}
 
@@ -1479,6 +1533,69 @@ void GameMap::ReadPlanesData()
 								triggers[t].x == x && triggers[t].y == y)
 								triggers[t].arg[0] = pair->Value;
 						}
+					}
+				}
+
+				// Resolve barrier switch links: flood fill the barrier group
+				// from each link target, share one tag across the group and
+				// its switch walls, and give every switch a use trigger.
+				if(switchLinkSrc.Size())
+				{
+					TMap<unsigned int, bool> barrierMap;
+					for(unsigned int b = 0;b < barrierCells.Size();++b)
+						barrierMap[barrierCells[b]] = true;
+
+					// Also guards SetSpotTag from running twice on a spot.
+					TMap<unsigned int, unsigned int> groupTag;
+					for(unsigned int l = 0;l < switchLinkSrc.Size();++l)
+					{
+						const unsigned int s = switchLinkSrc[l], d = switchLinkDst[l];
+						if(!barrierMap.CheckKey(d))
+							continue; // Stray or unsupported link
+
+						unsigned int tag;
+						if(const unsigned int *dt = groupTag.CheckKey(d))
+							tag = *dt; // Group already flooded by another switch
+						else
+						{
+							tag = ((d%header.width)<<8)|(d/header.width);
+
+							TArray<unsigned int> stack;
+							stack.Push(d);
+							while(stack.Size())
+							{
+								const unsigned int c = stack[stack.Size()-1];
+								stack.Delete(stack.Size()-1);
+								if(!barrierMap.CheckKey(c) || groupTag.CheckKey(c))
+									continue;
+								groupTag[c] = tag;
+								SetSpotTag(GetSpot(c%header.width, c/header.width, 0), tag);
+								if(c%header.width > 0)
+									stack.Push(c-1);
+								if(c%header.width < header.width-1)
+									stack.Push(c+1);
+								if(c >= header.width)
+									stack.Push(c-header.width);
+								if(c+header.width < size)
+									stack.Push(c+header.width);
+							}
+						}
+
+						if(!groupTag.CheckKey(s))
+						{
+							groupTag[s] = tag;
+							SetSpotTag(GetSpot(s%header.width, s/header.width, 0), tag);
+						}
+
+						Trigger trigger;
+						trigger.x = s%header.width;
+						trigger.y = s/header.width;
+						trigger.z = 0;
+						trigger.action = Specials::Barrier_Toggle;
+						trigger.arg[0] = tag;
+						trigger.playerUse = true;
+						trigger.repeatable = true;
+						triggers.Push(trigger);
 					}
 				}
 				break;

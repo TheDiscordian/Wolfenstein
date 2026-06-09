@@ -32,16 +32,51 @@ actor VerticalSpikeActive
 			VSPK BC 3.5
 			VSPK D 3.5 A_ChangeFlag("SOLID", true)
 			VSPK EFG 3.5
-			goto Spawn
+			goto Closed
+		Active:
+			VSPK BC 3.5
+			VSPK D 3.5 A_ChangeFlag("SOLID", true)
+			VSPK EFG 3.5
+		Raised:
+			VSPK H -1
+			stop
+		Inactive:
+			VSPK GFED 3.5
+			VSPK C 3.5 A_ChangeFlag("SOLID", false)
+			VSPK B 3.5
+		Lowered:
+			VSPK A -1
+			stop
 	}
 }
 
 actor VerticalSpikeInactive : VerticalSpikeActive
 {
+	-SOLID
 	states
 	{
 		Spawn:
 			goto Opened
+	}
+}
+
+// Switch wired spikes hold up/down instead of cycling.
+actor VerticalSpikeUp : VerticalSpikeActive
+{
+	states
+	{
+		Spawn:
+			goto Raised
+	}
+}
+
+actor VerticalSpikeDown : VerticalSpikeActive
+{
+	-SOLID
+	states
+	{
+		Spawn:
+			goto Lowered
 	}
 }
 
@@ -76,7 +111,21 @@ actor VerticalPostActive
 			VPST BC 3.5
 			VPST D 3.5 A_ChangeFlag("SOLID", true)
 			VPST EFG 3.5
-			goto Spawn
+			goto Closed
+		Active:
+			VPST BC 3.5
+			VPST D 3.5 A_ChangeFlag("SOLID", true)
+			VPST EFG 3.5
+		Raised:
+			VPST H -1
+			stop
+		Inactive:
+			VPST GFED 3.5
+			VPST C 3.5 A_ChangeFlag("SOLID", false)
+			VPST B 3.5
+		Lowered:
+			VPST A -1
+			stop
 	}
 }
 
@@ -87,6 +136,26 @@ actor VerticalPostInactive : VerticalPostActive
 	{
 		Spawn:
 			goto Opened
+	}
+}
+
+// Switch wired posts hold up/down instead of cycling.
+actor VerticalPostUp : VerticalPostActive
+{
+	states
+	{
+		Spawn:
+			goto Raised
+	}
+}
+
+actor VerticalPostDown : VerticalPostActive
+{
+	-SOLID
+	states
+	{
+		Spawn:
+			goto Lowered
 	}
 }
 

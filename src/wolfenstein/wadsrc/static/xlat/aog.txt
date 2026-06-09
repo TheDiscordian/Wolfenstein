@@ -45,6 +45,9 @@ things
 	{522, STARTrooper,              4, PATHING, 2}
 	{540, STARTrooper,              4, PATHING, 3}
 
+	// Arc barrier spawned on (PS: electric post barrier off)
+	{174, ElectricArcBarrier,       0, 0, 0}
+
 	// Projection generator (PS: rotating security cube)
 	{177, ProjectionGenerator,      0, 0, 0}
 

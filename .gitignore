@@ -5,6 +5,7 @@
 *.elf
 ._*
 app_pc
+app_pc.d
 save_*.bin
 build/
 .obj/

@@ -4,7 +4,7 @@ gameinfo
 	gamepalette = "BLAKEPAL"
 	translator = "xlat/planet.txt"
 	playerclasses = "BlakePlayer"
-	titlepage = "TITLE1"
+	titlepage = "TITLEPIC"
 	titlepalette = "TITLEPAL"
 	menumusic = "MEETINGA"
 	scoresmusic = "LEVELA"

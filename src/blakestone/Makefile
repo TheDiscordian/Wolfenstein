@@ -43,6 +43,7 @@ OF_ECWOLF_SRC  = of_ecwolf_openfpga.c
 OF_ECWOLF_CD_SRC = of_ecwolf_cd.cpp
 OF_ECWOLF_CXXABI_SRC = of_ecwolf_cxxabi.cpp
 OF_ECWOLF_GPU_SRC = of_ecwolf_gpu.cpp
+OF_ECWOLF_OPL_SRC = of_ecwolf_opl_music.cpp
 ECWOLF_MIDI_SRC = $(SDK_DIR)/of_midi.c $(SDK_DIR)/of_smp_bank.c \
 	$(SDK_DIR)/of_smp_voice.c $(SDK_DIR)/of_smp_tables.c
 PC_EXTRA_CFLAGS += $(shell pkg-config --cflags SDL2_mixer 2>/dev/null)
@@ -97,7 +98,7 @@ SRCS     = $(ZLIB_SRCS) $(LZMA_SRCS) $(BZIP2_SRCS) $(ECWOLF_C_SRCS) $(OF_ECWOLF_
 # DBOPL (GPL) renders AdLib sound effects to PCM at load time; the dosbox/
 # directory stays excluded from the generic scan, only the emulator builds.
 ECWOLF_DBOPL_SRC = $(ECWOLF_SRC_DIR)/dosbox/dbopl.cpp
-SRCS_CXX = $(ECWOLF_CXX_SRCS) $(ECWOLF_DBOPL_SRC) $(OF_ECWOLF_CD_SRC) $(OF_ECWOLF_CXXABI_SRC) $(OF_ECWOLF_GPU_SRC) $(OF_CXXABI_SRC)
+SRCS_CXX = $(ECWOLF_CXX_SRCS) $(ECWOLF_DBOPL_SRC) $(OF_ECWOLF_CD_SRC) $(OF_ECWOLF_CXXABI_SRC) $(OF_ECWOLF_GPU_SRC) $(OF_ECWOLF_OPL_SRC) $(OF_CXXABI_SRC)
 PC_SRCS = $(filter-out $(ECWOLF_MIDI_SRC),$(SRCS))
 PC_SRCS_CXX = $(filter-out $(OF_ECWOLF_CD_SRC) $(OF_ECWOLF_CXXABI_SRC) \
 	$(OF_ECWOLF_GPU_SRC) $(OF_CXXABI_SRC),$(SRCS_CXX))

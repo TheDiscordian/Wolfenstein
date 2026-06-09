@@ -582,6 +582,52 @@ static void audio_callback(void *userdata, uint8_t *stream, int len) {
     SDL_UnlockMutex(g_audio_mutex);
 }
 
+/* TEMPORARY (env-gated) WAV capture of everything written to the mixer.
+ * Set OF_WAV=/path/out.wav to dump the 48 kHz stereo s16 stream for offline
+ * audition/analysis (used to verify OPL music renders).  Off by default;
+ * remove if not wanted. */
+static FILE     *g_wav_file;
+static uint32_t  g_wav_data_bytes;
+static int       g_wav_probed;
+
+static void of_wav_finish(void) {
+    if (!g_wav_file) return;
+    /* Patch RIFF chunk size (4) and data chunk size (40). */
+    uint32_t riff = 36 + g_wav_data_bytes;
+    fseek(g_wav_file, 4, SEEK_SET);  fwrite(&riff, 4, 1, g_wav_file);
+    fseek(g_wav_file, 40, SEEK_SET); fwrite(&g_wav_data_bytes, 4, 1, g_wav_file);
+    fclose(g_wav_file);
+    g_wav_file = NULL;
+}
+
+static void of_wav_capture(const int16_t *samples, int frames) {
+    if (!g_wav_probed) {
+        g_wav_probed = 1;
+        const char *path = getenv("OF_WAV");
+        if (path && path[0]) {
+            g_wav_file = fopen(path, "wb");
+            if (g_wav_file) {
+                const uint32_t rate = OF_AUDIO_RATE;
+                const uint16_t ch = 2, bits = 16;
+                const uint32_t byteRate = rate * ch * bits / 8;
+                const uint16_t blockAlign = ch * bits / 8;
+                const uint32_t z = 0, fmtLen = 16; const uint16_t pcm = 1;
+                fwrite("RIFF", 1, 4, g_wav_file); fwrite(&z, 4, 1, g_wav_file);
+                fwrite("WAVEfmt ", 1, 8, g_wav_file); fwrite(&fmtLen, 4, 1, g_wav_file);
+                fwrite(&pcm, 2, 1, g_wav_file); fwrite(&ch, 2, 1, g_wav_file);
+                fwrite(&rate, 4, 1, g_wav_file); fwrite(&byteRate, 4, 1, g_wav_file);
+                fwrite(&blockAlign, 2, 1, g_wav_file); fwrite(&bits, 2, 1, g_wav_file);
+                fwrite("data", 1, 4, g_wav_file); fwrite(&z, 4, 1, g_wav_file);
+                atexit(of_wav_finish);
+            }
+        }
+    }
+    if (g_wav_file && frames > 0) {
+        fwrite(samples, sizeof(int16_t) * 2, frames, g_wav_file);
+        g_wav_data_bytes += (uint32_t)frames * 2 * sizeof(int16_t);
+    }
+}
+
 void of_audio_init(void) {
     if (g_audio_dev) return;
 
@@ -601,6 +647,7 @@ void of_audio_init(void) {
 
 int of_audio_write(const int16_t *samples, int count) {
     int written = 0;
+    of_wav_capture(samples, count);  /* TEMPORARY: env-gated OF_WAV dump */
     SDL_LockMutex(g_audio_mutex);
     for (int i = 0; i < count * 2; i++) {
         int next = (g_audio_write_pos + 1) % AUDIO_BUF_SIZE;

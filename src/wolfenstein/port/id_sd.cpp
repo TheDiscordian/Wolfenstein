@@ -42,6 +42,9 @@
 #include "wl_main.h"
 #include "wl_net.h"
 #include "id_sd.h"
+#ifdef OF_ECWOLF_OPENFPGA
+#include "../of_ecwolf_opl_music.h"
+#endif
 
 // Introduced in SDL_mixer 2.0.2
 #ifndef SDL_MIXER_VERSION_ATLEAST
@@ -2004,6 +2007,9 @@ SD_MusicOff(void)
 	midiOn = false;
 	SDL_UnlockMutex(audioMutex);
 
+	// Native IMF (OPL) playback, when no MIDI replacement existed.
+	OPLMusic_Stop();
+
 	if(music != NULL)
 		Mix_HaltMusic();
 	OpenFPGAMusicChunk = "";
@@ -2105,7 +2111,29 @@ SD_StartMusic(const char* chunk)
 	}
 	else
 	{
-		printf("OpenFPGA: wolfmidi.zip has no MIDI replacement for %s; music disabled.\n", chunk);
+		// No MIDI replacement in the pack: play the game's native IMF (the
+		// original DOS AdLib music) through the DBOPL OPL2 emulator.  This is
+		// how games without a MIDI pack (e.g. Blake Stone) get music.
+		int lumpNum = SoundInfo.GetMusicLumpNum(chunk);
+		if(lumpNum != -1)
+		{
+			const int len = Wads.LumpLength(lumpNum);
+			if(len > 4)
+			{
+				FWadLump lump = Wads.OpenLumpNum(lumpNum);
+				TUniquePtr<byte[]> imf(new byte[len]);
+				lump.Read(imf.Get(), len);
+
+				if(OPLMusic_Start(imf.Get(), len, true))
+					OpenFPGAMusicChunk = chunk;
+				else
+					printf("OpenFPGA: failed to start native IMF for %s.\n", chunk);
+			}
+		}
+		else
+		{
+			printf("OpenFPGA: no music lump for %s; music disabled.\n", chunk);
+		}
 	}
 	return;
 #else

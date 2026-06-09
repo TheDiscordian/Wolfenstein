@@ -1259,6 +1259,8 @@ void GameMap::ReadPlanesData()
 							case 0xFB:
 								// Floor/ceiling texture
 								// We only read the first instance
+								if(i + 1 >= size) // Truncated pair
+									continue;
 								if(canUseFlatColor || !gotFlatTextures)
 								{
 									canUseFlatColor = false;
@@ -1274,6 +1276,8 @@ void GameMap::ReadPlanesData()
 								// This would be pointless since ECWolf is
 								// always texture mapped, but it seems to be
 								// legal for a map to not include a texture tag.
+								if(i + 1 >= size) // Truncated pair
+									continue;
 								if(canUseFlatColor && !gotFlatTextures)
 								{
 									gotFlatTextures = true;

@@ -938,7 +938,7 @@ void SelectGame(TArray<FString> &wadfiles, const char* iwad, const char* datawad
 
 	if(basefiles.Size() == 0)
 	{
-		I_Error("Can not find base game data. (*.wl6, *.wl1, *.sdm, *.sod, *.sd2, *.sd3, *.n3d)");
+		I_Error("Can not find base game data. (*.wl6, *.wl1, *.sdm, *.sod, *.sd2, *.sd3, *.n3d, *.bs1, *.bs3, *.bs6, *.vsi)");
 	}
 
 	int pick = -1;

@@ -63,6 +63,8 @@ namespace Dialog {
 
 const Page *Conversation::Start() const
 {
+	if(Pages.Size() == 0)
+		return NULL;
 	if(RandomStart)
 		return &Pages[pr_conversation(Pages.Size())];
 	return &Pages[0];
@@ -171,12 +173,16 @@ void ConversationModule::ParseConversation(Scanner &sc)
 					{
 						Conversation &conv2 = Conversations.Insert(conv.Actor, conv);
 
-						// Resolve page links
+						// Resolve page links (0 or out of range = none)
 						for(unsigned int i = conv2.Pages.Size();i-- > 0;)
 						{
-							conv2.Pages[i].Link = &conv2.Pages[conv2.Pages[i].LinkIndex - 1];
+							const unsigned int link = conv2.Pages[i].LinkIndex;
+							conv2.Pages[i].Link = (link != 0 && link <= conv2.Pages.Size()) ? &conv2.Pages[link - 1] : NULL;
 							for(unsigned int j = conv2.Pages[i].Choices.Size();j-- > 0;)
-								conv2.Pages[i].Choices[j].NextPage = &conv2.Pages[conv2.Pages[i].Choices[j].NextPageIndex - 1];
+							{
+								const unsigned int next = conv2.Pages[i].Choices[j].NextPageIndex;
+								conv2.Pages[i].Choices[j].NextPage = (next != 0 && next <= conv2.Pages.Size()) ? &conv2.Pages[next - 1] : NULL;
+							}
 						}
 					}
 					break;
@@ -531,7 +537,7 @@ void StartConversation(AActor *npc, AActor *pc)
 #endif
 
 	const Page **page = FindConversation(npc);
-	if(!page)
+	if(!page || !*page)
 		return;
 
 	QuizMenu quiz;
@@ -561,7 +567,7 @@ void StartConversation(AActor *npc, AActor *pc)
 			VL_WaitVBL(72);
 
 			*page = choice.NextPage;
-			if(choice.CloseDialog)
+			if(choice.CloseDialog || *page == NULL)
 				break;
 			else
 				quiz.loadQuestion(*page);

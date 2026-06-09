@@ -221,6 +221,12 @@ int I_PickIWad (WadStuff *wads, int numwads, bool showwin, int defaultiwad)
 {
 	int i;
 
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+	// No interactive picker on device; the console fallback blocks in scanf.
+	(void)i;
+	return defaultiwad >= 0 && defaultiwad < numwads ? defaultiwad : 0;
+#endif
+
 	if (!showwin)
 	{
 		return defaultiwad;

@@ -238,7 +238,7 @@ void BlakeStatusBar::DrawStatusBar()
 			if(item->IsKindOf(NATIVE_CLASS(Key)))
 			{
 				int slot = static_cast<AKey *>(item)->KeyNumber;
-				if(slot <= 3)
+				if(slot >= 1 && slot <= 3)
 					presentKeys |= 1<<(slot-1);
 				if(presentKeys == 0x7)
 					break;

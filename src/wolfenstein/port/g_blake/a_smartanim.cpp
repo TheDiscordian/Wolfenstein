@@ -45,6 +45,12 @@ ACTION_FUNCTION(A_PlasmaGrenadeCalcDuration)
 {
 	const bool horiz = abs(self->velx) > abs(self->vely);
 	const fixed velocity = horiz ? self->velx : self->vely;
+	if(velocity == 0)
+	{
+		// Stationary: avoid division by zero.
+		self->ticcount = 1;
+		return true;
+	}
 
 	fixed distance = horiz ? self->fracx : self->fracy;
 	if(velocity > 0)

@@ -341,12 +341,26 @@ bool OPLMusic_Start(const uint8_t *imf, int len, bool loop)
 	M.loop    = loop;
 	M.volume  = MusicVolume;
 
-	// Parse the optional leading length word, exactly like SD_StartMusic.
+	// Parse the optional leading length word, exactly like SD_StartMusic,
+	// then clamp to whole events inside the copy: a corrupt length word
+	// would walk the service loop past the buffer.
 	const word *seq = reinterpret_cast<const word *>(copy);
+	int seqBytes;
 	if (*seq == 0)
-		M.seqLen = M.seqTotalLen = len;
+		seqBytes = len;
 	else
-		M.seqLen = M.seqTotalLen = LittleShort(*seq++);
+	{
+		seqBytes = LittleShort(*seq++);
+		if (seqBytes > len - 2)
+			seqBytes = len - 2;
+	}
+	seqBytes &= ~3;
+	if (seqBytes <= 0)
+	{
+		OPL_FreeData();
+		return false;
+	}
+	M.seqLen = M.seqTotalLen = seqBytes;
 	M.seqStart = seq;
 	M.seqPtr   = seq;
 	M.timeCount     = 0;

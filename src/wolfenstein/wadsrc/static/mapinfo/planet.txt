@@ -17,9 +17,9 @@ gameinfo
 	messagecolors = "00 28 51", "04 45 8A", "00 14 2C"
 	messagefontcolor = "White"
 
-	finalemusic = "CORNER"
+	finalemusic = "THEME"
 	finaleflat = "#DCDCDC"
-	intermissionmusic = "ENDLEVEL"
+	intermissionmusic = "LASTLAFF"
 	titletime = 15
 	menufontcolor_title = "Green"
 	menufontcolor_label = "DarkGreen"

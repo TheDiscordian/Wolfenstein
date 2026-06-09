@@ -1197,3 +1197,26 @@ FUNC(Teleport_Relative)
 	activator->Teleport(x, y, angle, !!(args[2] & TELEPORT_NoFog));
 	return 1;
 }
+
+FUNC(Teleport_Absolute)
+{
+	// Blake Stone intralevel warp: land centered on tile (args[0], args[1]),
+	// keeping the activator's angle.
+	if(activator->player)
+	{
+		if(control[activator->player->GetPlayerNum()].buttonheld[bt_use])
+			return 0;
+		control[activator->player->GetPlayerNum()].buttonheld[bt_use] = true;
+	}
+
+	if(!map->IsValidTileCoordinate(args[0], args[1], 0))
+	{
+		Printf("Error: %s attempted to teleport out of bounds to (%d, %d).\n", activator->GetClass()->GetName().GetChars(), args[0], args[1]);
+		return 0;
+	}
+
+	const fixed x = (args[0]<<FRACBITS)+(FRACUNIT/2);
+	const fixed y = (args[1]<<FRACBITS)+(FRACUNIT/2);
+	activator->Teleport(x, y, activator->angle, false);
+	return 1;
+}

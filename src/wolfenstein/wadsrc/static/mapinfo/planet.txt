@@ -140,6 +140,7 @@ cluster 1
 
 map "MAP01" lookup "BLAKE_AREA_1"
 {
+	next = "MAP02"
 	music = "MAJMIN"
 	cluster = 1
 	DefaultLighting = 178
@@ -148,6 +149,7 @@ map "MAP01" lookup "BLAKE_AREA_1"
 
 map "MAP02" lookup "BLAKE_AREA_2"
 {
+	next = "MAP03"
 	music = "STICKS"
 	cluster = 1
 	DefaultLighting = 165
@@ -157,6 +159,7 @@ map "MAP02" lookup "BLAKE_AREA_2"
 
 map "MAP03" lookup "BLAKE_AREA_3"
 {
+	next = "MAP04"
 	music = "MOURNING"
 	cluster = 1
 	DefaultLighting = 124
@@ -166,6 +169,7 @@ map "MAP03" lookup "BLAKE_AREA_3"
 
 map "MAP04" lookup "BLAKE_AREA_4"
 {
+	next = "MAP05"
 	music = "LURKING"
 	cluster = 1
 	DefaultLighting = 128
@@ -175,6 +179,7 @@ map "MAP04" lookup "BLAKE_AREA_4"
 
 map "MAP05" lookup "BLAKE_AREA_5"
 {
+	next = "MAP06"
 	music = "CIRCLES"
 	cluster = 1
 	DefaultLighting = 210
@@ -183,6 +188,7 @@ map "MAP05" lookup "BLAKE_AREA_5"
 
 map "MAP06" lookup "BLAKE_AREA_6"
 {
+	next = "MAP07"
 	music = "TIME"
 	cluster = 1
 	DefaultLighting = 140
@@ -192,6 +198,7 @@ map "MAP06" lookup "BLAKE_AREA_6"
 
 map "MAP07" lookup "BLAKE_AREA_7"
 {
+	next = "MAP08"
 	music = "TOHELL"
 	cluster = 1
 	DefaultLighting = 178
@@ -200,6 +207,7 @@ map "MAP07" lookup "BLAKE_AREA_7"
 
 map "MAP08" lookup "BLAKE_AREA_8"
 {
+	next = "MAP09"
 	music = "FORTRESS"
 	cluster = 1
 	DefaultLighting = 165
@@ -209,6 +217,7 @@ map "MAP08" lookup "BLAKE_AREA_8"
 
 map "MAP09" lookup "BLAKE_AREA_9"
 {
+	next = "MAP10"
 	music = "GIVING"
 	cluster = 1
 	DefaultLighting = 124
@@ -218,6 +227,7 @@ map "MAP09" lookup "BLAKE_AREA_9"
 
 map "MAP10" lookup "BLAKE_AREA_10"
 {
+	next = "MAP11"
 	music = "HARTBEAT"
 	cluster = 1
 	DefaultLighting = 128
@@ -227,6 +237,7 @@ map "MAP10" lookup "BLAKE_AREA_10"
 
 map "MAP11" lookup "BLAKE_AREA_11"
 {
+	next = "MAP12"
 	music = "MOURNING"
 	cluster = 1
 	DefaultLighting = 210
@@ -235,6 +246,7 @@ map "MAP11" lookup "BLAKE_AREA_11"
 
 map "MAP12" lookup "BLAKE_AREA_12"
 {
+	next = "MAP13"
 	music = "MAJMIN"
 	cluster = 1
 	DefaultLighting = 140
@@ -244,6 +256,7 @@ map "MAP12" lookup "BLAKE_AREA_12"
 
 map "MAP13" lookup "BLAKE_AREA_13"
 {
+	next = "MAP14"
 	music = "VACCINAP"
 	cluster = 1
 	DefaultLighting = 178
@@ -252,6 +265,7 @@ map "MAP13" lookup "BLAKE_AREA_13"
 
 map "MAP14" lookup "BLAKE_AREA_14"
 {
+	next = "MAP15"
 	music = "LURKING"
 	cluster = 1
 	DefaultLighting = 165
@@ -261,6 +275,7 @@ map "MAP14" lookup "BLAKE_AREA_14"
 
 map "MAP15" lookup "BLAKE_AREA_15"
 {
+	next = "MAP16"
 	music = "MONASTRY"
 	cluster = 1
 	DefaultLighting = 124
@@ -270,6 +285,7 @@ map "MAP15" lookup "BLAKE_AREA_15"
 
 map "MAP16" lookup "BLAKE_AREA_16"
 {
+	next = "MAP17"
 	music = "TOMBP"
 	cluster = 1
 	DefaultLighting = 128
@@ -279,6 +295,7 @@ map "MAP16" lookup "BLAKE_AREA_16"
 
 map "MAP17" lookup "BLAKE_AREA_17"
 {
+	next = "MAP18"
 	music = "DARKNESS"
 	cluster = 1
 	DefaultLighting = 210
@@ -287,6 +304,7 @@ map "MAP17" lookup "BLAKE_AREA_17"
 
 map "MAP18" lookup "BLAKE_AREA_18"
 {
+	next = "MAP19"
 	music = "MOURNING"
 	cluster = 1
 	DefaultLighting = 140
@@ -296,6 +314,7 @@ map "MAP18" lookup "BLAKE_AREA_18"
 
 map "MAP19" lookup "BLAKE_AREA_19"
 {
+	next = "MAP20"
 	music = "SERPENT"
 	cluster = 1
 	DefaultLighting = 178
@@ -304,6 +323,8 @@ map "MAP19" lookup "BLAKE_AREA_19"
 
 map "MAP20" lookup "BLAKE_AREA_20"
 {
+	next = "EndTitle"
+	victorynext = "EndTitle"
 	music = "TIME"
 	cluster = 1
 	DefaultLighting = 165
@@ -313,6 +334,7 @@ map "MAP20" lookup "BLAKE_AREA_20"
 
 map "MAP21" lookup "BLAKE_AREA_21"
 {
+	next = "MAP01"
 	music = "CATACOMB"
 	cluster = 1
 	DefaultLighting = 124
@@ -322,6 +344,7 @@ map "MAP21" lookup "BLAKE_AREA_21"
 
 map "MAP22" lookup "BLAKE_AREA_22"
 {
+	next = "MAP01"
 	music = "PLOT"
 	cluster = 1
 	DefaultLighting = 128
@@ -331,6 +354,7 @@ map "MAP22" lookup "BLAKE_AREA_22"
 
 map "MAP23" lookup "BLAKE_AREA_23"
 {
+	next = "MAP01"
 	music = "GIVING"
 	cluster = 1
 	DefaultLighting = 210
@@ -339,6 +363,7 @@ map "MAP23" lookup "BLAKE_AREA_23"
 
 map "MAP24" lookup "BLAKE_AREA_24"
 {
+	next = "MAP01"
 	music = "VACCINAP"
 	cluster = 1
 	DefaultLighting = 140

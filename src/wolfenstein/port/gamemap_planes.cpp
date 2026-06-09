@@ -1254,8 +1254,48 @@ void GameMap::ReadPlanesData()
 							case 0xF1: // Informant messages
 							case 0xF2: // Scientist messages
 							case 0xF3: // Men scientist messages
-							case 0xF5: // Intralevel warp coordinate
+							case 0xFA: // Quantity modifier
+							case 0xFC: // Food unit credits
+							case 0xFD: // Soda unit credits
 								continue;
+							case 0xF8: // Barrier switch link (level byte + next-word coordinate)
+								++i;
+								continue;
+							case 0xF4: // Interlevel transporter: low byte is the destination map index within the episode
+							{
+								Trigger trigger;
+								trigger.x = i%header.width;
+								trigger.y = i/header.width;
+								trigger.z = 0;
+								trigger.action = Specials::Teleport_NewMap;
+								// AOG packs 15 maps per episode; PS has a single linear set.
+								if(EpisodeInfo::GetNumEpisodes() > 1)
+									trigger.arg[0] = ((levelInfo->LevelNumber-1)/15)*15 + (oldplane[i]&0xFF) + 1;
+								else
+									trigger.arg[0] = (oldplane[i]&0xFF) + 1;
+								trigger.playerUse = true;
+								trigger.repeatable = true;
+								triggers.Push(trigger);
+								continue;
+							}
+							case 0xF5: // Intralevel warp: next word holds the destination (x<<8)|y
+							{
+								if(i + 1 >= size)
+									continue;
+								const WORD coord = LittleShort(oldplane[i+1]);
+								Trigger trigger;
+								trigger.x = i%header.width;
+								trigger.y = i/header.width;
+								trigger.z = 0;
+								trigger.action = Specials::Teleport_Absolute;
+								trigger.arg[0] = coord>>8;
+								trigger.arg[1] = coord&0xFF;
+								trigger.playerUse = true;
+								trigger.repeatable = true;
+								triggers.Push(trigger);
+								++i;
+								continue;
+							}
 							case 0xFB:
 								// Floor/ceiling texture
 								// We only read the first instance

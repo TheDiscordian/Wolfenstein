@@ -130,27 +130,27 @@ intermission DemoLoop
 	}
 }
 
-episode "MAP01"
+episode "MAP02"
 {
 }
 
-episode "MAP16"
+episode "MAP17"
 {
 }
 
-episode "MAP31"
+episode "MAP32"
 {
 }
 
-episode "MAP46"
+episode "MAP47"
 {
 }
 
-episode "MAP61"
+episode "MAP62"
 {
 }
 
-episode "MAP76"
+episode "MAP77"
 {
 }
 
@@ -181,6 +181,7 @@ cluster 6
 // ===== Episode 1 =====
 map "MAP01" lookup "BLAKE_AREA_1"
 {
+	next = "MAP02"
 	music = "INCNRATN"
 	cluster = 1
 	DefaultLighting = 178
@@ -189,6 +190,7 @@ map "MAP01" lookup "BLAKE_AREA_1"
 
 map "MAP02" lookup "BLAKE_AREA_2"
 {
+	next = "MAP03"
 	music = "DRKHALLA"
 	cluster = 1
 	DefaultLighting = 165
@@ -198,6 +200,7 @@ map "MAP02" lookup "BLAKE_AREA_2"
 
 map "MAP03" lookup "BLAKE_AREA_3"
 {
+	next = "MAP04"
 	music = "JUNGLEA"
 	cluster = 1
 	DefaultLighting = 124
@@ -207,6 +210,7 @@ map "MAP03" lookup "BLAKE_AREA_3"
 
 map "MAP04" lookup "BLAKE_AREA_4"
 {
+	next = "MAP05"
 	music = "RACSHUFL"
 	cluster = 1
 	DefaultLighting = 128
@@ -216,6 +220,7 @@ map "MAP04" lookup "BLAKE_AREA_4"
 
 map "MAP05" lookup "BLAKE_AREA_5"
 {
+	next = "MAP06"
 	music = "DRKHALLA"
 	cluster = 1
 	DefaultLighting = 210
@@ -224,6 +229,7 @@ map "MAP05" lookup "BLAKE_AREA_5"
 
 map "MAP06" lookup "BLAKE_AREA_6"
 {
+	next = "MAP07"
 	music = "HIDINGA"
 	cluster = 1
 	DefaultLighting = 140
@@ -233,6 +239,7 @@ map "MAP06" lookup "BLAKE_AREA_6"
 
 map "MAP07" lookup "BLAKE_AREA_7"
 {
+	next = "MAP08"
 	music = "JUNGLEA"
 	cluster = 1
 	DefaultLighting = 178
@@ -241,6 +248,7 @@ map "MAP07" lookup "BLAKE_AREA_7"
 
 map "MAP08" lookup "BLAKE_AREA_8"
 {
+	next = "MAP09"
 	music = "RACSHUFL"
 	cluster = 1
 	DefaultLighting = 165
@@ -250,6 +258,7 @@ map "MAP08" lookup "BLAKE_AREA_8"
 
 map "MAP09" lookup "BLAKE_AREA_9"
 {
+	next = "MAP10"
 	music = "HIDINGA"
 	cluster = 1
 	DefaultLighting = 124
@@ -259,6 +268,8 @@ map "MAP09" lookup "BLAKE_AREA_9"
 
 map "MAP10" lookup "BLAKE_AREA_10"
 {
+	next = "MAP11"
+	victorynext = "EndTitle"
 	music = "DRKHALLA"
 	cluster = 1
 	DefaultLighting = 128
@@ -268,6 +279,7 @@ map "MAP10" lookup "BLAKE_AREA_10"
 
 map "MAP11" lookup "BLAKE_AREA_11"
 {
+	next = "MAP10"
 	music = "INCNRATN"
 	cluster = 1
 	DefaultLighting = 210
@@ -276,6 +288,7 @@ map "MAP11" lookup "BLAKE_AREA_11"
 
 map "MAP12" lookup "BLAKE_AREA_12"
 {
+	next = "MAP02"
 	music = "INCNRATN"
 	cluster = 1
 	DefaultLighting = 140
@@ -285,6 +298,7 @@ map "MAP12" lookup "BLAKE_AREA_12"
 
 map "MAP13" lookup "BLAKE_AREA_13"
 {
+	next = "MAP02"
 	music = "DRKHALLA"
 	cluster = 1
 	DefaultLighting = 178
@@ -293,6 +307,7 @@ map "MAP13" lookup "BLAKE_AREA_13"
 
 map "MAP14" lookup "BLAKE_AREA_14"
 {
+	next = "MAP02"
 	music = "JUNGLEA"
 	cluster = 1
 	DefaultLighting = 165
@@ -302,6 +317,7 @@ map "MAP14" lookup "BLAKE_AREA_14"
 
 map "MAP15" lookup "BLAKE_AREA_15"
 {
+	next = "MAP02"
 	music = "RACSHUFL"
 	cluster = 1
 	DefaultLighting = 124
@@ -312,6 +328,7 @@ map "MAP15" lookup "BLAKE_AREA_15"
 // ===== Episode 2 =====
 map "MAP16" lookup "BLAKE_AREA_16"
 {
+	next = "MAP17"
 	music = "FREEDOMA"
 	cluster = 2
 	DefaultLighting = 128
@@ -321,6 +338,7 @@ map "MAP16" lookup "BLAKE_AREA_16"
 
 map "MAP17" lookup "BLAKE_AREA_17"
 {
+	next = "MAP18"
 	music = "DRKHALLA"
 	cluster = 2
 	DefaultLighting = 210
@@ -329,6 +347,7 @@ map "MAP17" lookup "BLAKE_AREA_17"
 
 map "MAP18" lookup "BLAKE_AREA_18"
 {
+	next = "MAP19"
 	music = "STRUTA"
 	cluster = 2
 	DefaultLighting = 140
@@ -338,6 +357,7 @@ map "MAP18" lookup "BLAKE_AREA_18"
 
 map "MAP19" lookup "BLAKE_AREA_19"
 {
+	next = "MAP20"
 	music = "INTRIGEA"
 	cluster = 2
 	DefaultLighting = 178
@@ -346,6 +366,7 @@ map "MAP19" lookup "BLAKE_AREA_19"
 
 map "MAP20" lookup "BLAKE_AREA_20"
 {
+	next = "MAP21"
 	music = "MEETINGA"
 	cluster = 2
 	DefaultLighting = 165
@@ -355,6 +376,7 @@ map "MAP20" lookup "BLAKE_AREA_20"
 
 map "MAP21" lookup "BLAKE_AREA_21"
 {
+	next = "MAP22"
 	music = "DRKHALLA"
 	cluster = 2
 	DefaultLighting = 124
@@ -364,6 +386,7 @@ map "MAP21" lookup "BLAKE_AREA_21"
 
 map "MAP22" lookup "BLAKE_AREA_22"
 {
+	next = "MAP23"
 	music = "INCNRATN"
 	cluster = 2
 	DefaultLighting = 128
@@ -373,6 +396,7 @@ map "MAP22" lookup "BLAKE_AREA_22"
 
 map "MAP23" lookup "BLAKE_AREA_23"
 {
+	next = "MAP24"
 	music = "RACSHUFL"
 	cluster = 2
 	DefaultLighting = 210
@@ -381,6 +405,7 @@ map "MAP23" lookup "BLAKE_AREA_23"
 
 map "MAP24" lookup "BLAKE_AREA_24"
 {
+	next = "MAP25"
 	music = "JUNGLEA"
 	cluster = 2
 	DefaultLighting = 140
@@ -390,6 +415,8 @@ map "MAP24" lookup "BLAKE_AREA_24"
 
 map "MAP25" lookup "BLAKE_AREA_25"
 {
+	next = "MAP26"
+	victorynext = "EndTitle"
 	music = "GENEFUNK"
 	cluster = 2
 	DefaultLighting = 178
@@ -398,6 +425,7 @@ map "MAP25" lookup "BLAKE_AREA_25"
 
 map "MAP26" lookup "BLAKE_AREA_26"
 {
+	next = "MAP25"
 	music = "THEME"
 	cluster = 2
 	DefaultLighting = 165
@@ -407,6 +435,7 @@ map "MAP26" lookup "BLAKE_AREA_26"
 
 map "MAP27" lookup "BLAKE_AREA_27"
 {
+	next = "MAP17"
 	music = "FREEDOMA"
 	cluster = 2
 	DefaultLighting = 124
@@ -416,6 +445,7 @@ map "MAP27" lookup "BLAKE_AREA_27"
 
 map "MAP28" lookup "BLAKE_AREA_28"
 {
+	next = "MAP17"
 	music = "DRKHALLA"
 	cluster = 2
 	DefaultLighting = 128
@@ -425,6 +455,7 @@ map "MAP28" lookup "BLAKE_AREA_28"
 
 map "MAP29" lookup "BLAKE_AREA_29"
 {
+	next = "MAP17"
 	music = "STRUTA"
 	cluster = 2
 	DefaultLighting = 210
@@ -433,6 +464,7 @@ map "MAP29" lookup "BLAKE_AREA_29"
 
 map "MAP30" lookup "BLAKE_AREA_30"
 {
+	next = "MAP17"
 	music = "INTRIGEA"
 	cluster = 2
 	DefaultLighting = 140
@@ -443,6 +475,7 @@ map "MAP30" lookup "BLAKE_AREA_30"
 // ===== Episode 3 =====
 map "MAP31" lookup "BLAKE_AREA_31"
 {
+	next = "MAP32"
 	music = "LEVELA"
 	cluster = 3
 	DefaultLighting = 178
@@ -451,6 +484,7 @@ map "MAP31" lookup "BLAKE_AREA_31"
 
 map "MAP32" lookup "BLAKE_AREA_32"
 {
+	next = "MAP33"
 	music = "HIDINGA"
 	cluster = 3
 	DefaultLighting = 165
@@ -460,6 +494,7 @@ map "MAP32" lookup "BLAKE_AREA_32"
 
 map "MAP33" lookup "BLAKE_AREA_33"
 {
+	next = "MAP34"
 	music = "STRUTA"
 	cluster = 3
 	DefaultLighting = 124
@@ -469,6 +504,7 @@ map "MAP33" lookup "BLAKE_AREA_33"
 
 map "MAP34" lookup "BLAKE_AREA_34"
 {
+	next = "MAP35"
 	music = "THEME"
 	cluster = 3
 	DefaultLighting = 128
@@ -478,6 +514,7 @@ map "MAP34" lookup "BLAKE_AREA_34"
 
 map "MAP35" lookup "BLAKE_AREA_35"
 {
+	next = "MAP36"
 	music = "RACSHUFL"
 	cluster = 3
 	DefaultLighting = 210
@@ -486,6 +523,7 @@ map "MAP35" lookup "BLAKE_AREA_35"
 
 map "MAP36" lookup "BLAKE_AREA_36"
 {
+	next = "MAP37"
 	music = "INCNRATN"
 	cluster = 3
 	DefaultLighting = 140
@@ -495,6 +533,7 @@ map "MAP36" lookup "BLAKE_AREA_36"
 
 map "MAP37" lookup "BLAKE_AREA_37"
 {
+	next = "MAP38"
 	music = "GOLDA"
 	cluster = 3
 	DefaultLighting = 178
@@ -503,6 +542,7 @@ map "MAP37" lookup "BLAKE_AREA_37"
 
 map "MAP38" lookup "BLAKE_AREA_38"
 {
+	next = "MAP39"
 	music = "JUNGLEA"
 	cluster = 3
 	DefaultLighting = 165
@@ -512,6 +552,7 @@ map "MAP38" lookup "BLAKE_AREA_38"
 
 map "MAP39" lookup "BLAKE_AREA_39"
 {
+	next = "MAP40"
 	music = "DRKHALLA"
 	cluster = 3
 	DefaultLighting = 124
@@ -521,6 +562,8 @@ map "MAP39" lookup "BLAKE_AREA_39"
 
 map "MAP40" lookup "BLAKE_AREA_40"
 {
+	next = "MAP41"
+	victorynext = "EndTitle"
 	music = "THEWAYA"
 	cluster = 3
 	DefaultLighting = 128
@@ -530,6 +573,7 @@ map "MAP40" lookup "BLAKE_AREA_40"
 
 map "MAP41" lookup "BLAKE_AREA_41"
 {
+	next = "MAP40"
 	music = "FREEDOMA"
 	cluster = 3
 	DefaultLighting = 210
@@ -538,6 +582,7 @@ map "MAP41" lookup "BLAKE_AREA_41"
 
 map "MAP42" lookup "BLAKE_AREA_42"
 {
+	next = "MAP32"
 	music = "LEVELA"
 	cluster = 3
 	DefaultLighting = 140
@@ -547,6 +592,7 @@ map "MAP42" lookup "BLAKE_AREA_42"
 
 map "MAP43" lookup "BLAKE_AREA_43"
 {
+	next = "MAP32"
 	music = "HIDINGA"
 	cluster = 3
 	DefaultLighting = 178
@@ -555,6 +601,7 @@ map "MAP43" lookup "BLAKE_AREA_43"
 
 map "MAP44" lookup "BLAKE_AREA_44"
 {
+	next = "MAP32"
 	music = "STRUTA"
 	cluster = 3
 	DefaultLighting = 165
@@ -564,6 +611,7 @@ map "MAP44" lookup "BLAKE_AREA_44"
 
 map "MAP45" lookup "BLAKE_AREA_45"
 {
+	next = "MAP32"
 	music = "THEME"
 	cluster = 3
 	DefaultLighting = 124
@@ -574,6 +622,7 @@ map "MAP45" lookup "BLAKE_AREA_45"
 // ===== Episode 4 =====
 map "MAP46" lookup "BLAKE_AREA_46"
 {
+	next = "MAP47"
 	music = "HIDINGA"
 	cluster = 4
 	DefaultLighting = 128
@@ -583,6 +632,7 @@ map "MAP46" lookup "BLAKE_AREA_46"
 
 map "MAP47" lookup "BLAKE_AREA_47"
 {
+	next = "MAP48"
 	music = "DRKHALLA"
 	cluster = 4
 	DefaultLighting = 210
@@ -591,6 +641,7 @@ map "MAP47" lookup "BLAKE_AREA_47"
 
 map "MAP48" lookup "BLAKE_AREA_48"
 {
+	next = "MAP49"
 	music = "GENEFUNK"
 	cluster = 4
 	DefaultLighting = 140
@@ -600,6 +651,7 @@ map "MAP48" lookup "BLAKE_AREA_48"
 
 map "MAP49" lookup "BLAKE_AREA_49"
 {
+	next = "MAP50"
 	music = "JUNGLEA"
 	cluster = 4
 	DefaultLighting = 178
@@ -608,6 +660,7 @@ map "MAP49" lookup "BLAKE_AREA_49"
 
 map "MAP50" lookup "BLAKE_AREA_50"
 {
+	next = "MAP51"
 	music = "INCNRATN"
 	cluster = 4
 	DefaultLighting = 165
@@ -617,6 +670,7 @@ map "MAP50" lookup "BLAKE_AREA_50"
 
 map "MAP51" lookup "BLAKE_AREA_51"
 {
+	next = "MAP52"
 	music = "GOLDA"
 	cluster = 4
 	DefaultLighting = 124
@@ -626,6 +680,7 @@ map "MAP51" lookup "BLAKE_AREA_51"
 
 map "MAP52" lookup "BLAKE_AREA_52"
 {
+	next = "MAP53"
 	music = "HIDINGA"
 	cluster = 4
 	DefaultLighting = 128
@@ -635,6 +690,7 @@ map "MAP52" lookup "BLAKE_AREA_52"
 
 map "MAP53" lookup "BLAKE_AREA_53"
 {
+	next = "MAP54"
 	music = "JUNGLEA"
 	cluster = 4
 	DefaultLighting = 210
@@ -643,6 +699,7 @@ map "MAP53" lookup "BLAKE_AREA_53"
 
 map "MAP54" lookup "BLAKE_AREA_54"
 {
+	next = "MAP55"
 	music = "DRKHALLA"
 	cluster = 4
 	DefaultLighting = 140
@@ -652,6 +709,8 @@ map "MAP54" lookup "BLAKE_AREA_54"
 
 map "MAP55" lookup "BLAKE_AREA_55"
 {
+	next = "MAP56"
+	victorynext = "EndTitle"
 	music = "THEWAYA"
 	cluster = 4
 	DefaultLighting = 178
@@ -660,6 +719,7 @@ map "MAP55" lookup "BLAKE_AREA_55"
 
 map "MAP56" lookup "BLAKE_AREA_56"
 {
+	next = "MAP55"
 	music = "RHUMBAAS"
 	cluster = 4
 	DefaultLighting = 165
@@ -669,6 +729,7 @@ map "MAP56" lookup "BLAKE_AREA_56"
 
 map "MAP57" lookup "BLAKE_AREA_57"
 {
+	next = "MAP47"
 	music = "HIDINGA"
 	cluster = 4
 	DefaultLighting = 124
@@ -678,6 +739,7 @@ map "MAP57" lookup "BLAKE_AREA_57"
 
 map "MAP58" lookup "BLAKE_AREA_58"
 {
+	next = "MAP47"
 	music = "DRKHALLA"
 	cluster = 4
 	DefaultLighting = 128
@@ -687,6 +749,7 @@ map "MAP58" lookup "BLAKE_AREA_58"
 
 map "MAP59" lookup "BLAKE_AREA_59"
 {
+	next = "MAP47"
 	music = "GENEFUNK"
 	cluster = 4
 	DefaultLighting = 210
@@ -695,6 +758,7 @@ map "MAP59" lookup "BLAKE_AREA_59"
 
 map "MAP60" lookup "BLAKE_AREA_60"
 {
+	next = "MAP47"
 	music = "JUNGLEA"
 	cluster = 4
 	DefaultLighting = 140
@@ -705,6 +769,7 @@ map "MAP60" lookup "BLAKE_AREA_60"
 // ===== Episode 5 =====
 map "MAP61" lookup "BLAKE_AREA_61"
 {
+	next = "MAP62"
 	music = "RACSHUFL"
 	cluster = 5
 	DefaultLighting = 178
@@ -713,6 +778,7 @@ map "MAP61" lookup "BLAKE_AREA_61"
 
 map "MAP62" lookup "BLAKE_AREA_62"
 {
+	next = "MAP63"
 	music = "SEARCHNA"
 	cluster = 5
 	DefaultLighting = 165
@@ -722,6 +788,7 @@ map "MAP62" lookup "BLAKE_AREA_62"
 
 map "MAP63" lookup "BLAKE_AREA_63"
 {
+	next = "MAP64"
 	music = "JUNGLEA"
 	cluster = 5
 	DefaultLighting = 124
@@ -731,6 +798,7 @@ map "MAP63" lookup "BLAKE_AREA_63"
 
 map "MAP64" lookup "BLAKE_AREA_64"
 {
+	next = "MAP65"
 	music = "HIDINGA"
 	cluster = 5
 	DefaultLighting = 128
@@ -740,6 +808,7 @@ map "MAP64" lookup "BLAKE_AREA_64"
 
 map "MAP65" lookup "BLAKE_AREA_65"
 {
+	next = "MAP66"
 	music = "GENEFUNK"
 	cluster = 5
 	DefaultLighting = 210
@@ -748,6 +817,7 @@ map "MAP65" lookup "BLAKE_AREA_65"
 
 map "MAP66" lookup "BLAKE_AREA_66"
 {
+	next = "MAP67"
 	music = "MEETINGA"
 	cluster = 5
 	DefaultLighting = 140
@@ -757,6 +827,7 @@ map "MAP66" lookup "BLAKE_AREA_66"
 
 map "MAP67" lookup "BLAKE_AREA_67"
 {
+	next = "MAP68"
 	music = "2100A"
 	cluster = 5
 	DefaultLighting = 178
@@ -765,6 +836,7 @@ map "MAP67" lookup "BLAKE_AREA_67"
 
 map "MAP68" lookup "BLAKE_AREA_68"
 {
+	next = "MAP69"
 	music = "THEME"
 	cluster = 5
 	DefaultLighting = 165
@@ -774,6 +846,7 @@ map "MAP68" lookup "BLAKE_AREA_68"
 
 map "MAP69" lookup "BLAKE_AREA_69"
 {
+	next = "MAP70"
 	music = "INCNRATN"
 	cluster = 5
 	DefaultLighting = 124
@@ -783,6 +856,8 @@ map "MAP69" lookup "BLAKE_AREA_69"
 
 map "MAP70" lookup "BLAKE_AREA_70"
 {
+	next = "MAP71"
+	victorynext = "EndTitle"
 	music = "DRKHALLA"
 	cluster = 5
 	DefaultLighting = 128
@@ -792,6 +867,7 @@ map "MAP70" lookup "BLAKE_AREA_70"
 
 map "MAP71" lookup "BLAKE_AREA_71"
 {
+	next = "MAP70"
 	music = "THEWAYA"
 	cluster = 5
 	DefaultLighting = 210
@@ -800,6 +876,7 @@ map "MAP71" lookup "BLAKE_AREA_71"
 
 map "MAP72" lookup "BLAKE_AREA_72"
 {
+	next = "MAP62"
 	music = "RACSHUFL"
 	cluster = 5
 	DefaultLighting = 140
@@ -809,6 +886,7 @@ map "MAP72" lookup "BLAKE_AREA_72"
 
 map "MAP73" lookup "BLAKE_AREA_73"
 {
+	next = "MAP62"
 	music = "SEARCHNA"
 	cluster = 5
 	DefaultLighting = 178
@@ -817,6 +895,7 @@ map "MAP73" lookup "BLAKE_AREA_73"
 
 map "MAP74" lookup "BLAKE_AREA_74"
 {
+	next = "MAP62"
 	music = "JUNGLEA"
 	cluster = 5
 	DefaultLighting = 165
@@ -826,6 +905,7 @@ map "MAP74" lookup "BLAKE_AREA_74"
 
 map "MAP75" lookup "BLAKE_AREA_75"
 {
+	next = "MAP62"
 	music = "HIDINGA"
 	cluster = 5
 	DefaultLighting = 124
@@ -836,6 +916,7 @@ map "MAP75" lookup "BLAKE_AREA_75"
 // ===== Episode 6 =====
 map "MAP76" lookup "BLAKE_AREA_76"
 {
+	next = "MAP77"
 	music = "TIMEA"
 	cluster = 6
 	DefaultLighting = 128
@@ -845,6 +926,7 @@ map "MAP76" lookup "BLAKE_AREA_76"
 
 map "MAP77" lookup "BLAKE_AREA_77"
 {
+	next = "MAP78"
 	music = "RACSHUFL"
 	cluster = 6
 	DefaultLighting = 210
@@ -853,6 +935,7 @@ map "MAP77" lookup "BLAKE_AREA_77"
 
 map "MAP78" lookup "BLAKE_AREA_78"
 {
+	next = "MAP79"
 	music = "GENEFUNK"
 	cluster = 6
 	DefaultLighting = 140
@@ -862,6 +945,7 @@ map "MAP78" lookup "BLAKE_AREA_78"
 
 map "MAP79" lookup "BLAKE_AREA_79"
 {
+	next = "MAP80"
 	music = "HIDINGA"
 	cluster = 6
 	DefaultLighting = 178
@@ -870,6 +954,7 @@ map "MAP79" lookup "BLAKE_AREA_79"
 
 map "MAP80" lookup "BLAKE_AREA_80"
 {
+	next = "MAP81"
 	music = "2100A"
 	cluster = 6
 	DefaultLighting = 165
@@ -879,6 +964,7 @@ map "MAP80" lookup "BLAKE_AREA_80"
 
 map "MAP81" lookup "BLAKE_AREA_81"
 {
+	next = "MAP82"
 	music = "THEME"
 	cluster = 6
 	DefaultLighting = 124
@@ -888,6 +974,7 @@ map "MAP81" lookup "BLAKE_AREA_81"
 
 map "MAP82" lookup "BLAKE_AREA_82"
 {
+	next = "MAP83"
 	music = "THEWAYA"
 	cluster = 6
 	DefaultLighting = 128
@@ -897,6 +984,7 @@ map "MAP82" lookup "BLAKE_AREA_82"
 
 map "MAP83" lookup "BLAKE_AREA_83"
 {
+	next = "MAP84"
 	music = "JUNGLEA"
 	cluster = 6
 	DefaultLighting = 210
@@ -905,6 +993,7 @@ map "MAP83" lookup "BLAKE_AREA_83"
 
 map "MAP84" lookup "BLAKE_AREA_84"
 {
+	next = "MAP85"
 	music = "MEETINGA"
 	cluster = 6
 	DefaultLighting = 140
@@ -914,6 +1003,8 @@ map "MAP84" lookup "BLAKE_AREA_84"
 
 map "MAP85" lookup "BLAKE_AREA_85"
 {
+	next = "MAP86"
+	victorynext = "EndTitle"
 	music = "DRKHALLA"
 	cluster = 6
 	DefaultLighting = 178
@@ -922,6 +1013,7 @@ map "MAP85" lookup "BLAKE_AREA_85"
 
 map "MAP86" lookup "BLAKE_AREA_86"
 {
+	next = "MAP85"
 	music = "INCNRATN"
 	cluster = 6
 	DefaultLighting = 165
@@ -931,6 +1023,7 @@ map "MAP86" lookup "BLAKE_AREA_86"
 
 map "MAP87" lookup "BLAKE_AREA_87"
 {
+	next = "MAP77"
 	music = "TIMEA"
 	cluster = 6
 	DefaultLighting = 124
@@ -940,6 +1033,7 @@ map "MAP87" lookup "BLAKE_AREA_87"
 
 map "MAP88" lookup "BLAKE_AREA_88"
 {
+	next = "MAP77"
 	music = "RACSHUFL"
 	cluster = 6
 	DefaultLighting = 128
@@ -949,6 +1043,7 @@ map "MAP88" lookup "BLAKE_AREA_88"
 
 map "MAP89" lookup "BLAKE_AREA_89"
 {
+	next = "MAP77"
 	music = "GENEFUNK"
 	cluster = 6
 	DefaultLighting = 210
@@ -957,6 +1052,7 @@ map "MAP89" lookup "BLAKE_AREA_89"
 
 map "MAP90" lookup "BLAKE_AREA_90"
 {
+	next = "MAP77"
 	music = "HIDINGA"
 	cluster = 6
 	DefaultLighting = 140

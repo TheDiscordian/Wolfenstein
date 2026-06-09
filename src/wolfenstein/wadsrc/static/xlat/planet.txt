@@ -2,6 +2,20 @@ enable globalmeta;
 
 tiles
 {
+	// Transporter/elevator unit: exits to the next map.
+	trigger 21
+	{
+		action = "Exit_Normal";
+		playeruse = true;
+	}
+
+	// AOG win tile: crossing it boards the shuttle and ends the episode.
+	trigger 157
+	{
+		action = "Exit_Victory";
+		playercross = true;
+	}
+
 	trigger 88
 	{
 		action = "Door_Open";
@@ -664,6 +678,14 @@ tiles
 		textureeast = "PLNEMBL2";
 		texturewest = "PLNEMBL2";
 	}
+	// PS map filler block; solid but never exposed in normal play.
+	tile 64
+	{
+		texturenorth = "METWALL1";
+		texturesouth = "METWALL1";
+		textureeast = "METWALL2";
+		texturewest = "METWALL2";
+	}
 	tile 88
 	{
 		texturenorth = "JAMBIO1";
@@ -821,6 +843,19 @@ tiles
 
 	modzone 106 fillzone ambush;
 
+	// PS special-spawn floor markers (red key, yellow key, blue key, BFG,
+	// ion cannon, detonator, cloak, LINC, cloaked ambush); treated as
+	// ambush floor like tile 106.
+	modzone 72 fillzone ambush;
+	modzone 73 fillzone ambush;
+	modzone 74 fillzone ambush;
+	modzone 75 fillzone ambush;
+	modzone 76 fillzone ambush;
+	modzone 77 fillzone ambush;
+	modzone 78 fillzone ambush;
+	modzone 79 fillzone ambush;
+	modzone 80 fillzone ambush;
+
 	zone 108 {}
 	zone 109 {}
 	zone 110 {}
@@ -866,6 +901,53 @@ tiles
 	zone 150 {}
 	zone 151 {}
 	zone 152 {}
+
+	// Hidden floor codes; one zone per code, mirroring areas 108..152.
+	zone 162 {}
+	zone 163 {}
+	zone 164 {}
+	zone 165 {}
+	zone 166 {}
+	zone 167 {}
+	zone 168 {}
+	zone 169 {}
+	zone 170 {}
+	zone 171 {}
+	zone 172 {}
+	zone 173 {}
+	zone 174 {}
+	zone 175 {}
+	zone 176 {}
+	zone 177 {}
+	zone 178 {}
+	zone 179 {}
+	zone 180 {}
+	zone 181 {}
+	zone 182 {}
+	zone 183 {}
+	zone 184 {}
+	zone 185 {}
+	zone 186 {}
+	zone 187 {}
+	zone 188 {}
+	zone 189 {}
+	zone 190 {}
+	zone 191 {}
+	zone 192 {}
+	zone 193 {}
+	zone 194 {}
+	zone 195 {}
+	zone 196 {}
+	zone 197 {}
+	zone 198 {}
+	zone 199 {}
+	zone 200 {}
+	zone 201 {}
+	zone 202 {}
+	zone 203 {}
+	zone 204 {}
+	zone 205 {}
+	zone 206 {}
 }
 
 things

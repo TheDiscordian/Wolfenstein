@@ -420,6 +420,8 @@ barrier/zap				{ DSARCZAP ALARCZAP PCARCZAP }
 misc/plasmadetonator/pickup	{ DSGETDET ALGETDET PCGETDET }
 $random misc/plasmadetonator/explosion { misc/blake/explosion1 misc/blake/explosion2 }
 
+$random crate/explode { misc/blake/explosion1 misc/blake/explosion2 }
+
 plasmagrenade/fire		{ DSGRENAD ALGRENAD PCGRENAD }
 $random plasmagrenade/hit { misc/blake/explosion1 misc/blake/explosion2 }
 

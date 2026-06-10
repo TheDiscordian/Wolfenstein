@@ -415,6 +415,8 @@ misc/radar_pickup		{ DSGETRDR ALGETRDR PCGETRDR }
 misc/blake/explosion1	{ DSEXPLO1 ALEXPLO1 PCEXPLO1 }
 misc/blake/explosion2	{ DSEXPLO2 ALEXPLO2 PCEXPLO2 }
 
+barrier/zap				{ DSARCZAP ALARCZAP PCARCZAP }
+
 misc/plasmadetonator/pickup	{ DSGETDET ALGETDET PCGETDET }
 $random misc/plasmadetonator/explosion { misc/blake/explosion1 misc/blake/explosion2 }
 

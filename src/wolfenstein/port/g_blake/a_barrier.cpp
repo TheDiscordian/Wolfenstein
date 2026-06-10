@@ -1,0 +1,107 @@
+/*
+** a_barrier.cpp
+**
+**---------------------------------------------------------------------------
+** Copyright 2026 TheDiscordian
+** All rights reserved.
+**
+** Redistribution and use in source and binary forms, with or without
+** modification, are permitted provided that the following conditions
+** are met:
+**
+** 1. Redistributions of source code must retain the above copyright
+**    notice, this list of conditions and the following disclaimer.
+** 2. Redistributions in binary form must reproduce the above copyright
+**    notice, this list of conditions and the following disclaimer in the
+**    documentation and/or other materials provided with the distribution.
+** 3. The name of the author may not be used to endorse or promote products
+**    derived from this software without specific prior written permission.
+**
+** THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+** IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+** OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+** IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+** INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+** NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+**---------------------------------------------------------------------------
+**
+** Blake Stone barrier contact damage.
+**
+*/
+
+#include "actor.h"
+#include "m_random.h"
+#include "wl_def.h"
+#include "wl_agent.h"
+#include "wl_game.h"
+#include "wl_net.h"
+#include "wl_state.h"
+#include "thingdef/thingdef.h"
+
+static FRandom pr_barrier("BlakeBarrier");
+
+// Per-tic thinker for active electric barriers: arcs zap players standing
+// alongside; anything shootable caught on the tile itself gets fried.
+ACTION_FUNCTION(A_BarrierDamage)
+{
+	ACTION_PARAM_BOOL(zapPlayer, 0); // arcs zap the player, posts don't
+
+	if(zapPlayer && pr_barrier() < 0x10)
+	{
+		for(unsigned int i = 0; i < Net::InitVars.numPlayers; ++i)
+		{
+			AActor *p = players[i].mo;
+			if(!p)
+				continue;
+			const fixed dx = abs(p->x - self->x);
+			const fixed dy = abs(p->y - self->y);
+			if(dx <= 0x16000 && dy <= 0x16000)
+			{
+				PlaySoundLocActor("barrier/zap", self);
+				DamageActor(p, self, 4);
+			}
+		}
+	}
+
+	if(pr_barrier() < 0x7f)
+	{
+		AActor::Iterator iter = AActor::GetIterator();
+		while(iter.Next())
+		{
+			AActor * const other = iter;
+			if(other->player || !(other->flags & FL_SHOOTABLE))
+				continue;
+			if(other->tilex == self->tilex && other->tiley == self->tiley)
+				DamageActor(other, self, 500);
+		}
+	}
+
+	return true;
+}
+
+// Per-tic thinker for closing spike/post frames: the animation holds while a
+// player is alongside, grinding anyone standing on the tile.
+ACTION_FUNCTION(A_VPostGuard)
+{
+	for(unsigned int i = 0; i < Net::InitVars.numPlayers; ++i)
+	{
+		AActor *p = players[i].mo;
+		if(!p)
+			continue;
+		const fixed dx = abs(p->x - self->x);
+		const fixed dy = abs(p->y - self->y);
+		if(dx <= 0x18000 && dy <= 0x18000)
+		{
+			if(dx <= 0x8000 && dy <= 0x8000)
+				DamageActor(p, self, 2);
+			++self->ticcount; // hold the current frame
+			break;
+		}
+	}
+
+	return true;
+}

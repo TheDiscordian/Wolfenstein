@@ -17,6 +17,7 @@ actor VerticalSpikeActive
 {
 	radius 32
 	+SOLID
+	action native A_VPostGuard();
 	states
 	{
 		Spawn:
@@ -29,14 +30,14 @@ actor VerticalSpikeActive
 		Opened:
 			VSPK A 45
 		Close:
-			VSPK BC 3.5
-			VSPK D 3.5 A_ChangeFlag("SOLID", true)
-			VSPK EFG 3.5
+			VSPK BC 3.5 NOP A_VPostGuard
+			VSPK D 3.5 A_ChangeFlag("SOLID", true) A_VPostGuard
+			VSPK EFG 3.5 NOP A_VPostGuard
 			goto Closed
 		Active:
-			VSPK BC 3.5
-			VSPK D 3.5 A_ChangeFlag("SOLID", true)
-			VSPK EFG 3.5
+			VSPK BC 3.5 NOP A_VPostGuard
+			VSPK D 3.5 A_ChangeFlag("SOLID", true) A_VPostGuard
+			VSPK EFG 3.5 NOP A_VPostGuard
 		Raised:
 			VSPK H -1
 			stop
@@ -92,10 +93,8 @@ actor VerticalPostStatic
 	}
 }
 
-actor VerticalPostActive
+actor VerticalPostActive : VerticalSpikeActive
 {
-	radius 32
-	+SOLID
 	states
 	{
 		Spawn:
@@ -108,14 +107,14 @@ actor VerticalPostActive
 		Opened:
 			VPST A 45
 		Close:
-			VPST BC 3.5
-			VPST D 3.5 A_ChangeFlag("SOLID", true)
-			VPST EFG 3.5
+			VPST BC 3.5 NOP A_VPostGuard
+			VPST D 3.5 A_ChangeFlag("SOLID", true) A_VPostGuard
+			VPST EFG 3.5 NOP A_VPostGuard
 			goto Closed
 		Active:
-			VPST BC 3.5
-			VPST D 3.5 A_ChangeFlag("SOLID", true)
-			VPST EFG 3.5
+			VPST BC 3.5 NOP A_VPostGuard
+			VPST D 3.5 A_ChangeFlag("SOLID", true) A_VPostGuard
+			VPST EFG 3.5 NOP A_VPostGuard
 		Raised:
 			VPST H -1
 			stop
@@ -173,7 +172,7 @@ actor ElectricArcBarrier : SmartAnimation
 			ELCK A 0 bright A_ChangeFlag("SOLID", true)
 			ELCK A 0 bright A_Jump(256, 1, 2, 3)
 		ActiveLoop:
-			ELCK ABC 1.5 bright A_SmartAnimDelay
+			ELCK ABC 1.5 bright A_SmartAnimDelay A_BarrierDamage(true)
 			loop
 		Inactive:
 			ELCK D -1 A_ChangeFlag("SOLID", false)
@@ -205,7 +204,7 @@ actor ElectricPostBarrier : SmartAnimation
 			ELCP A 0 bright A_ChangeFlag("SOLID", true)
 			ELCP A 0 bright A_Jump(256, 1, 2, 3)
 		ActiveLoop:
-			ELCP ABC 1.5 bright A_SmartAnimDelay
+			ELCP ABC 1.5 bright A_SmartAnimDelay A_BarrierDamage(false)
 			loop
 		Inactive:
 			ELCP D -1 A_ChangeFlag("SOLID", false)

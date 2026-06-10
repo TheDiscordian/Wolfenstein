@@ -437,7 +437,9 @@ static void LookForGameData(FResourceFile *res, TArray<WadStuff> &iwads, const c
 	if(files.Size() == 0)
 	{
 		static const char* const ProbeNames[] = {
-			"audiohed", "audiot", "gamemaps", "maphead",
+			// Blake Stone names its map data MAPTEMP, not GAMEMAPS; probe both
+			// (BaseFileNames maps them to the same FILE_GAMEMAPS bit).
+			"audiohed", "audiot", "gamemaps", "maptemp", "maphead",
 			"vgadict", "vgahead", "vgagraph", "vswap"
 		};
 		FString probeExt = NormalizeExtensionName(getenv("ECWOLF_DATA_EXT"));

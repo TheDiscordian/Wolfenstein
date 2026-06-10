@@ -150,6 +150,24 @@ static void OFEarlyFillRect(byte *fb, int pitch, int width, int height,
 		memset(fb + (y + row) * pitch + x, color, w);
 }
 
+#ifdef OF_BOOT_LOG
+#include <unistd.h>
+extern "C" char __bss_end[];
+// Count nonzero bytes in the centre row of a video buffer so the log can
+// tell whether a presented frame still holds the splash or was wiped.
+static int OFEarlyRowNonzero(int idx, int pitch, int width, int height)
+{
+	const uint8_t *fb = of_video_buffer_addr(idx);
+	if(fb == NULL || pitch <= 0 || width <= 0 || height <= 0)
+		return -1;
+	const uint8_t *row = fb + (height / 2) * pitch;
+	int nz = 0;
+	for(int x = 0;x < width;++x)
+		if(row[x]) ++nz;
+	return nz;
+}
+#endif
+
 // The OS terminal/overlay text renders through the VGA-bright region
 // (240..255) of the shared palette RAM, so every early palette upload must
 // keep those entries populated or terminal text goes black-on-black.
@@ -383,6 +401,15 @@ void OF_EarlyStartupScreen(int progress)
 	const int height = mode.height;
 	const int pitch = mode.stride ? mode.stride : mode.width;
 
+#ifdef OF_BOOT_LOG
+	// Re-sample the previously presented buffer: did the splash survive the
+	// boot work that ran since the last call, or was it wiped?
+	if(ofEarlyStartup.haveFlip)
+		OF_BootLog("BOOT2: enter p=%d prev=%d nz=%d\n", progress,
+			ofEarlyStartup.lastFlipIdx,
+			OFEarlyRowNonzero(ofEarlyStartup.lastFlipIdx, pitch, width, height));
+#endif
+
 	if(!ofEarlyStartup.paletteReady)
 	{
 #ifdef OF_BOOT_MARKERS
@@ -403,7 +430,14 @@ void OF_EarlyStartupScreen(int progress)
 		for(int i = 0;i < OF_BOOT_LOGO_PALETTE_COUNT;++i)
 			palette[OF_BOOT_LOGO_PALETTE_BASE + i] = OFBootLogoPalette[i];
 		OFEarlyFillTerminalPalette(palette);
+#ifdef OF_BOOT_LOG
+		OF_BootLog("BOOT2: fb0=%p fb1=%p fb2=%p bss_end=%p brk=%p\n",
+			(void*)of_video_buffer_addr(0), (void*)of_video_buffer_addr(1),
+			(void*)of_video_buffer_addr(2), (void*)__bss_end, sbrk(0));
+		OF_BootLog("BOOT2: palette_bulk begin\n");
+#endif
 		of_video_palette_bulk(palette, 256);
+		OF_BootLog("BOOT2: palette_bulk done\n");
 		ofEarlyStartup.paletteReady = true;
 #ifdef OF_BOOT_MARKERS
 		OF_BOOT_MARK("BOOT2: palette uploaded -> GRAY hold (pre-logo)\n");
@@ -460,7 +494,12 @@ void OF_EarlyStartupScreen(int progress)
 		if(!ofEarlyStartup.buffersPrimed)
 			OF_BOOT_MARK("BOOT2: frame %d presented\n", i);
 #endif
-		OF_BootLog("BOOT2: p=%d f=%d presented\n", progress, i);
+#ifdef OF_BOOT_LOG
+		// nz = nonzero bytes in the buffer's centre row after present: proves
+		// whether the flipped frame still holds the splash pixels.
+		OF_BootLog("BOOT2: p=%d f=%d presented nz=%d\n", progress, i,
+			OFEarlyRowNonzero(drawIdx, pitch, width, height));
+#endif
 	}
 
 	ofEarlyStartup.buffersPrimed = true;

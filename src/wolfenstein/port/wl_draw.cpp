@@ -93,6 +93,8 @@ int fps_frames=0, fps_time=0, fps=0;
 
 TUniquePtr<int[]> wallheight;
 int min_wallheight;
+// TEMPORARY: env-gated wall post stats for remap debugging.
+static unsigned int dbgPosts, dbgNullPosts;
 
 //
 // math tables
@@ -508,9 +510,13 @@ void HitVertWall (void)
 		texture -= texture%texxscale;
 
 		postsource = WallTextureColumn(source, texture);
+		++dbgPosts;
 	}
 	else
+	{
 		postsource = NULL;
+		++dbgNullPosts;
+	}
 
 	lasttexture=texture;
 }
@@ -582,9 +588,13 @@ void HitHorizWall (void)
 		texture -= texture%texxscale;
 
 		postsource = WallTextureColumn(source, texture);
+		++dbgPosts;
 	}
 	else
+	{
 		postsource = NULL;
+		++dbgNullPosts;
+	}
 
 	lasttexture=texture;
 }
@@ -1260,6 +1270,15 @@ void WallRefresh (void)
 
 	AsmRefresh();
 	ScalePost ();                   // no more optimization on last post
+
+	// TEMPORARY: env-gated wall post stats for remap debugging.
+	if(getenv("OF_LUMPDUMP"))
+	{
+		static unsigned int dbgFrame;
+		if(++dbgFrame % 70 == 0)
+			fprintf(stderr, "WALLS: posts=%u null=%u min_wallheight=%d\n", dbgPosts, dbgNullPosts, min_wallheight);
+		dbgPosts = dbgNullPosts = 0;
+	}
 }
 
 void CalcViewVariables()

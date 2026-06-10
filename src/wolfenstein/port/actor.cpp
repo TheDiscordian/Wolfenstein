@@ -619,6 +619,7 @@ void AActor::SetState(const Frame *state, bool norun)
 	{
 		state->action(this, this, state);
 
+		unsigned int zeroTicSteps = 0;
 		while(ticcount == 0)
 		{
 			this->state = this->state->next;
@@ -632,6 +633,14 @@ void AActor::SetState(const Frame *state, bool norun)
 				sprite = this->state->spriteInf;
 				ticcount = this->state->GetTics();
 				this->state->action(this, this, this->state);
+			}
+			// Guard against zero-tic state cycles hanging the game loop.
+			if(++zeroTicSteps > 1000)
+			{
+				printf("SetState: zero-tic state cycle in %s, forcing 1 tic\n",
+					GetClass()->GetName().GetChars());
+				ticcount = 1;
+				break;
 			}
 		}
 	}

@@ -1270,7 +1270,7 @@ textures
 	"GBRICKA1", // Gray Brick
 	"GBRICKA2",
 	"GBRICKB1", // Gray Brick (Variation)
-	"GBRICKB1",
+	"GBRICKB2",
 	"PRIVENA1", // Prison Vent
 	"PRIVENA2",
 	"PRILITE1", // Prison Wall w/ Light

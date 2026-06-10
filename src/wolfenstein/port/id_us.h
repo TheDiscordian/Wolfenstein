@@ -31,7 +31,12 @@ typedef struct
 #define	MaxHelpLines	500
 
 #define	MaxHighName	57
+#ifdef OF_BOOT_LOGO_BLAKE
+// Blake shows the original's 10-entry table; Wolf keeps 7.
+#define	MaxScores	10
+#else
 #define	MaxScores	7
+#endif
 typedef	struct
 {
 	char	name[MaxHighName + 1];
@@ -39,6 +44,7 @@ typedef	struct
 	FString	completed;
 	char	graphic[9];
 	int32_t	ratio;
+	int32_t	mission;
 } HighScore;
 
 #define	MaxString	128	// Maximum input string size

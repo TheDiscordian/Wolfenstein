@@ -160,17 +160,19 @@ void FinalReadConfig()
 	// defaults depend on which game was selected.
 	if(IWad::CheckGameFilter("Blake"))
 	{
-		static const char* const blakeNames[MaxScores] = {
+		static const char* const blakeNames[10] = {
 			"JAM PRODUCTIONS INC.", "", "JERRY JONES",
-			"MICHAEL MAYNARD", "JAMES T. ROW", "", ""
+			"MICHAEL MAYNARD", "JAMES T. ROW", "", "",
+			"TO REGISTER CALL", " 1-800-GAME123", ""
 		};
 		for(unsigned int i = 0;i < MaxScores;i++)
 		{
-			strcpy(Scores[i].name, blakeNames[i]);
+			strcpy(Scores[i].name, blakeNames[i % 10]);
 			Scores[i].score = 10000;
 			Scores[i].completed = "1";
 			Scores[i].graphic[0] = 0;
 			Scores[i].ratio = 0;
+			Scores[i].mission = 1;
 		}
 	}
 
@@ -179,6 +181,7 @@ void FinalReadConfig()
 	char hsCompleted[50];
 	char hsGraphic[50];
 	char hsRatio[50];
+	char hsMission[50];
 	for(unsigned int i = 0;i < MaxScores;i++)
 	{
 		mysnprintf(hsName, 50, "HighScore%u_Name", i);
@@ -186,12 +189,14 @@ void FinalReadConfig()
 		mysnprintf(hsCompleted, 50, "HighScore%u_Completed", i);
 		mysnprintf(hsGraphic, 50, "HighScore%u_Graphic", i);
 		mysnprintf(hsRatio, 50, "HighScore%u_Ratio", i);
+		mysnprintf(hsMission, 50, "HighScore%u_Mission", i);
 
 		config.CreateSetting(hsName, Scores[i].name);
 		config.CreateSetting(hsScore, Scores[i].score);
 		config.CreateSetting(hsCompleted, Scores[i].completed);
 		config.CreateSetting(hsGraphic, Scores[i].graphic);
 		config.CreateSetting(hsRatio, Scores[i].ratio);
+		config.CreateSetting(hsMission, Scores[i].mission);
 
 		strcpy(Scores[i].name, config.GetSetting(hsName)->GetString());
 		Scores[i].score = config.GetSetting(hsScore)->GetInteger();
@@ -202,6 +207,7 @@ void FinalReadConfig()
 		strncpy(Scores[i].graphic, config.GetSetting(hsGraphic)->GetString(), 8);
 		Scores[i].graphic[8] = 0;
 		Scores[i].ratio = config.GetSetting(hsRatio)->GetInteger();
+		Scores[i].mission = config.GetSetting(hsMission)->GetInteger();
 	}
 
 	doWriteConfig = true;
@@ -471,6 +477,7 @@ void WriteConfig(void)
 	char hsCompleted[50];
 	char hsGraphic[50];
 	char hsRatio[50];
+	char hsMission[50];
 	for(unsigned int i = 0;i < MaxScores;i++)
 	{
 		mysnprintf(hsName, 50, "HighScore%u_Name", i);
@@ -478,12 +485,14 @@ void WriteConfig(void)
 		mysnprintf(hsCompleted, 50, "HighScore%u_Completed", i);
 		mysnprintf(hsGraphic, 50, "HighScore%u_Graphic", i);
 		mysnprintf(hsRatio, 50, "HighScore%u_Ratio", i);
+		mysnprintf(hsMission, 50, "HighScore%u_Mission", i);
 
 		config.GetSetting(hsName)->SetValue(Scores[i].name);
 		config.GetSetting(hsScore)->SetValue(Scores[i].score);
 		config.GetSetting(hsCompleted)->SetValue(Scores[i].completed);
 		config.GetSetting(hsGraphic)->SetValue(Scores[i].graphic);
 		config.GetSetting(hsRatio)->SetValue(Scores[i].ratio);
+		config.GetSetting(hsMission)->SetValue(Scores[i].mission);
 	}
 
 	config.SaveConfig();

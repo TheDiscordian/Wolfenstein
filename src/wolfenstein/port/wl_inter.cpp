@@ -901,15 +901,18 @@ void DrawHighScores (void)
 		PrintY = 31;
 		US_Print (titleFont, "HIGH SCORES", gameinfo.FontColors[GameInfo::MENU_TITLE]);
 
+		const EColorRange hdrColor = gameinfo.FontColors[GameInfo::MENU_TITLE];
 		const EColorRange color = gameinfo.FontColors[GameInfo::HIGHSCORES];
 		PrintX = 86; PrintY = 60;
-		US_Print (font, "NAME", color);
-		PrintX = 175; PrintY = 60;
-		US_Print (font, "SCORE", color);
+		US_Print (font, "NAME", hdrColor);
+		PrintX = 150; PrintY = 60;
+		US_Print (font, "MISSION", hdrColor);
+		PrintX = 205; PrintY = 60;
+		US_Print (font, "SCORE", hdrColor);
 		PrintX = 247; PrintY = 53;
-		US_Print (font, "MISSION", color);
+		US_Print (font, "MISSION", hdrColor);
 		PrintX = 254; PrintY = 60;
-		US_Print (font, "RATIO", color);
+		US_Print (font, "RATIO", hdrColor);
 
 		for (i = 0, s = Scores; i < MaxScores; i++, s++)
 		{
@@ -919,9 +922,13 @@ void DrawHighScores (void)
 				PrintX = 45;
 				US_Print (font, s->name, color);
 			}
+			buffer.Format("%d", s->mission);
+			VW_MeasurePropString (font, buffer, w, h);
+			PrintX = 167 - w/2;
+			US_Print (font, buffer, color);
 			buffer.Format("%d", s->score);
 			VW_MeasurePropString (font, buffer, w, h);
-			PrintX = 205 - w;
+			PrintX = 235 - w;
 			US_Print (font, buffer, color);
 			buffer.Format("%d", s->ratio);
 			VW_MeasurePropString (font, buffer, w, h);
@@ -1031,6 +1038,8 @@ void CheckHighScore (int32_t score, const LevelInfo *levelInfo)
 		myscore.ratio = (gamestate.killcount * 100) / gamestate.killtotal;
 	else
 		myscore.ratio = 0;
+	// Blake episodes are clusters 1-6 in mapinfo.
+	myscore.mission = levelInfo->Cluster > 0 ? levelInfo->Cluster : 1;
 
 	for (i = 0, n = -1; i < MaxScores; i++)
 	{

@@ -41,6 +41,18 @@ Flat:
 	#04A400
 }
 
+BlakeGreen "Blake Green"
+{
+	#0C5A0C  #14C414  0 191
+	#14C414  #50FF50  192 256
+Console:
+	#000000  #0A7F0A    0 127
+	#14C414  #FEFFFE  128 256
+Flat:
+	// Blake high score table text
+	#14C414
+}
+
 Brown
 {
 	#533F2F  #BFA78F

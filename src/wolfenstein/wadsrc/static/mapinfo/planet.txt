@@ -29,7 +29,7 @@ gameinfo
 	menufontcolor_highlight = "Yellow"
 	menufontcolor_highlightselection = "Gold"
 	menufontcolor_disabled = "DarkGreen"
-	highscoresfontcolor = "White"
+	highscoresfontcolor = "BlakeGreen"
 	pageindexfontcolor = "DarkYellow"
 	advisorycolor = "71 04 04"
 	advisorypic = "PC13"

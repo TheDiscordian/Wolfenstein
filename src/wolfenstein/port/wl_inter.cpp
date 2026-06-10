@@ -14,6 +14,7 @@
 #include "wl_game.h"
 #include "wl_inter.h"
 #include "of_ecwolf_gpu.h"
+#include "of_ecwolf_opl_music.h"
 #include "wl_net.h"
 #include "wl_text.h"
 #include "g_mapinfo.h"
@@ -796,7 +797,16 @@ static void PreloadProgressSpan(unsigned base, unsigned span,
 
 static void PreloadTexProgress(unsigned done, unsigned total)
 {
+	// Keep music fed: the precache reads from SD far longer than the audio
+	// ring holds, and the bar redraw (the only other pump) is gated.
+	OPLMusic_Pump();
 	PreloadProgressSpan(50, 450, done, total);
+}
+
+// Psych-less loads still need the per-texture music pump.
+static void PreloadTexPump(unsigned, unsigned)
+{
+	OPLMusic_Pump();
 }
 #endif
 
@@ -828,7 +838,7 @@ void PreloadGraphics (bool showPsych)
 		PreloadUpdate (50, 1000);
 	}
 
-	TexMan.PrecacheLevel(showPsych ? PreloadTexProgress : NULL);
+	TexMan.PrecacheLevel(showPsych ? PreloadTexProgress : PreloadTexPump);
 
 	// Decode every digitized sound now, behind the load screen.  They used
 	// to load lazily on first play, which ran SD_PrepareSound/Mix_LoadWAV
@@ -840,6 +850,7 @@ void PreloadGraphics (bool showPsych)
 		unsigned int doneSounds = 0;
 		while(SoundInfo.DigitalLoadsPending() > 0)
 		{
+			OPLMusic_Pump();
 			SoundInfo.PumpDigitalLoads(1);
 			++doneSounds;
 			if(showPsych)

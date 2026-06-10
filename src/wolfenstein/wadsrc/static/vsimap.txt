@@ -4,12 +4,13 @@
 
 graphics
 {
-	"STRUCTPIC",
-	"SMALLFNT",
-	"BIGFONT",
-	"FONTTINY",
-	"FONTHUGE",
-	"FONTMED",
+	// The pictable chunk is consumed by the VGAGRAPH loader, so the first
+	// lump is font 0.
+	"FONT0SHF", // font 0: glyphs stored at ASCII-31, never drawn by the game
+	"BIGFONT",  // font 1
+	"SMALLFNT", // font 2: the game's main text font
+	"FONTHUGE", // font 3
+	"FONTMED",  // font 4
 	"TELETOP", "TELEBOT",
 	"TELEON01", "TELEON02", "TELEON03", "TELEON04", "TELEON05",
 	"TELEON06", "TELEON07", "TELEON08", "TELEON09", "TELEON10",

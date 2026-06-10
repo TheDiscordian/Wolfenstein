@@ -41,6 +41,7 @@
 #include "id_us.h"
 #include "templates.h"
 #include "wl_agent.h"
+#include "wl_iwad.h"
 #include "wl_main.h"
 #include "wl_play.h"
 
@@ -154,6 +155,49 @@ void FinalReadConfig()
 	N3DTempoEmulation = !!config.GetSetting("N3DTempoEmulation")->GetInteger();
 
 	AM_UpdateFlags();
+
+	// High scores are seeded here rather than in ReadConfig since the
+	// defaults depend on which game was selected.
+	if(IWad::CheckGameFilter("Blake"))
+	{
+		static const char* const blakeNames[MaxScores] = {
+			"JAM PRODUCTIONS INC.", "", "JERRY JONES",
+			"MICHAEL MAYNARD", "JAMES T. ROW", "", ""
+		};
+		for(unsigned int i = 0;i < MaxScores;i++)
+		{
+			strcpy(Scores[i].name, blakeNames[i]);
+			Scores[i].score = 10000;
+			Scores[i].completed = "1";
+			Scores[i].graphic[0] = 0;
+		}
+	}
+
+	char hsName[50];
+	char hsScore[50];
+	char hsCompleted[50];
+	char hsGraphic[50];
+	for(unsigned int i = 0;i < MaxScores;i++)
+	{
+		mysnprintf(hsName, 50, "HighScore%u_Name", i);
+		mysnprintf(hsScore, 50, "HighScore%u_Score", i);
+		mysnprintf(hsCompleted, 50, "HighScore%u_Completed", i);
+		mysnprintf(hsGraphic, 50, "HighScore%u_Graphic", i);
+
+		config.CreateSetting(hsName, Scores[i].name);
+		config.CreateSetting(hsScore, Scores[i].score);
+		config.CreateSetting(hsCompleted, Scores[i].completed);
+		config.CreateSetting(hsGraphic, Scores[i].graphic);
+
+		strcpy(Scores[i].name, config.GetSetting(hsName)->GetString());
+		Scores[i].score = config.GetSetting(hsScore)->GetInteger();
+		if(config.GetSetting(hsCompleted)->GetType() == SettingsData::ST_STR)
+			Scores[i].completed = config.GetSetting(hsCompleted)->GetString();
+		else
+			Scores[i].completed.Format("%d", config.GetSetting(hsCompleted)->GetInteger());
+		strncpy(Scores[i].graphic, config.GetSetting(hsGraphic)->GetString(), 8);
+		Scores[i].graphic[8] = 0;
+	}
 
 	doWriteConfig = true;
 }
@@ -291,32 +335,6 @@ void ReadConfig(void)
 	am_overlaytextured = config.GetSetting("AM_OverlayTextured")->GetInteger() != 0;
 	am_pause = config.GetSetting("AM_Pause")->GetInteger() != 0;
 	am_showratios = config.GetSetting("AM_ShowRatios")->GetInteger() != 0;
-
-	char hsName[50];
-	char hsScore[50];
-	char hsCompleted[50];
-	char hsGraphic[50];
-	for(unsigned int i = 0;i < MaxScores;i++)
-	{
-		mysnprintf(hsName, 50, "HighScore%u_Name", i);
-		mysnprintf(hsScore, 50, "HighScore%u_Score", i);
-		mysnprintf(hsCompleted, 50, "HighScore%u_Completed", i);
-		mysnprintf(hsGraphic, 50, "HighScore%u_Graphic", i);
-
-		config.CreateSetting(hsName, Scores[i].name);
-		config.CreateSetting(hsScore, Scores[i].score);
-		config.CreateSetting(hsCompleted, Scores[i].completed);
-		config.CreateSetting(hsGraphic, Scores[i].graphic);
-
-		strcpy(Scores[i].name, config.GetSetting(hsName)->GetString());
-		Scores[i].score = config.GetSetting(hsScore)->GetInteger();
-		if(config.GetSetting(hsCompleted)->GetType() == SettingsData::ST_STR)
-			Scores[i].completed = config.GetSetting(hsCompleted)->GetString();
-		else
-			Scores[i].completed.Format("%d", config.GetSetting(hsCompleted)->GetInteger());
-		strncpy(Scores[i].graphic, config.GetSetting(hsGraphic)->GetString(), 8);
-		Scores[i].graphic[8] = 0;
-	}
 
 	// make sure values are correct
 	if (mousexadjustment<0) mousexadjustment = 0;

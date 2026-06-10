@@ -4,11 +4,11 @@
 
 graphics
 {
-	"SMALLFNT",
-	"BIGFONT",
-	"FONTTINY",
-	"FONTHUGE",
-	"FONTMED",
+	"FONT0SHF", // font 0: glyphs stored at ASCII-31, never drawn by the game
+	"BIGFONT",  // font 1
+	"SMALLFNT", // font 2: the game's main text font
+	"FONTHUGE", // font 3
+	"FONTMED",  // font 4
 	"TELEBACK",
 	"TELEOF01", "TELEOF02", "TELEOF03", "TELEOF04", "TELEOF05",
 	"TELEOF06", "TELEOF07", "TELEOF08", "TELEOF09", "TELEOF10",

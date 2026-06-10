@@ -122,8 +122,8 @@ void BlakeStatusBar::DrawStatusBar()
 	if(viewsize == 21 && ingame)
 		return;
 
-	// FONTTINY is VGAGRAPH font chunk 3, which upstream named INDEXFON.
-	static FFont *IndexFont = V_GetFont("FONTTINY");
+	// Blake's index font is VGAGRAPH font chunk 3, mapped as SMALLFNT.
+	static FFont *IndexFont = SmallFont;
 	static FFont *HealthFont = V_GetFont("BlakeHealthFont");
 	static FFont *ScoreFont = V_GetFont("BlakeScoreFont");
 	if(!IndexFont) IndexFont = SmallFont;

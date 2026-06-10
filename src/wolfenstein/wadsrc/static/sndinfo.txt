@@ -409,7 +409,7 @@ treasure/loot/pickup		{ DSBONUS2 ALBONUS2 PCBONUS2 }
 treasure/goldbars/pickup	{ DSBONUS3 ALBONUS3 PCBONUS3 }
 treasure/xylanorb/pickup	{ DSBONUS4 ALBONUS4 PCBONUS4 }
 
-misc/coin_pickup		{ DSCONCES ALCONCES PCCONCES }
+misc/coin_pickup		{ DSGETTKN ALGETTKN PCGETTKN }
 misc/radar_pickup		{ DSGETRDR ALGETRDR PCGETRDR }
 
 misc/blake/explosion1	{ DSEXPLO1 ALEXPLO1 PCEXPLO1 }

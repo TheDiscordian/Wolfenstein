@@ -1,0 +1,187 @@
+// Blastable crates (codes 432-485). The code offset from the crate base
+// selects the content, which spills onto the crate's tile when it is
+// destroyed. In Planet Strike the crate simply breaks open; in Aliens of
+// Gold it also explodes with radius damage, chaining adjacent crates.
+
+actor BreakableCrate1 : SmartAnimation
+{
+	radius 32
+	health 1
+	+SOLID
+	+SHOOTABLE
+	states
+	{
+		Spawn:
+			CRT1 A -1
+			stop
+		Death:
+			EXPL B 0 bright A_AlertMonsters
+			EXPL B 0 bright A_InitSmartAnim(random(3, 10))
+			EXPL BCDE 1.5 bright A_SmartAnimDelay
+			stop
+	}
+}
+
+actor BreakableCrate2 : BreakableCrate1
+{
+	states
+	{
+		Spawn:
+			CRT2 A -1
+			stop
+	}
+}
+
+actor BreakableCrate3 : BreakableCrate1
+{
+	states
+	{
+		Spawn:
+			CRT3 A -1
+			stop
+	}
+}
+
+actor BlastableCrate1 : BreakableCrate1
+{
+	deathsound "crate/explode"
+	states
+	{
+		Death:
+			EXPL B 0 bright A_Scream
+			EXPL B 0 bright A_Explode(20, 128, XF_HURTSOURCE, true)
+			EXPL B 0 bright A_InitSmartAnim(random(24, 31))
+			EXPL BCDE 1.5 bright A_SmartAnimDelay
+			stop
+	}
+}
+
+actor BlastableCrate2 : BlastableCrate1
+{
+	states
+	{
+		Spawn:
+			CRT2 A -1
+			stop
+	}
+}
+
+actor BlastableCrate3 : BlastableCrate1
+{
+	states
+	{
+		Spawn:
+			CRT3 A -1
+			stop
+	}
+}
+
+// Planet Strike contents
+actor BreakableCrate1ChickenLeg : BreakableCrate1 { dropitem "ChickenLeg" }
+actor BreakableCrate1Ham : BreakableCrate1 { dropitem "HamMeat" }
+actor BreakableCrate1ChargeUnit : BreakableCrate1 { dropitem "ChargeUnit" }
+actor BreakableCrate1Pistol : BreakableCrate1 { dropitem "SlowFireProtector" }
+actor BreakableCrate1Rifle : BreakableCrate1 { dropitem "RapidAssaultWeapon" }
+actor BreakableCrate1IonCannon : BreakableCrate1 { dropitem "DualNeutronDisruptor" }
+actor BreakableCrate1GrenadeLauncher : BreakableCrate1 { dropitem "PlasmaDischargeUnit" }
+actor BreakableCrate1MoneyBag : BreakableCrate1 { dropitem "MoneyBag" }
+actor BreakableCrate1Loot : BreakableCrate1 { dropitem "Loot" }
+actor BreakableCrate1Gold : BreakableCrate1 { dropitem "Gold5Bars" }
+actor BreakableCrate1Orb : BreakableCrate1 { dropitem "XylanOrb" }
+actor BreakableCrate1Gore : BreakableCrate1 { dropitem "BodyParts" }
+actor BreakableCrate1RedKey : BreakableCrate1 { dropitem "RedAccessKey" }
+actor BreakableCrate1YellowKey : BreakableCrate1 { dropitem "YellowAccessKey" }
+actor BreakableCrate1Cannon : BreakableCrate1 { dropitem "AntiPlasmaCannon" }
+actor BreakableCrate1BlueKey : BreakableCrate1 { dropitem "BlueAccessKey" }
+actor BreakableCrate1Box : BreakableCrate1 { dropitem "YellowBox" }
+
+actor BreakableCrate2ChickenLeg : BreakableCrate2 { dropitem "ChickenLeg" }
+actor BreakableCrate2Ham : BreakableCrate2 { dropitem "HamMeat" }
+actor BreakableCrate2ChargeUnit : BreakableCrate2 { dropitem "ChargeUnit" }
+actor BreakableCrate2Pistol : BreakableCrate2 { dropitem "SlowFireProtector" }
+actor BreakableCrate2Rifle : BreakableCrate2 { dropitem "RapidAssaultWeapon" }
+actor BreakableCrate2IonCannon : BreakableCrate2 { dropitem "DualNeutronDisruptor" }
+actor BreakableCrate2GrenadeLauncher : BreakableCrate2 { dropitem "PlasmaDischargeUnit" }
+actor BreakableCrate2MoneyBag : BreakableCrate2 { dropitem "MoneyBag" }
+actor BreakableCrate2Loot : BreakableCrate2 { dropitem "Loot" }
+actor BreakableCrate2Gold : BreakableCrate2 { dropitem "Gold5Bars" }
+actor BreakableCrate2Orb : BreakableCrate2 { dropitem "XylanOrb" }
+actor BreakableCrate2Gore : BreakableCrate2 { dropitem "BodyParts" }
+actor BreakableCrate2RedKey : BreakableCrate2 { dropitem "RedAccessKey" }
+actor BreakableCrate2YellowKey : BreakableCrate2 { dropitem "YellowAccessKey" }
+actor BreakableCrate2Cannon : BreakableCrate2 { dropitem "AntiPlasmaCannon" }
+actor BreakableCrate2BlueKey : BreakableCrate2 { dropitem "BlueAccessKey" }
+actor BreakableCrate2Box : BreakableCrate2 { dropitem "YellowBox" }
+
+actor BreakableCrate3ChickenLeg : BreakableCrate3 { dropitem "ChickenLeg" }
+actor BreakableCrate3Ham : BreakableCrate3 { dropitem "HamMeat" }
+actor BreakableCrate3ChargeUnit : BreakableCrate3 { dropitem "ChargeUnit" }
+actor BreakableCrate3Pistol : BreakableCrate3 { dropitem "SlowFireProtector" }
+actor BreakableCrate3Rifle : BreakableCrate3 { dropitem "RapidAssaultWeapon" }
+actor BreakableCrate3IonCannon : BreakableCrate3 { dropitem "DualNeutronDisruptor" }
+actor BreakableCrate3GrenadeLauncher : BreakableCrate3 { dropitem "PlasmaDischargeUnit" }
+actor BreakableCrate3MoneyBag : BreakableCrate3 { dropitem "MoneyBag" }
+actor BreakableCrate3Loot : BreakableCrate3 { dropitem "Loot" }
+actor BreakableCrate3Gold : BreakableCrate3 { dropitem "Gold5Bars" }
+actor BreakableCrate3Orb : BreakableCrate3 { dropitem "XylanOrb" }
+actor BreakableCrate3Gore : BreakableCrate3 { dropitem "BodyParts" }
+actor BreakableCrate3RedKey : BreakableCrate3 { dropitem "RedAccessKey" }
+actor BreakableCrate3YellowKey : BreakableCrate3 { dropitem "YellowAccessKey" }
+actor BreakableCrate3Cannon : BreakableCrate3 { dropitem "AntiPlasmaCannon" }
+actor BreakableCrate3BlueKey : BreakableCrate3 { dropitem "BlueAccessKey" }
+actor BreakableCrate3Box : BreakableCrate3 { dropitem "YellowBox" }
+
+// Aliens of Gold contents
+actor BlastableCrate1ChickenLeg : BlastableCrate1 { dropitem "ChickenLeg" }
+actor BlastableCrate1Ham : BlastableCrate1 { dropitem "HamMeat" }
+actor BlastableCrate1ChargeUnit : BlastableCrate1 { dropitem "ChargeUnit" }
+actor BlastableCrate1Pistol : BlastableCrate1 { dropitem "SlowFireProtector" }
+actor BlastableCrate1Rifle : BlastableCrate1 { dropitem "RapidAssaultWeapon" }
+actor BlastableCrate1IonCannon : BlastableCrate1 { dropitem "DualNeutronDisruptor" }
+actor BlastableCrate1GrenadeLauncher : BlastableCrate1 { dropitem "PlasmaDischargeUnit" }
+actor BlastableCrate1MoneyBag : BlastableCrate1 { dropitem "MoneyBag" }
+actor BlastableCrate1Loot : BlastableCrate1 { dropitem "Loot" }
+actor BlastableCrate1Gold : BlastableCrate1 { dropitem "Gold5Bars" }
+actor BlastableCrate1Orb : BlastableCrate1 { dropitem "XylanOrb" }
+actor BlastableCrate1Gore : BlastableCrate1 { dropitem "BodyParts" }
+actor BlastableCrate1RedKey : BlastableCrate1 { dropitem "RedAccessCard" }
+actor BlastableCrate1YellowKey : BlastableCrate1 { dropitem "YellowAccessCard" }
+actor BlastableCrate1GreenKey : BlastableCrate1 { dropitem "GreenAccessCard" }
+actor BlastableCrate1BlueKey : BlastableCrate1 { dropitem "BlueAccessCard" }
+actor BlastableCrate1GoldKey : BlastableCrate1 { dropitem "GoldAccessCard" }
+
+actor BlastableCrate2ChickenLeg : BlastableCrate2 { dropitem "ChickenLeg" }
+actor BlastableCrate2Ham : BlastableCrate2 { dropitem "HamMeat" }
+actor BlastableCrate2ChargeUnit : BlastableCrate2 { dropitem "ChargeUnit" }
+actor BlastableCrate2Pistol : BlastableCrate2 { dropitem "SlowFireProtector" }
+actor BlastableCrate2Rifle : BlastableCrate2 { dropitem "RapidAssaultWeapon" }
+actor BlastableCrate2IonCannon : BlastableCrate2 { dropitem "DualNeutronDisruptor" }
+actor BlastableCrate2GrenadeLauncher : BlastableCrate2 { dropitem "PlasmaDischargeUnit" }
+actor BlastableCrate2MoneyBag : BlastableCrate2 { dropitem "MoneyBag" }
+actor BlastableCrate2Loot : BlastableCrate2 { dropitem "Loot" }
+actor BlastableCrate2Gold : BlastableCrate2 { dropitem "Gold5Bars" }
+actor BlastableCrate2Orb : BlastableCrate2 { dropitem "XylanOrb" }
+actor BlastableCrate2Gore : BlastableCrate2 { dropitem "BodyParts" }
+actor BlastableCrate2RedKey : BlastableCrate2 { dropitem "RedAccessCard" }
+actor BlastableCrate2YellowKey : BlastableCrate2 { dropitem "YellowAccessCard" }
+actor BlastableCrate2GreenKey : BlastableCrate2 { dropitem "GreenAccessCard" }
+actor BlastableCrate2BlueKey : BlastableCrate2 { dropitem "BlueAccessCard" }
+actor BlastableCrate2GoldKey : BlastableCrate2 { dropitem "GoldAccessCard" }
+
+actor BlastableCrate3ChickenLeg : BlastableCrate3 { dropitem "ChickenLeg" }
+actor BlastableCrate3Ham : BlastableCrate3 { dropitem "HamMeat" }
+actor BlastableCrate3ChargeUnit : BlastableCrate3 { dropitem "ChargeUnit" }
+actor BlastableCrate3Pistol : BlastableCrate3 { dropitem "SlowFireProtector" }
+actor BlastableCrate3Rifle : BlastableCrate3 { dropitem "RapidAssaultWeapon" }
+actor BlastableCrate3IonCannon : BlastableCrate3 { dropitem "DualNeutronDisruptor" }
+actor BlastableCrate3GrenadeLauncher : BlastableCrate3 { dropitem "PlasmaDischargeUnit" }
+actor BlastableCrate3MoneyBag : BlastableCrate3 { dropitem "MoneyBag" }
+actor BlastableCrate3Loot : BlastableCrate3 { dropitem "Loot" }
+actor BlastableCrate3Gold : BlastableCrate3 { dropitem "Gold5Bars" }
+actor BlastableCrate3Orb : BlastableCrate3 { dropitem "XylanOrb" }
+actor BlastableCrate3Gore : BlastableCrate3 { dropitem "BodyParts" }
+actor BlastableCrate3RedKey : BlastableCrate3 { dropitem "RedAccessCard" }
+actor BlastableCrate3YellowKey : BlastableCrate3 { dropitem "YellowAccessCard" }
+actor BlastableCrate3GreenKey : BlastableCrate3 { dropitem "GreenAccessCard" }
+actor BlastableCrate3BlueKey : BlastableCrate3 { dropitem "BlueAccessCard" }
+actor BlastableCrate3GoldKey : BlastableCrate3 { dropitem "GoldAccessCard" }

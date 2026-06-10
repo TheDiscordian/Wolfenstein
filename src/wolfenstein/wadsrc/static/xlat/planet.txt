@@ -1219,9 +1219,61 @@ things
 	{429, VerticalSpikeInactive,    0, 0, 2}
 	{430, VerticalSpikeInactive,    0, 0, 3}
 	// No 431
-	// TODO: 432-449 -> Blastable crate1
-	// TODO: 450-467 -> Blastable crate2
-	// TODO: 468-485 -> Blastable crate3
+	// Blastable crates (PS: break open without exploding)
+	{432, BreakableCrate1ChickenLeg, 0, 0, 0}
+	{433, BreakableCrate1Ham,        0, 0, 0}
+	{434, BreakableCrate1ChargeUnit, 0, 0, 0}
+	{435, BreakableCrate1Pistol,     0, 0, 0}
+	{436, BreakableCrate1Rifle,      0, 0, 0}
+	{437, BreakableCrate1IonCannon,  0, 0, 0}
+	{438, BreakableCrate1GrenadeLauncher, 0, 0, 0}
+	{439, BreakableCrate1MoneyBag,   0, 0, 0}
+	{440, BreakableCrate1Loot,       0, 0, 0}
+	{441, BreakableCrate1Gold,       0, 0, 0}
+	{442, BreakableCrate1Orb,        0, 0, 0}
+	{443, BreakableCrate1Gore,       0, 0, 0}
+	{444, BreakableCrate1Gore,       0, 0, 0}
+	{445, BreakableCrate1RedKey,     0, 0, 0}
+	{446, BreakableCrate1YellowKey,  0, 0, 0}
+	{447, BreakableCrate1Cannon,     0, 0, 0}
+	{448, BreakableCrate1BlueKey,    0, 0, 0}
+	{449, BreakableCrate1Box,        0, 0, 0}
+	{450, BreakableCrate2ChickenLeg, 0, 0, 0}
+	{451, BreakableCrate2Ham,        0, 0, 0}
+	{452, BreakableCrate2ChargeUnit, 0, 0, 0}
+	{453, BreakableCrate2Pistol,     0, 0, 0}
+	{454, BreakableCrate2Rifle,      0, 0, 0}
+	{455, BreakableCrate2IonCannon,  0, 0, 0}
+	{456, BreakableCrate2GrenadeLauncher, 0, 0, 0}
+	{457, BreakableCrate2MoneyBag,   0, 0, 0}
+	{458, BreakableCrate2Loot,       0, 0, 0}
+	{459, BreakableCrate2Gold,       0, 0, 0}
+	{460, BreakableCrate2Orb,        0, 0, 0}
+	{461, BreakableCrate2Gore,       0, 0, 0}
+	{462, BreakableCrate2Gore,       0, 0, 0}
+	{463, BreakableCrate2RedKey,     0, 0, 0}
+	{464, BreakableCrate2YellowKey,  0, 0, 0}
+	{465, BreakableCrate2Cannon,     0, 0, 0}
+	{466, BreakableCrate2BlueKey,    0, 0, 0}
+	{467, BreakableCrate2Box,        0, 0, 0}
+	{468, BreakableCrate3ChickenLeg, 0, 0, 0}
+	{469, BreakableCrate3Ham,        0, 0, 0}
+	{470, BreakableCrate3ChargeUnit, 0, 0, 0}
+	{471, BreakableCrate3Pistol,     0, 0, 0}
+	{472, BreakableCrate3Rifle,      0, 0, 0}
+	{473, BreakableCrate3IonCannon,  0, 0, 0}
+	{474, BreakableCrate3GrenadeLauncher, 0, 0, 0}
+	{475, BreakableCrate3MoneyBag,   0, 0, 0}
+	{476, BreakableCrate3Loot,       0, 0, 0}
+	{477, BreakableCrate3Gold,       0, 0, 0}
+	{478, BreakableCrate3Orb,        0, 0, 0}
+	{479, BreakableCrate3Gore,       0, 0, 0}
+	{480, BreakableCrate3Gore,       0, 0, 0}
+	{481, BreakableCrate3RedKey,     0, 0, 0}
+	{482, BreakableCrate3YellowKey,  0, 0, 0}
+	{483, BreakableCrate3Cannon,     0, 0, 0}
+	{484, BreakableCrate3BlueKey,    0, 0, 0}
+	{485, BreakableCrate3Box,        0, 0, 0}
 	{486, PlasmaDetonator,          0, 0, 0}
 	{487, BlakeRubble,              0, 0, 0}
 	{488, RadarPack,                0, 0, 0}

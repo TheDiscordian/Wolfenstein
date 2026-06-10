@@ -39,7 +39,7 @@ ECWOLF_INCLUDES = -I. -I$(ECWOLF_SRC_DIR) -I$(ECWOLF_SRC_DIR)/g_shared \
 	-I$(ECWOLF_SRC_DIR)/textures -I$(ECWOLF_SRC_DIR)/thingdef
 
 SDL_TARGET_SRC = $(wildcard $(SDK_DIR)/of_sdl2.c)
-OF_ECWOLF_SRC  = of_ecwolf_openfpga.c
+OF_ECWOLF_SRC  = of_ecwolf_openfpga.c of_ecwolf_bootlog.c
 OF_ECWOLF_CD_SRC = of_ecwolf_cd.cpp
 OF_ECWOLF_CXXABI_SRC = of_ecwolf_cxxabi.cpp
 OF_ECWOLF_GPU_SRC = of_ecwolf_gpu.cpp
@@ -82,6 +82,14 @@ CXXFLAGS += -falign-functions=16 -falign-loops=16
 ifdef DEBUG_BOOT
 CFLAGS   += -DOF_BOOT_MARKERS
 CXXFLAGS += -DOF_BOOT_MARKERS
+endif
+
+# `make DEBUG_BOOTLOG=1` writes the same boot breadcrumbs to save slot 19
+# (read back from the card as the slot's bound save file) with no holds,
+# colour fills, or display-mode changes — the boot path stays stock.
+ifdef DEBUG_BOOTLOG
+CFLAGS   += -DOF_BOOT_LOG
+CXXFLAGS += -DOF_BOOT_LOG
 endif
 
 # Preserve ECWolf's SDL-facing platform layer.  The openfpgaOS-specific

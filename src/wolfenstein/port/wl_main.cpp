@@ -89,6 +89,7 @@
 #define VIEWHEIGHT      144
 
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+#include "of_ecwolf_bootlog.h"
 #ifdef OF_BOOT_MARKERS
 #include <cstdio>
 #include "of_timer.h"
@@ -96,11 +97,20 @@ static void OF_BootHold(unsigned int ms);
 // Each marker holds ~2s so the line is readable on-device; failure paths
 // restore the terminal, print the reason, and freeze instead of returning
 // silently to a black screen.
-#define OF_BOOT_MARK(...) do { printf(__VA_ARGS__); OF_BootHold(2000); } while(0)
+#define OF_BOOT_MARK(...) do { printf(__VA_ARGS__); OF_BootLog(__VA_ARGS__); OF_BootHold(2000); } while(0)
 #define OF_BOOT_FAIL(...) do { \
 	printf(__VA_ARGS__); \
+	OF_BootLog(__VA_ARGS__); \
 	of_video_set_display_mode(OF_DISPLAY_TERMINAL); \
 	for(;;) OF_BootHold(1000); \
+} while(0)
+#elif defined(OF_BOOT_LOG)
+// Log-only build: file breadcrumbs via OF_BootLog, no holds, no colour fills,
+// no display-mode changes — the boot path stays stock.
+#define OF_BOOT_MARK(...) OF_BootLog(__VA_ARGS__)
+#define OF_BOOT_FAIL(...) do { \
+	OF_BootLog(__VA_ARGS__); \
+	for(;;) __asm__ volatile(""); \
 } while(0)
 #else
 #define OF_BOOT_MARK(...) ((void)0)

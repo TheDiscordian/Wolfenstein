@@ -36,6 +36,7 @@
 
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 extern void OF_EarlyStartupScreen(int progress);
+#include "of_ecwolf_bootlog.h"
 #ifdef OF_BOOT_MARKERS
 #include <cstdio>
 #endif
@@ -52,6 +53,7 @@ int main(int argc, char *argv[])
 #ifdef OF_BOOT_MARKERS
 	printf("BOOT: main() entered — all global constructors completed\n");
 #endif
+	OF_BootLog("BOOT: main enter (all global ctors done)\n");
 	OF_EarlyStartupScreen(1);
 #endif
 

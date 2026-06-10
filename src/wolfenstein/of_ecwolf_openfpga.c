@@ -1,5 +1,6 @@
 #ifndef OF_PC
 
+#include "of_ecwolf_bootlog.h"
 #include "of_file.h"
 #include "of_mount.h"
 #include "of_services.h"
@@ -173,14 +174,17 @@ static void of_ecwolf_openfpga_init(void)
 {
     char name[16];
 
+    OF_BootLog("BOOT: ctor enter\n");
     of_ecwolf_setenv_default("HOME", "/");
     of_ecwolf_setenv_default("XDG_CONFIG_HOME", "/");
     of_ecwolf_setenv_default("XDG_DATA_HOME", "/");
     of_ecwolf_select_data_extension();
+    OF_BootLog("BOOT: data extension selected\n");
 
     of_file_slot_register(4, "wolfmidi.zip");
     of_file_slot_register(7, "bank.ofsf");
     of_ecwolf_log_bank_status();
+    OF_BootLog("BOOT: bank status logged\n");
     of_file_slot_register(8, "ecwolf.cfg");
     /* Host-rendered AdLib SFX cache (scripts/sfxcache.sh); optional. */
     of_file_slot_register(26, "sfxcache.ofx");
@@ -197,6 +201,7 @@ static void of_ecwolf_openfpga_init(void)
         of_file_slot_register((uint32_t)(10 + i), name);
     }
 
+    OF_BootLog("BOOT: ctor done\n");
 #ifdef OF_BOOT_MARKERS
     printf("BOOT: of_ecwolf_openfpga_init constructor done\n");
 #endif

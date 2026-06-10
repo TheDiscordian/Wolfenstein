@@ -1145,24 +1145,24 @@ things
 	{318, VolatileTransport,        4, PATHING, 0}
 	{322, WhiteOoze,                0, 0, 3}
 	// No 323
-	// TODO: 324 -> Vertical Sphere Easy
-	// TODO: 325 -> Horizonal Sphere Easy
-	// TODO: 326 -> Diagonal Sphere Easy
+	{324, ElectroSphereVert,        0, 0, 0}
+	{325, ElectroSphereHorz,        0, 0, 0}
+	{326, ElectroSphereDiag,        0, 0, 0}
 	// No 327
 	{328, FloatingBomb,             4, 0, 0} // STATIONARY
 	{332, VolatileTransport,        4, 0, 2}
 	{336, VolatileTransport,        4, PATHING, 2}
-	// TODO: 342 -> Vertical Sphere Normal
-	// TODO: 343 -> Horizonal Sphere Normal
-	// TODO: 344 -> Diagonal Sphere Normal
+	{342, ElectroSphereVert,        0, 0, 2}
+	{343, ElectroSphereHorz,        0, 0, 2}
+	{344, ElectroSphereDiag,        0, 0, 2}
 	// No 345
 	{346, FloatingBomb,             4, 0, 2} // STATIONARY
 	{350, VolatileTransport,        4, 0, 3}
 	{354, VolatileTransport,        4, PATHING, 3}
 	// No 358-359
-	// TODO: 360 -> Vertical Sphere Hard
-	// TODO: 361 -> Horizonal Sphere Hard
-	// TODO: 362 -> Diagonal Sphere Hard
+	{360, ElectroSphereVert,        0, 0, 3}
+	{361, ElectroSphereHorz,        0, 0, 3}
+	{362, ElectroSphereDiag,        0, 0, 3}
 	// No 363
 	{364, FloatingBomb,             4, 0, 3} // STATIONARY
 	{368, CeilingTurretStatic,      4, 0, 3}

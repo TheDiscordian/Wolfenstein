@@ -38,6 +38,7 @@ typedef	struct
 	int32_t	score;
 	FString	completed;
 	char	graphic[9];
+	int32_t	ratio;
 } HighScore;
 
 #define	MaxString	128	// Maximum input string size

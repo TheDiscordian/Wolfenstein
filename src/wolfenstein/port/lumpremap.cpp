@@ -126,6 +126,10 @@ void LumpRemapper::DoRemap()
 					}
 					break;
 				case VSWAP:
+					// TEMPORARY: env-gated lump dump for remap debugging.
+					if(getenv("OF_LUMPDUMP"))
+						fprintf(stderr, "VSW %3u ns=%d size=%d\n", i,
+							oldNamespace, lump->LumpSize);
 					if(lump->Namespace == ns_flats)
 					{
 						if(i < textures.Size() && lump->LumpSize > 0)

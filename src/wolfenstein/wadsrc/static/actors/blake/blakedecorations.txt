@@ -2,6 +2,7 @@ actor SmartAnimation
 {
 	action native A_InitSmartAnim(int delay);
 	action native A_SmartAnimDelay();
+	action native A_BarrierDamage(bool zapPlayer);
 }
 
 actor ContainmentCanister

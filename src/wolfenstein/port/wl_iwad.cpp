@@ -47,6 +47,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+#include "of_ecwolf_bootlog.h"
+#else
+#define OF_BootLog(...) ((void)0)
+#endif
+
 bool queryiwad = true;
 static bool showpreviewgames = false;
 
@@ -418,6 +424,7 @@ static void LookForGameData(FResourceFile *res, TArray<WadStuff> &iwads, const c
 	};
 	TArray<BaseFile> foundFiles;
 
+	OF_BootLog("IWAD: LookFor dir=%s\n", directory);
 	File dir(directory);
 
 	TArray<FString> files;
@@ -462,8 +469,10 @@ static void LookForGameData(FResourceFile *res, TArray<WadStuff> &iwads, const c
 		files = dir.getFileList();
 	}
 
+	OF_BootLog("IWAD: files n=%u\n", files.Size());
 	for(unsigned int i = 0;i < files.Size();++i)
 	{
+		OF_BootLog("IWAD: file %s\n", files[i].GetChars());
 		FString name, extension;
 		if(!SplitFilename(files[i], name, extension))
 			continue;
@@ -521,11 +530,14 @@ static void LookForGameData(FResourceFile *res, TArray<WadStuff> &iwads, const c
 		while(++baseName < BASEFILES);
 	}
 
+	OF_BootLog("IWAD: classify done groups=%u\n", foundFiles.Size());
 	for(unsigned int i = 0;i < foundFiles.Size();++i)
 	{
 		if(!foundFiles[i].isValid)
 			continue;
 
+		OF_BootLog("IWAD: group .%s valid=0x%x\n",
+			foundFiles[i].extension.GetChars(), (unsigned)foundFiles[i].isValid);
 		WadStuff wadStuff;
 		wadStuff.Extension = foundFiles[i].extension;
 		for(unsigned int j = 0;LoadableBaseFiles[j] != BASEFILES;++j)
@@ -572,6 +584,7 @@ static void LookForGameData(FResourceFile *res, TArray<WadStuff> &iwads, const c
 	}
 
 	LumpRemapper::ClearRemaps();
+	OF_BootLog("IWAD: LookFor done iwads=%u\n", iwads.Size());
 }
 
 /**
@@ -739,6 +752,7 @@ static void ParseIWadInfo(FResourceFile *res)
 
 void SelectGame(TArray<FString> &wadfiles, const char* iwad, const char* datawad, const FString &progdir)
 {
+	OF_BootLog("IWAD: SelectGame enter\n");
 	config.CreateSetting("DefaultIWad", 0);
 	config.CreateSetting("ShowIWadPicker", 1);
 	bool showPicker = config.GetSetting("ShowIWadPicker")->GetInteger() != 0;
@@ -761,7 +775,9 @@ void SelectGame(TArray<FString> &wadfiles, const char* iwad, const char* datawad
 	if(!datawadRes)
 		I_Error("Could not open %s!", datawad);
 
+	OF_BootLog("IWAD: datawad open ok\n");
 	ParseIWadInfo(datawadRes);
+	OF_BootLog("IWAD: ParseIWadInfo done\n");
 
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 	FString requestedDataExtension = NormalizeExtensionName(iwad);
@@ -920,9 +936,11 @@ void SelectGame(TArray<FString> &wadfiles, const char* iwad, const char* datawad
 
 	delete datawadRes;
 
+	OF_BootLog("IWAD: scans done bases=%u\n", basefiles.Size());
 	// Check requirements now as opposed to with LookForGameData so that reqs
 	// don't get loaded multiple times.
 	CheckForExpansionRequirements(basefiles);
+	OF_BootLog("IWAD: reqs done bases=%u\n", basefiles.Size());
 
 	// Now search for any applicable level sets
 #if !defined(OF_ECWOLF_OPENFPGA) || defined(OF_PC)
@@ -986,6 +1004,7 @@ void SelectGame(TArray<FString> &wadfiles, const char* iwad, const char* datawad
 
 	WadStuff &base = basefiles[pick];
 	selectedGame = &iwadTypes[base.Type];
+	OF_BootLog("IWAD: picked %d type=%d\n", pick, (int)base.Type);
 
 	wadfiles.Push(datawadDir + datawad);
 	for(unsigned int i = 0;i < base.Path.Size();++i)

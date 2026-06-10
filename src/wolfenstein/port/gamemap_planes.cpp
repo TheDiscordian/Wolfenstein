@@ -1041,7 +1041,6 @@ void GameMap::ReadPlanesData()
 				xlat.GetZonePalette(zonePalette);
 
 				TArray<WORD> fillSpots;
-				unsigned int dbgTiles = 0;
 				TMap<WORD, Xlat::ModZone> changeTriggerSpots;
 				
 
@@ -1050,10 +1049,7 @@ void GameMap::ReadPlanesData()
 					oldplane[i] = LittleShort(oldplane[i]);
 
 					if(xlat.IsValidTile(oldplane[i]))
-					{
 						mapPlane.map[i].SetTile(&tilePalette[oldplane[i]-tileStart]);
-						++dbgTiles;
-					}
 					else
 						mapPlane.map[i].SetTile(NULL);
 
@@ -1093,9 +1089,6 @@ void GameMap::ReadPlanesData()
 					else
 						mapPlane.map[i].zone = NULL;
 				}
-
-				printf("XLAT: tileStart=%u palette=%u translated=%u of %u cells\n",
-						tileStart, tilePalette.Size(), dbgTiles, size);
 
 				// Get a sound zone for modzones that aren't valid sound zones.
 				for(unsigned int i = 0;i < fillSpots.Size();++i)

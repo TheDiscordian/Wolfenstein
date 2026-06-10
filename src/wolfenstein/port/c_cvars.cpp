@@ -170,6 +170,7 @@ void FinalReadConfig()
 			Scores[i].score = 10000;
 			Scores[i].completed = "1";
 			Scores[i].graphic[0] = 0;
+			Scores[i].ratio = 0;
 		}
 	}
 
@@ -177,17 +178,20 @@ void FinalReadConfig()
 	char hsScore[50];
 	char hsCompleted[50];
 	char hsGraphic[50];
+	char hsRatio[50];
 	for(unsigned int i = 0;i < MaxScores;i++)
 	{
 		mysnprintf(hsName, 50, "HighScore%u_Name", i);
 		mysnprintf(hsScore, 50, "HighScore%u_Score", i);
 		mysnprintf(hsCompleted, 50, "HighScore%u_Completed", i);
 		mysnprintf(hsGraphic, 50, "HighScore%u_Graphic", i);
+		mysnprintf(hsRatio, 50, "HighScore%u_Ratio", i);
 
 		config.CreateSetting(hsName, Scores[i].name);
 		config.CreateSetting(hsScore, Scores[i].score);
 		config.CreateSetting(hsCompleted, Scores[i].completed);
 		config.CreateSetting(hsGraphic, Scores[i].graphic);
+		config.CreateSetting(hsRatio, Scores[i].ratio);
 
 		strcpy(Scores[i].name, config.GetSetting(hsName)->GetString());
 		Scores[i].score = config.GetSetting(hsScore)->GetInteger();
@@ -197,6 +201,7 @@ void FinalReadConfig()
 			Scores[i].completed.Format("%d", config.GetSetting(hsCompleted)->GetInteger());
 		strncpy(Scores[i].graphic, config.GetSetting(hsGraphic)->GetString(), 8);
 		Scores[i].graphic[8] = 0;
+		Scores[i].ratio = config.GetSetting(hsRatio)->GetInteger();
 	}
 
 	doWriteConfig = true;
@@ -465,17 +470,20 @@ void WriteConfig(void)
 	char hsScore[50];
 	char hsCompleted[50];
 	char hsGraphic[50];
+	char hsRatio[50];
 	for(unsigned int i = 0;i < MaxScores;i++)
 	{
 		mysnprintf(hsName, 50, "HighScore%u_Name", i);
 		mysnprintf(hsScore, 50, "HighScore%u_Score", i);
 		mysnprintf(hsCompleted, 50, "HighScore%u_Completed", i);
 		mysnprintf(hsGraphic, 50, "HighScore%u_Graphic", i);
+		mysnprintf(hsRatio, 50, "HighScore%u_Ratio", i);
 
 		config.GetSetting(hsName)->SetValue(Scores[i].name);
 		config.GetSetting(hsScore)->SetValue(Scores[i].score);
 		config.GetSetting(hsCompleted)->SetValue(Scores[i].completed);
 		config.GetSetting(hsGraphic)->SetValue(Scores[i].graphic);
+		config.GetSetting(hsRatio)->SetValue(Scores[i].ratio);
 	}
 
 	config.SaveConfig();

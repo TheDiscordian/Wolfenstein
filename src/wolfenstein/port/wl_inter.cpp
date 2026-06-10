@@ -18,6 +18,7 @@
 #include "wl_text.h"
 #include "g_mapinfo.h"
 #include "colormatcher.h"
+#include "wl_iwad.h"
 
 LRstruct LevelRatios;
 
@@ -890,6 +891,47 @@ void DrawHighScores (void)
 
 	ClearMScreen ();
 
+	if(IWad::CheckGameFilter("Blake"))
+	{
+		// Match the original layout: FONTHUGE title, column headers, and
+		// rows on a 7px pitch with the mission ratio column.
+		FFont *titleFont = V_GetFont("FONTHUGE");
+		VW_MeasurePropString (titleFont, "HIGH SCORES", w, h);
+		PrintX = 32 + (244 - w)/2;
+		PrintY = 31;
+		US_Print (titleFont, "HIGH SCORES", gameinfo.FontColors[GameInfo::MENU_TITLE]);
+
+		const EColorRange color = gameinfo.FontColors[GameInfo::HIGHSCORES];
+		PrintX = 86; PrintY = 60;
+		US_Print (font, "NAME", color);
+		PrintX = 175; PrintY = 60;
+		US_Print (font, "SCORE", color);
+		PrintX = 247; PrintY = 53;
+		US_Print (font, "MISSION", color);
+		PrintX = 254; PrintY = 60;
+		US_Print (font, "RATIO", color);
+
+		for (i = 0, s = Scores; i < MaxScores; i++, s++)
+		{
+			PrintY = 68 + 7*i;
+			if (s->name[0])
+			{
+				PrintX = 45;
+				US_Print (font, s->name, color);
+			}
+			buffer.Format("%d", s->score);
+			VW_MeasurePropString (font, buffer, w, h);
+			PrintX = 205 - w;
+			US_Print (font, buffer, color);
+			buffer.Format("%d", s->ratio);
+			VW_MeasurePropString (font, buffer, w, h);
+			PrintX = 272 - w;
+			US_Print (font, buffer, color);
+		}
+		VW_UpdateScreen ();
+		return;
+	}
+
 	FTexture *highscores = TexMan("HGHSCORE");
 	DrawStripes (10);
 	if(highscores->GetScaledWidth() < 320)
@@ -983,6 +1025,13 @@ void CheckHighScore (int32_t score, const LevelInfo *levelInfo)
 	else
 		myscore.graphic[0] = 0;
 
+	// The original stores the overall mission ratio; per-floor stats aren't
+	// tracked yet, so use the kill ratio.
+	if (gamestate.killtotal)
+		myscore.ratio = (gamestate.killcount * 100) / gamestate.killtotal;
+	else
+		myscore.ratio = 0;
+
 	for (i = 0, n = -1; i < MaxScores; i++)
 	{
 		if ((myscore.score > Scores[i].score)
@@ -1008,8 +1057,16 @@ void CheckHighScore (int32_t score, const LevelInfo *levelInfo)
 		//
 		// got a high score
 		//
-		PrintY = 76 + ((font->GetHeight() + 3) * n);
-		PrintX = 16;
+		if(IWad::CheckGameFilter("Blake"))
+		{
+			PrintY = 68 + 7*n;
+			PrintX = 45;
+		}
+		else
+		{
+			PrintY = 76 + ((font->GetHeight() + 3) * n);
+			PrintX = 16;
+		}
 		US_LineInput (font,PrintX, PrintY, Scores[n].name, 0, true, MaxHighName, 130, BKGDCOLOR, CR_WHITE);
 	}
 	else

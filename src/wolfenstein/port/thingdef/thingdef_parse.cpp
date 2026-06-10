@@ -581,10 +581,13 @@ void FDecorateParser::ParseActorStateAction(StateDefinition &thisState, int func
 						argType == TypeHierarchy::staticTypes.GetType(TypeHierarchy::BOOL))
 					{
 						val.isExpression = true;
-						if(argType == TypeHierarchy::staticTypes.GetType(TypeHierarchy::INT))
-							val.useType = CallArguments::Value::VAL_INTEGER;
-						else
+						// Bools must evaluate as integers; VAL_DOUBLE stores to
+						// the float member of the value union while
+						// ACTION_PARAM_BOOL reads the int64 member.
+						if(argType == TypeHierarchy::staticTypes.GetType(TypeHierarchy::FLOAT))
 							val.useType = CallArguments::Value::VAL_DOUBLE;
+						else
+							val.useType = CallArguments::Value::VAL_INTEGER;
 						val.expr = ExpressionNode::ParseExpression(newClass, TypeHierarchy::staticTypes, sc);
 					}
 					else if(argType == TypeHierarchy::staticTypes.GetType(TypeHierarchy::STATE))

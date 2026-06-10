@@ -167,6 +167,8 @@ actor ElectricArcBarrier : SmartAnimation
 	{
 		Spawn:
 		Active:
+			// Spawn-frame actions are skipped, so lead with a no-op frame.
+			ELCK A 0 bright
 			ELCK A 0 bright A_InitSmartAnim(random(3, 5))
 			ELCK A 0 bright A_ChangeFlag("SOLID", true)
 			ELCK A 0 bright A_Jump(256, 1, 2, 3)
@@ -197,6 +199,8 @@ actor ElectricPostBarrier : SmartAnimation
 	{
 		Spawn:
 		Active:
+			// Spawn-frame actions are skipped, so lead with a no-op frame.
+			ELCP A 0 bright
 			ELCP A 0 bright A_InitSmartAnim(random(3, 5))
 			ELCP A 0 bright A_ChangeFlag("SOLID", true)
 			ELCP A 0 bright A_Jump(256, 1, 2, 3)

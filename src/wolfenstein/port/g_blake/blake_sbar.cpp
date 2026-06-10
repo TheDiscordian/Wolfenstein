@@ -229,46 +229,46 @@ void BlakeStatusBar::DrawStatusBar()
 			DrawLed(0, 235, 155);
 	}
 
-	// Find keys in inventory
+	// Find keys in inventory. AoG's VGAGRAPH has no key pics; the original
+	// game draws the security keys as 7x7 colour bars.
 	int presentKeys = 0;
 	if(players[ConsolePlayer].mo)
 	{
+		static const ClassDef * const keyClasses[5][2] = {
+			{ClassDef::FindClass("RedAccessKey"), ClassDef::FindClass("RedAccessCard")},
+			{ClassDef::FindClass("YellowAccessKey"), ClassDef::FindClass("YellowAccessCard")},
+			{ClassDef::FindClass("BlueAccessKey"), ClassDef::FindClass("BlueAccessCard")},
+			{NULL, ClassDef::FindClass("GreenAccessCard")},
+			{NULL, ClassDef::FindClass("GoldAccessCard")}
+		};
 		for(AInventory *item = players[ConsolePlayer].mo->inventory;item != NULL;item = item->inventory)
 		{
-			if(item->IsKindOf(NATIVE_CLASS(Key)))
+			if(!item->IsKindOf(NATIVE_CLASS(Key)))
+				continue;
+			for(unsigned int key = 0;key < 5;++key)
 			{
-				int slot = static_cast<AKey *>(item)->KeyNumber;
-				if(slot >= 1 && slot <= 3)
-					presentKeys |= 1<<(slot-1);
-				if(presentKeys == 0x7)
-					break;
+				if((keyClasses[key][0] && item->IsKindOf(keyClasses[key][0])) ||
+					(keyClasses[key][1] && item->IsKindOf(keyClasses[key][1])))
+					presentKeys |= 1<<key;
 			}
 		}
 	}
 
-	static FTextureID Keys[4] = {
-		TexMan.GetTexture("STKEYS0", FTexture::TEX_Any),
-		TexMan.GetTexture("STKEYS1", FTexture::TEX_Any),
-		TexMan.GetTexture("STKEYS2", FTexture::TEX_Any),
-		TexMan.GetTexture("STKEYS3", FTexture::TEX_Any)
-	};
-	for(unsigned int i = 0;i < 3;++i)
+	// Display order red, yellow, green, blue, gold; colours from BLAKEPAL.
+	static const unsigned int keyOrder[5] = {0, 1, 3, 2, 4};
+	static const int keyOffColors[5] = {0x11, 0x31, 0x91, 0x51, 0x21};
+	static const int keyOnColors[5] = {0xC9, 0xB9, 0x9C, 0x5B, 0x2B};
+	for(unsigned int i = 0;i < 5;++i)
 	{
-		FTexture *tex;
-		if(presentKeys & (1<<i))
-			tex = TexMan(Keys[i+1]);
-		else
-			tex = TexMan(Keys[0]);
+		const unsigned int key = keyOrder[i];
+		const int color = (presentKeys & (1<<key)) ? keyOnColors[key] : keyOffColors[key];
 
-		stx = 120+16*i;
-		sty = 179;
-		stw = tex->GetScaledWidthDouble();
-		sth = tex->GetScaledHeightDouble();
+		stx = 257+8*i;
+		sty = 177;
+		stw = 7;
+		sth = 7;
 		screen->VirtualToRealCoords(stx, sty, stw, sth, 320, 200, true, true);
-		screen->DrawTexture(tex, stx, sty,
-			DTA_DestWidthF, stw,
-			DTA_DestHeightF, sth,
-			TAG_DONE);
+		VWB_Clear(color, stx, sty, stx+stw, sty+sth);
 	}
 }
 

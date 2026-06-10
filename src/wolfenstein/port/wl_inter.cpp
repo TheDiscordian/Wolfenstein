@@ -748,8 +748,97 @@ void Victory (bool fromIntermission)
 =================
 */
 
+// Blake's loading screen replaces Wolf's "Get Psyched": black view area,
+// "-- LOADING --" in the top strip, and the bottom "Get Ready, Blake!"
+// message box with two thermometer tracks (bstone DisplayPrepingMsg /
+// BMAmsg / LoadUpdate).  Colours are BLAKEPAL border indices.
+enum
+{
+	BLAKE_BORDER_LO = 0x80,
+	BLAKE_BORDER_MED = 0x82,
+	BLAKE_BORDER_CORNER = 0x83,
+	BLAKE_BORDER_HI = 0x85,
+	BLAKE_TRACK_GRAY = 0xA0,
+	BLAKE_BAR_FILL = 0xAF
+};
+
+static void BlakeBar(int color, double x, double y, double w, double h)
+{
+	screen->VirtualToRealCoords(x, y, w, h, 320, 200, true, true);
+	VWB_Clear(color, x, y, x+w, y+h);
+}
+
+// BevelBox: med fill, tl on the top/left edges, br on the bottom/right,
+// med+1 accents on the lower-left and upper-right corners.
+static void BlakeBevelBox(int x, int y, int w, int h, int tl, int br)
+{
+	BlakeBar(BLAKE_BORDER_MED, x, y, w, h);
+	BlakeBar(tl, x, y, w, 1);
+	BlakeBar(br, x, y+h-1, w, 1);
+	BlakeBar(tl, x, y, 1, h);
+	BlakeBar(br, x+w-1, y, 1, h);
+	BlakeBar(BLAKE_BORDER_CORNER, x, y+h-1, 1, 1);
+	BlakeBar(BLAKE_BORDER_CORNER, x+w-1, y, 1, 1);
+}
+
+static void BlakeShadowText(FFont *font, const char *string, int x, int y, EColorRange color)
+{
+	PrintX = x+1;
+	PrintY = y+1;
+	US_Print(font, string, CR_BLACK);
+	PrintX = x;
+	PrintY = y;
+	US_Print(font, string, color);
+}
+
+static void BlakePrepScreen()
+{
+	word w, h;
+
+	// Black out the view area between the status strips.
+	BlakeBar(0, 0, 16, 320, 136);
+
+	// Top strip: fresh pic with "-- LOADING --" in place of the area name.
+	static FTextureID STBarTop = TexMan.GetTexture("STTOP", FTexture::TEX_Any);
+	double tx = 0, ty = 0, tw = 320, th = 16;
+	screen->VirtualToRealCoords(tx, ty, tw, th, 320, 200, true, true);
+	screen->DrawTexture(TexMan(STBarTop), tx, 0.0,
+		DTA_DestWidthF, tw,
+		DTA_DestHeightF, th,
+		TAG_DONE);
+	VW_MeasurePropString(SmallFont, "-- LOADING --", w, h);
+	BlakeShadowText(SmallFont, "-- LOADING --", 160 - w/2, 5, CR_WHITE);
+
+	// Bottom message box: raised outer bevel, sunken inner bevel.
+	BlakeBevelBox(0, 152, 320, 48, BLAKE_BORDER_HI, BLAKE_BORDER_LO);
+	BlakeBevelBox(7, 156, 306, 40, BLAKE_BORDER_LO, BLAKE_BORDER_HI);
+
+	// Thermometer tracks; the map one is already full by the time we show.
+	BlakeBar(BLAKE_BORDER_LO, 36, 181, 250, 2);
+	BlakeBar(BLAKE_TRACK_GRAY, 36, 181, 249, 1);
+	BlakeBar(BLAKE_BORDER_LO, 36, 188, 250, 2);
+	BlakeBar(BLAKE_TRACK_GRAY, 36, 188, 249, 1);
+	BlakeBar(BLAKE_BAR_FILL, 36, 181, 249, 1);
+
+	// Centred like BMAmsg: two presenter lines (text plus a blank one)
+	// framed by one-pixel margins inside the inner bevel.
+	VW_MeasurePropString(BigFont, "Get Ready, Blake!", w, h);
+	BlakeShadowText(BigFont, "Get Ready, Blake!", 8 + (303 - w)/2,
+	                156 + (40 - (2*h + 3))/2, CR_WHITE);
+}
+
 bool PreloadUpdate (unsigned current, unsigned total)
 {
+	if(IWad::CheckGameFilter("Blake"))
+	{
+		// One-pixel thermometer line, per the original LoadUpdate.
+		const unsigned w = 250u*current/total;
+		if(w)
+			BlakeBar(BLAKE_BAR_FILL, 36, 188, w - 1.0, 1);
+		VW_UpdateScreen ();
+		return (false);
+	}
+
 	static const PalEntry colors[2] = {
 		ColorMatcher.Pick(RPART(gameinfo.PsychedColors[0]), GPART(gameinfo.PsychedColors[0]), BPART(gameinfo.PsychedColors[0])),
 		ColorMatcher.Pick(RPART(gameinfo.PsychedColors[1]), GPART(gameinfo.PsychedColors[1]), BPART(gameinfo.PsychedColors[1]))
@@ -823,7 +912,10 @@ void PreloadGraphics (bool showPsych)
 		DrawPlayScreen(true);
 		ingame = oldingame;
 
-		VWB_DrawGraphic(TexMan("GETPSYCH"), 48, 56);
+		if(IWad::CheckGameFilter("Blake"))
+			BlakePrepScreen();
+		else
+			VWB_DrawGraphic(TexMan("GETPSYCH"), 48, 56);
 
 		WindowX = (screenWidth - scaleFactorX*224)/2;
 		WindowY = (screenHeight - scaleFactorY*(StatusBar->GetHeight(false)+48))/2;

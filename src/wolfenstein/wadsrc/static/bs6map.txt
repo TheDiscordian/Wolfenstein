@@ -132,8 +132,8 @@ sprites
 	"CLT2A0", // Ceiling Light 2
 	"CLT3A0", // Ceiling Light 3
 	"CRT1A0", // Crate 1 (Cardboard)
-	"CRT2B0", // Crate 2 (Bronze)
-	"CRT3C0", // Crate 3 (Steel)
+	"CRT2A0", // Crate 2 (Bronze)
+	"CRT3A0", // Crate 3 (Steel)
 	"BDYPA0", // Body Parts 1
 	"ORLPA0", // Operation Lamp
 	"OSNKA0", // Operation Sink

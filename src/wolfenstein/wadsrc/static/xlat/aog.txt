@@ -3,6 +3,189 @@ include "xlat/planet.txt"
 // Blake Stone: Aliens of Gold. Same object codes as Planet Strike, but the
 // guard/key/static art differs per game. Overrides must keep the oldnum and
 // angle span of the planet.txt entry they replace.
+
+// Wall tiles whose VSWAP pages hold different art in AOG. Page order is
+// shared, so each override re-binds the same tile number to the AOG lump
+// names for pages (tile-1)*2 and (tile-1)*2+1.
+tiles
+{
+	tile 3
+	{
+		texturenorth = "RBRICKA1";
+		texturesouth = "RBRICKA1";
+		textureeast = "RBRICKA2";
+		texturewest = "RBRICKA2";
+	}
+	tile 4
+	{
+		texturenorth = "RBRICKB1";
+		texturesouth = "RBRICKB1";
+		textureeast = "RBRICKB2";
+		texturewest = "RBRICKB2";
+	}
+	tile 5
+	{
+		texturenorth = "RBRKBLD1";
+		texturesouth = "RBRKBLD1";
+		textureeast = "RBRKBLD2";
+		texturewest = "RBRKBLD2";
+	}
+	tile 7
+	{
+		texturenorth = "GBRICKA1";
+		texturesouth = "GBRICKA1";
+		textureeast = "GBRICKA2";
+		texturewest = "GBRICKA2";
+	}
+	tile 8
+	{
+		texturenorth = "GBRICKB1";
+		texturesouth = "GBRICKB1";
+		textureeast = "GBRICKB2";
+		texturewest = "GBRICKB2";
+	}
+	tile 13
+	{
+		texturenorth = "TELEWAL1";
+		texturesouth = "TELEWAL1";
+		textureeast = "TELEWAL2";
+		texturewest = "TELEWAL2";
+	}
+	tile 17
+	{
+		texturenorth = "COMPCON1";
+		texturesouth = "COMPCON1";
+		textureeast = "COMPCON2";
+		texturewest = "COMPCON2";
+	}
+	tile 21
+	{
+		texturenorth = "ELEVEMBL";
+		texturesouth = "ELEVEMBL";
+		textureeast = "ELEVPANL";
+		texturewest = "ELEVPANL";
+	}
+	tile 23
+	{
+		texturenorth = "GBRKBLD1";
+		texturesouth = "GBRKBLD1";
+		textureeast = "GBRKBLD2";
+		texturewest = "GBRKBLD2";
+	}
+	tile 25
+	{
+		texturenorth = "ELEVOUT1";
+		texturesouth = "ELEVOUT1";
+		textureeast = "ELEVOUT2";
+		texturewest = "ELEVOUT2";
+	}
+	tile 26
+	{
+		texturenorth = "COMPLIT1";
+		texturesouth = "COMPLIT1";
+		textureeast = "COMPLIT2";
+		texturewest = "COMPLIT2";
+	}
+	tile 27
+	{
+		texturenorth = "COMPELE1";
+		texturesouth = "COMPELE1";
+		textureeast = "COMPELE2";
+		texturewest = "COMPELE2";
+	}
+	tile 28
+	{
+		texturenorth = "COMPWAL1";
+		texturesouth = "COMPWAL1";
+		textureeast = "COMPWAL2";
+		texturewest = "COMPWAL2";
+	}
+	tile 29
+	{
+		texturenorth = "XHANGAR1";
+		texturesouth = "XHANGAR1";
+		textureeast = "XPASSAG1";
+		texturewest = "XPASSAG1";
+	}
+	tile 30
+	{
+		texturenorth = "XHANGAR2";
+		texturesouth = "XHANGAR2";
+		textureeast = "XPASSAG2";
+		texturewest = "XPASSAG2";
+	}
+	tile 31
+	{
+		texturenorth = "XHANGAR3";
+		texturesouth = "XHANGAR3";
+		textureeast = "XPASSAG3";
+		texturewest = "XPASSAG3";
+	}
+	tile 42
+	{
+		texturenorth = "SPCWALA1";
+		texturesouth = "SPCWALA1";
+		textureeast = "SPCWALA2";
+		texturewest = "SPCWALA2";
+	}
+	tile 43
+	{
+		texturenorth = "SPCWALB1";
+		texturesouth = "SPCWALB1";
+		textureeast = "SPCWALB2";
+		texturewest = "SPCWALB2";
+	}
+	tile 44
+	{
+		texturenorth = "SPCWALC1";
+		texturesouth = "SPCWALC1";
+		textureeast = "SPCWALC2";
+		texturewest = "SPCWALC2";
+	}
+	tile 47
+	{
+		texturenorth = "CAVESIN1";
+		texturesouth = "CAVESIN1";
+		textureeast = "CAVESIN2";
+		texturewest = "CAVESIN2";
+	}
+	tile 54
+	{
+		texturenorth = "CAVERNA1";
+		texturesouth = "CAVERNA1";
+		textureeast = "CAVERNA2";
+		texturewest = "CAVERNA2";
+	}
+	tile 55
+	{
+		texturenorth = "CAVEBLD1";
+		texturesouth = "CAVEBLD1";
+		textureeast = "CAVEBLD2";
+		texturewest = "CAVEBLD2";
+	}
+	tile 56
+	{
+		texturenorth = "CAVERNB1";
+		texturesouth = "CAVERNB1";
+		textureeast = "CAVERNB2";
+		texturewest = "CAVERNB2";
+	}
+	tile 62
+	{
+		texturenorth = "SPCWALD1";
+		texturesouth = "SPCWALD1";
+		textureeast = "SPCWALD2";
+		texturewest = "SPCWALD2";
+	}
+	tile 63
+	{
+		texturenorth = "SPCEMBL1";
+		texturesouth = "SPCEMBL1";
+		textureeast = "SPCEMBL2";
+		texturewest = "SPCEMBL2";
+	}
+}
+
 things
 {
 	// Access cards (PS: access keys / anti-plasma cannon / yellow box)

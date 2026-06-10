@@ -741,7 +741,9 @@ void DamageActor (AActor *ob, AActor *attacker, unsigned damage)
 {
 	if (ob->player)
 	{
-		if ((attacker && attacker->player) && !Net::FriendlyFire())
+		// Self-damage (e.g. blast radius from a crate the player shot) is
+		// not friendly fire.
+		if ((attacker && attacker->player) && attacker != ob && !Net::FriendlyFire())
 			return;
 
 		ob->player->TakeDamage(damage, attacker);

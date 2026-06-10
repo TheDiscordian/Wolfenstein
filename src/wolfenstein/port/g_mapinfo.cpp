@@ -319,7 +319,8 @@ FString LevelInfo::GetMusic(const GameMap *gm) const
 
 FString LevelInfo::GetName(const GameMap *gm) const
 {
-	if(UseMapInfoName)
+	// gm may be NULL when the status bar draws before the level loads.
+	if(UseMapInfoName || !gm)
 		return Name;
 	return gm->GetHeader().name;
 }

@@ -34,6 +34,7 @@
 #include "thingdef/thingdef.h"
 #include "doomerrors.h"
 #include "of_ecwolf_gpu.h"
+#include "of_ecwolf_opl_music.h"
 
 #ifdef MYPROFILE
 #include <TIME.H>
@@ -327,6 +328,11 @@ void SetupGameLevel (void)
 		map->SpawnThings();
 		CheckSpawnPlayer(true);
 	}
+
+#ifdef OF_ECWOLF_OPENFPGA
+	// Top the music ring back up after the spawn pass ran unpumped.
+	OPLMusic_Pump();
+#endif
 }
 
 

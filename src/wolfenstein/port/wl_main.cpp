@@ -430,6 +430,7 @@ void OF_EarlyStartupScreen(int progress)
 		if(!ofEarlyStartup.buffersPrimed)
 			OF_BOOT_MARK("BOOT2: acquire frame %d\n", i);
 #endif
+		OF_BootLog("BOOT2: p=%d f=%d acquire\n", progress, i);
 		const int drawIdx = of_video_acquire_next(acquireIdx, acquireToken);
 		if(drawIdx < 0)
 		{
@@ -442,6 +443,7 @@ void OF_EarlyStartupScreen(int progress)
 			OF_BOOT_FAIL("BOOT2-FAIL: draw failed idx=%d (frame %d)\n", drawIdx, i);
 			return;
 		}
+		OF_BootLog("BOOT2: p=%d f=%d drawn idx=%d\n", progress, i, drawIdx);
 
 		uint32_t flipToken = 0;
 		if(!OF_WolfGPU_FlipVideoBuffer(drawIdx, &flipToken))
@@ -450,6 +452,7 @@ void OF_EarlyStartupScreen(int progress)
 			return;
 		}
 		ofEarlyStartup.lastFlipToken = flipToken;
+		OF_BootLog("BOOT2: p=%d f=%d flip kicked, wait\n", progress, i);
 		of_video_wait_flip();
 		ofEarlyStartup.lastFlipIdx = drawIdx;
 		ofEarlyStartup.haveFlip = true;
@@ -457,10 +460,12 @@ void OF_EarlyStartupScreen(int progress)
 		if(!ofEarlyStartup.buffersPrimed)
 			OF_BOOT_MARK("BOOT2: frame %d presented\n", i);
 #endif
+		OF_BootLog("BOOT2: p=%d f=%d presented\n", progress, i);
 	}
 
 	ofEarlyStartup.buffersPrimed = true;
 	ofEarlyStartup.lastProgress = progress;
+	OF_BootLog("BOOT2: progress=%d done\n", progress);
 
 #ifdef OF_BOOT_MARKERS
 	// Hold each distinct progress step so the bar climb is a watchable slideshow
@@ -1814,9 +1819,17 @@ int WL_Main (int argc, char *argv[])
 			TArray<FString> wadfiles, files;
 
 			Printf("IWad: Selecting base game data.\n");
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+			OF_BootLog("BOOT3: CheckParameters enter\n");
+#endif
 			const char* extension = CheckParameters(argc, argv, wadfiles);
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+			OF_BootLog("BOOT3: CheckParameters done ext=%s\n",
+				extension ? extension : "(none)");
+#endif
 			IWad::SelectGame(files, extension, MAIN_PK3, progdir);
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+			OF_BootLog("BOOT3: SelectGame done\n");
 			OF_EarlyStartupScreen(35);
 #endif
 
@@ -1828,15 +1841,28 @@ int WL_Main (int argc, char *argv[])
 				files[i].ReplaceChars('\\', '/');
 
 			printf("W_Init: Init WADfiles.\n");
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+			OF_BootLog("BOOT3: W_Init enter files=%u\n", files.Size());
+#endif
 			Wads.InitMultipleFiles(files);
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+			OF_BootLog("BOOT3: W_Init done\n");
+#endif
 			LumpRemapper::RemapAll();
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+			OF_BootLog("BOOT3: RemapAll done\n");
+#endif
 			language.SetupStrings();
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+			OF_BootLog("BOOT3: SetupStrings done\n");
 			OF_EarlyStartupScreen(55);
 #endif
 		}
 
 		R_InitRenderer();
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+		OF_BootLog("BOOT3: R_InitRenderer done\n");
+#endif
 
 		printf("InitGame: Setting up the game...\n");
 		rngseed = I_MakeRNGSeed(); // May change after initializing a net game
@@ -1848,6 +1874,9 @@ int WL_Main (int argc, char *argv[])
 		FRandom::StaticClearRandom();
 
 		printf("DemoLoop: Starting the game loop...\n");
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+		OF_BootLog("BOOT3: DemoLoop enter\n");
+#endif
 		DemoLoop();
 
 		I_FatalError("Demo loop exited???");

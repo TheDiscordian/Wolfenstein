@@ -73,10 +73,6 @@ ACTION_FUNCTION(A_PlasmaGrenadeCalcDuration)
 ACTION_FUNCTION(A_InitSmartAnim)
 {
 	ACTION_PARAM_INT(delay, 0);
-	// TEMPORARY: env-gated smart anim debugging.
-	if(getenv("OF_LUMPDUMP"))
-		fprintf(stderr, "A_InitSmartAnim: %s delay=%d\n",
-			self->GetClass()->GetName().GetChars(), delay);
 	self->temp1 = delay;
 	return true;
 }

@@ -124,6 +124,11 @@ void LumpRemapper::DoRemap()
 					{
 						lump->LumpNameSetup(graphics[i]);
 					}
+					// TEMPORARY: env-gated lump dump for remap debugging.
+					if(getenv("OF_LUMPDUMP"))
+						fprintf(stderr, "VGA %3u -> %-8s ns=%d size=%d\n", i,
+							i < graphics.Size() ? graphics[i].GetChars() : "(none)",
+							oldNamespace, lump->LumpSize);
 					break;
 				case VSWAP:
 					if(lump->Namespace == ns_flats)

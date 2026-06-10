@@ -236,6 +236,27 @@ static uint8_t framebuffer_index_at(const uint8_t *fb, int x, int y) {
     }
 }
 
+/* TEMPORARY: env-gated frame dump.  Set OF_FRAMEDUMP=/path/prefix to write
+ * the composited ARGB output as PPM every 60 presents. */
+static void of_frame_dump(const uint32_t *pixels, int w, int h, uint32_t count) {
+    const char *prefix = getenv("OF_FRAMEDUMP");
+    if (!prefix || (count % 60) != 0)
+        return;
+    char path[512];
+    snprintf(path, sizeof(path), "%s-%05u.ppm", prefix, count);
+    FILE *f = fopen(path, "wb");
+    if (!f)
+        return;
+    fprintf(f, "P6\n%d %d\n255\n", w, h);
+    for (int i = 0; i < w * h; i++) {
+        uint8_t rgb[3] = { (uint8_t)(pixels[i] >> 16),
+                           (uint8_t)(pixels[i] >> 8),
+                           (uint8_t)pixels[i] };
+        fwrite(rgb, 1, 3, f);
+    }
+    fclose(f);
+}
+
 /* Composite the framebuffer and upload to texture */
 static void composite_and_present(void) {
     int disp = g_draw_buf ^ 1;  /* display buffer is the one we just flipped from */
@@ -266,6 +287,8 @@ static void composite_and_present(void) {
             g_pixels[(uint32_t)y * w + x] = color;
         }
     }
+
+    of_frame_dump(g_pixels, w, h, g_present_count);
 
     SDL_UpdateTexture(g_texture, NULL, g_pixels, w * 4);
     SDL_RenderClear(g_renderer);

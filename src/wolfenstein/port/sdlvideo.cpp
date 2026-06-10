@@ -1014,6 +1014,38 @@ void SDLFB::Update ()
 		}
 	}
 
+#ifdef OF_PC
+	// TEMPORARY: env-gated frame dump.  Set OF_FRAMEDUMP=/path/prefix to
+	// write the converted output as PPM every 60 frames.
+	{
+		static unsigned int dumpCount;
+		const char *dumpPrefix = getenv("OF_FRAMEDUMP");
+		if (dumpPrefix && (dumpCount % 60) == 0)
+		{
+			char dumpPath[512];
+			snprintf(dumpPath, sizeof(dumpPath), "%s-%05u.ppm", dumpPrefix, dumpCount);
+			FILE *df = fopen(dumpPath, "wb");
+			if (df)
+			{
+				fprintf(df, "P6\n%d %d\n255\n", Width, Height);
+				for (int y = 0; y < Height; ++y)
+				{
+					const uint32_t *row = (const uint32_t *)((const BYTE *)pixels + y*pitch);
+					for (int x = 0; x < Width; ++x)
+					{
+						uint8_t rgb[3] = { (uint8_t)(row[x] >> 16),
+						                   (uint8_t)(row[x] >> 8),
+						                   (uint8_t)row[x] };
+						fwrite(rgb, 1, 3, df);
+					}
+				}
+				fclose(df);
+			}
+		}
+		++dumpCount;
+	}
+#endif
+
 	if (UsingRenderer)
 	{
 		SDL_UnlockTexture (Texture);

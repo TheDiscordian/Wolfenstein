@@ -375,6 +375,17 @@ class FVGAGraph : public FResourceFile
 			--NumLumps;
 			if(!quiet) Printf(", %d lumps\n", NumLumps);
 
+			// TEMPORARY: env-gated structure dump for remap debugging.
+			if(getenv("OF_LUMPDUMP"))
+			{
+				fprintf(stderr, "VGAGRAPH: NumLumps=%u numFonts=%u numPictures=%u tile8Position=%u\n",
+					NumLumps, numFonts, numPictures, tile8Position);
+				for(unsigned int i = 0;i <= NumLumps;i++)
+					fprintf(stderr, "  raw %3u pos=%u len=%u size=%d img=%d dims=%ux%u\n",
+						i, lumps[i].position, lumps[i].length, lumps[i].LumpSize,
+						lumps[i].isImage, lumps[i].dimensions.width, lumps[i].dimensions.height);
+			}
+
 			LumpRemapper::AddFile(extension, this, LumpRemapper::VGAGRAPH);
 			return true;
 		}

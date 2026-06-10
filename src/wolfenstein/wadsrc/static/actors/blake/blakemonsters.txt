@@ -1706,3 +1706,112 @@ actor ElectroAlien : WolfensteinMonster
 			stop
 	}
 }
+
+//------------------------------------------------------------------------------
+// Electro-Sphere: bouncing security spheres. Movement and arc damage are
+// native (A_SphereBounce); the argument picks the preferred axes
+// (0 = vertical, 1 = horizontal, 2 = diagonal). Bonus kills: no enemy count,
+// silent death. A_SphereRoamFrame cycles random roam frames every 10 tics.
+
+actor ElectroSphere : WolfensteinMonster
+{
+	action native A_SphereBounce(int variant);
+	action native A_SphereRoamFrame();
+
+	points 2055
+	health 1
+	speed 6.046875
+	-SOLID
+	-CANUSEWALLS
+	-COUNTKILL
+	states
+	{
+		Death:
+			ESPR F 0 A_Fall
+			ESPR F 15 bright
+			ESPR G 15 bright
+			ESPR H 15 bright
+			stop
+	}
+}
+
+actor ElectroSphereVert : ElectroSphere
+{
+	states
+	{
+		Spawn:
+		RoamA:
+			ESPR A 10 bright NOP A_SphereBounce(0)
+			ESPR A 0 A_SphereRoamFrame
+			goto RoamB
+		RoamB:
+			ESPR B 10 bright NOP A_SphereBounce(0)
+			ESPR B 0 A_SphereRoamFrame
+			goto RoamC
+		RoamC:
+			ESPR C 10 bright NOP A_SphereBounce(0)
+			ESPR C 0 A_SphereRoamFrame
+			goto RoamA
+		RoamE:
+			ESPR E 10 bright NOP A_SphereBounce(0)
+			ESPR E 0 A_SphereRoamFrame
+			goto RoamA
+		Pain:
+			ESPR E 15 bright NOP A_SphereBounce(0)
+			goto RoamA
+	}
+}
+
+actor ElectroSphereHorz : ElectroSphere
+{
+	states
+	{
+		Spawn:
+		RoamA:
+			ESPR A 10 bright NOP A_SphereBounce(1)
+			ESPR A 0 A_SphereRoamFrame
+			goto RoamB
+		RoamB:
+			ESPR B 10 bright NOP A_SphereBounce(1)
+			ESPR B 0 A_SphereRoamFrame
+			goto RoamC
+		RoamC:
+			ESPR C 10 bright NOP A_SphereBounce(1)
+			ESPR C 0 A_SphereRoamFrame
+			goto RoamA
+		RoamE:
+			ESPR E 10 bright NOP A_SphereBounce(1)
+			ESPR E 0 A_SphereRoamFrame
+			goto RoamA
+		Pain:
+			ESPR E 15 bright NOP A_SphereBounce(1)
+			goto RoamA
+	}
+}
+
+actor ElectroSphereDiag : ElectroSphere
+{
+	states
+	{
+		Spawn:
+		RoamA:
+			ESPR A 10 bright NOP A_SphereBounce(2)
+			ESPR A 0 A_SphereRoamFrame
+			goto RoamB
+		RoamB:
+			ESPR B 10 bright NOP A_SphereBounce(2)
+			ESPR B 0 A_SphereRoamFrame
+			goto RoamC
+		RoamC:
+			ESPR C 10 bright NOP A_SphereBounce(2)
+			ESPR C 0 A_SphereRoamFrame
+			goto RoamA
+		RoamE:
+			ESPR E 10 bright NOP A_SphereBounce(2)
+			ESPR E 0 A_SphereRoamFrame
+			goto RoamA
+		Pain:
+			ESPR E 15 bright NOP A_SphereBounce(2)
+			goto RoamA
+	}
+}

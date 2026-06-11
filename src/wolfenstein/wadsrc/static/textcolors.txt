@@ -41,18 +41,6 @@ Flat:
 	#04A400
 }
 
-BlakeGreen "Blake Green"
-{
-	#0C5A0C  #14C414  0 191
-	#14C414  #50FF50  192 256
-Console:
-	#000000  #0A7F0A    0 127
-	#14C414  #FEFFFE  128 256
-Flat:
-	// Blake high score table text
-	#14C414
-}
-
 Brown
 {
 	#533F2F  #BFA78F
@@ -191,16 +179,6 @@ Flat:
 	#700000
 }
 
-DarkBlue "Dark Blue"
-{
-	#00002B  #2B2BAF
-Console:
-	#000000  #000073    0 127
-	#800000  #DCDCFF  128 255
-Flat:
-	#000070
-}
-
 DarkBrown "Dark Brown"
 {
 	#1F170B  #A36B3F
@@ -239,6 +217,32 @@ Console:
 	#00FFFF #FEFFFF   128 256
 Flat:
 	#00DDDD
+}
+
+// Colors are assigned indices in file order, so everything above must match
+// the EColorRange enum exactly. Custom colors (no CR_ constant, looked up by
+// name) go below this line only.
+
+DarkBlue "Dark Blue"
+{
+	#00002B  #2B2BAF
+Console:
+	#000000  #000073    0 127
+	#800000  #DCDCFF  128 255
+Flat:
+	#000070
+}
+
+BlakeGreen "Blake Green"
+{
+	#0C5A0C  #14C414  0 191
+	#14C414  #50FF50  192 256
+Console:
+	#000000  #0A7F0A    0 127
+	#14C414  #FEFFFE  128 256
+Flat:
+	// Blake high score table text
+	#14C414
 }
 
 // Since the for pg x of y

@@ -52,7 +52,7 @@ actor PlasmaDetonatorDrop : SmartAnimation
 	states
 	{
 		Spawn:
-			DBOM ABABABABABABABABABABABAB 10
+			DBOM ABABABABABAB 10
 			goto Death
 		Death:
 			PEXP A 0 A_Scream

@@ -2,6 +2,23 @@ enable globalmeta;
 
 tiles
 {
+	// Food unit machines: arg0 is the machine type (1 = food, 2 = beverage),
+	// arg1 (vend count) is patched in by the loader from the plane-1 word.
+	trigger 15
+	{
+		action = "Concession_Operate";
+		arg0 = 2;
+		playeruse = true;
+		repeatable = true;
+	}
+	trigger 18
+	{
+		action = "Concession_Operate";
+		arg0 = 1;
+		playeruse = true;
+		repeatable = true;
+	}
+
 	// Transporter/elevator unit: exits to the next map.
 	trigger 21
 	{

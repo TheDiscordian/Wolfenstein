@@ -465,6 +465,87 @@ FUNC(Barrier_Toggle)
 	return 1;
 }
 
+// Operates a Blake Stone food unit machine. arg0 is the machine type
+// (1 = food, 2 = beverage); arg1 is the remaining vend count, patched in
+// by the loader from the map's credit word, with 0 meaning out of order.
+FUNC(Concession_Operate)
+{
+	enum { CT_FOOD = 1, CT_BEVS = 2 };
+
+	if(!activator || !activator->player)
+		return 0;
+
+	// One operation per use press.
+	if(control[activator->player->GetPlayerNum()].buttonheld[bt_use])
+		return 0;
+
+	if(args[1] <= 0)
+	{
+		StatusBar->DisplayInfoMessage("\r\r   FOOD UNIT MACHINE\r    IS OUT OF ORDER.");
+		PlaySoundLocActor("player/usefail", activator);
+		return 1;
+	}
+
+	player_t *player = activator->player;
+	if(player->health >= player->mo->maxhealth)
+	{
+		StatusBar->DisplayInfoMessage("\r\r    CAN'T EAT NOW,\r     NOT HUNGRY.");
+		PlaySoundLocActor("player/usefail", activator);
+		return 1;
+	}
+
+	static const ClassDef * const coinCls = ClassDef::FindClass("ConcessionCoin");
+	AInventory *coins = activator->FindInventory(coinCls);
+	if(!coins || coins->amount == 0)
+	{
+		StatusBar->DisplayInfoMessage("\r\r  YOU DON'T HAVE ANY\r     FOOD TOKENS!");
+		PlaySoundLocActor("player/usefail", activator);
+		return 1;
+	}
+	--coins->amount;
+
+	// Track the vends left on the machine's own trigger.
+	for(unsigned int i = 0;i < spot->triggers.Size();++i)
+	{
+		MapTrigger &trig = spot->triggers[i];
+		if(trig.action == Specials::Concession_Operate && trig.arg[1] > 0)
+			--trig.arg[1];
+	}
+
+	PlaySoundLocActor("misc/concession", activator);
+
+	// PS appends the remaining token count to the dispense messages.
+	const bool ps = EpisodeInfo::GetNumEpisodes() == 1;
+	FString msg;
+	int heal;
+	if(args[0] == CT_FOOD)
+	{
+		heal = 10;
+		if(ps)
+			msg.Format("\r FOOD UNIT DISPENSES\r  SOMETHING EDIBLE.\r\r     TOKENS: %u", coins->amount);
+		else
+			msg = "\r FOOD UNIT DISPENSES\r SOMETHING RESEMBLING\r        FOOD.";
+	}
+	else
+	{
+		heal = 7;
+		if(ps)
+			msg.Format("\r FOOD UNIT DISPENSES\r  A COLD BEVERAGE.\r\r     TOKENS: %u", coins->amount);
+		else
+			msg = "\r\r FOOD UNIT DISPENSES\r  A COLD BEVERAGE.";
+	}
+	StatusBar->DisplayInfoMessage(msg);
+
+	player->health += heal;
+	if(player->health > player->mo->maxhealth)
+		player->health = player->mo->maxhealth;
+	const int oldhealth = activator->health;
+	activator->health = player->health;
+	StatusBar->UpdateFace(oldhealth - activator->health);
+
+	return 1;
+}
+
 class EVElevator : public Thinker
 {
 	DECLARE_CLASS(EVElevator, Thinker)

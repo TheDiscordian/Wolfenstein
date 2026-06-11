@@ -835,6 +835,13 @@ static inline bool CheckAdjacentTileBlockage(int x, int y, int lastx, int lasty)
 */
 bool CheckLine (const AActor *ob, const AActor *ob2)
 {
+	if (!ob2)
+		return false;
+	return CheckLine (ob, ob2->x, ob2->y, ob2->tilex, ob2->tiley);
+}
+
+bool CheckLine (const AActor *ob, fixed x2f, fixed y2f, int tilex2, int tiley2)
+{
 	int         x1,y1,xt1,yt1,x2,y2,xt2,yt2;
 	int         x,y;
 	int         xdist,ydist,xstep,ystep;
@@ -844,9 +851,6 @@ bool CheckLine (const AActor *ob, const AActor *ob2)
 	unsigned    intercept;
 	MapTile::Side	direction;
 	int			lastx, lasty;
-
-	if (!ob2)
-		return false;
 
 	// Dense solidity bytes (wl_agent.cpp): empty and plain-wall steps stay
 	// out of the fat MapSpot structs; only doors/sliders consult the spot.
@@ -858,10 +862,10 @@ bool CheckLine (const AActor *ob, const AActor *ob2)
 	xt1 = x1 >> 8;
 	yt1 = y1 >> 8;
 
-	x2 = ob2->x >> UNSIGNEDSHIFT;
-	y2 = ob2->y >> UNSIGNEDSHIFT;
-	xt2 = ob2->tilex;
-	yt2 = ob2->tiley;
+	x2 = x2f >> UNSIGNEDSHIFT;
+	y2 = y2f >> UNSIGNEDSHIFT;
+	xt2 = tilex2;
+	yt2 = tiley2;
 
 	xdist = abs(xt2-xt1);
 

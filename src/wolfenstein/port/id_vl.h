@@ -20,7 +20,9 @@ extern	bool  screenfaded;
 // VGA hardware routines
 //
 
-#define VL_WaitVBL(a) SDL_Delay((SDL_GetTicks() - TICS2MS(GetTimeCount())) + TICS2MS((a)-1))
+// Plain tic sleep; SDL_GetTicks and GetTimeCount use different epochs on
+// PC, so mixing them here underflows into a near-infinite SDL_Delay.
+#define VL_WaitVBL(a) SDL_Delay(TICS2MS(a))
 
 void VL_ToggleFullscreen();
 void VL_SetFullscreen(bool isFull);

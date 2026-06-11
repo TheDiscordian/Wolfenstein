@@ -1263,8 +1263,19 @@ void GameMap::ReadPlanesData()
 							case 0xF2: // Scientist messages
 							case 0xF3: // Men scientist messages
 							case 0xFA: // Quantity modifier
-							case 0xFC: // Food unit credits
-							case 0xFD: // Soda unit credits
+								continue;
+							case 0xFC: // Concession machine credits: patch the
+							           // vend count into the machine trigger
+							           // attached to this cell by the tile xlat.
+								for(unsigned int t = 0;t < triggers.Size();++t)
+								{
+									if(triggers[t].action != Specials::Concession_Operate ||
+										triggers[t].x != i%header.width || triggers[t].y != i/header.width)
+										continue;
+									triggers[t].arg[1] = oldplane[i]&0xFF;
+								}
+								continue;
+							case 0xFD: // Out of order concession machine
 								continue;
 							case 0xF8: // Barrier switch link (AOG): low byte is the floor, next word holds the target (x<<8)|y
 							{

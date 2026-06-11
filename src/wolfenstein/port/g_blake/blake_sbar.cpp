@@ -57,7 +57,7 @@ enum
 class BlakeStatusBar : public DBaseStatusBar
 {
 public:
-	BlakeStatusBar() : CurrentScore(0) {}
+	BlakeStatusBar() : CurrentScore(0), InfoMessagePriority(0), InfoMessageTics(0) {}
 
 	void DrawStatusBar();
 	unsigned int GetHeight(bool top)
@@ -70,16 +70,33 @@ public:
 	void NewGame()
 	{
 		CurrentScore = players[ConsolePlayer].score;
+		InfoMessage = "";
+		InfoMessagePriority = 0;
+		InfoMessageTics = 0;
 	}
 
 	void Tick();
 
+	void DisplayInfoMessage(const char *msg, int priority, int tics)
+	{
+		if(priority < InfoMessagePriority)
+			return;
+
+		InfoMessage = msg;
+		InfoMessagePriority = priority;
+		InfoMessageTics = tics;
+	}
+
 protected:
+	void DrawInfoArea();
 	void DrawLed(double percent, double x, double y) const;
 	void DrawString(FFont *font, const char* string, double x, double y, bool shadow, EColorRange color=CR_UNTRANSLATED, bool center=false) const;
 
 private:
 	int CurrentScore;
+	FString InfoMessage;
+	int InfoMessagePriority;
+	int InfoMessageTics;
 };
 
 DBaseStatusBar *CreateStatusBar_Blake() { return new BlakeStatusBar(); }
@@ -186,6 +203,8 @@ void BlakeStatusBar::DrawStatusBar()
 	DrawString(IndexFont, lives, 267, 5, true, CR_WHITE);
 
 	// Draw bottom information
+	DrawInfoArea();
+
 	FString health;
 	health.Format("%3d", players[ConsolePlayer].health);
 	DrawString(HealthFont, health, 128, 162, false);
@@ -272,6 +291,60 @@ void BlakeStatusBar::DrawStatusBar()
 	}
 }
 
+// Draws the message strip in the bottom status bar: the current timed
+// message if one is up, otherwise the no-messages/token-count idle text.
+void BlakeStatusBar::DrawInfoArea()
+{
+	static FTextureID STInfo = TexMan.GetTexture("STINFO", FTexture::TEX_Any);
+
+	FTexture *info = TexMan(STInfo);
+	if(info)
+	{
+		double stx = 0;
+		double sty = 200-STATUSLINES;
+		double stw = info->GetScaledWidthDouble();
+		double sth = info->GetScaledHeightDouble();
+		screen->VirtualToRealCoords(stx, sty, stw, sth, 320, 200, true, true);
+		screen->DrawTexture(info, stx, sty,
+			DTA_DestWidthF, stw,
+			DTA_DestHeightF, sth,
+			TAG_DONE);
+	}
+
+	FString msg;
+	if(InfoMessageTics > 0)
+		msg = InfoMessage;
+	else
+	{
+		unsigned int tokens = 0;
+		if(players[ConsolePlayer].mo)
+		{
+			static const ClassDef * const coinCls = ClassDef::FindClass("ConcessionCoin");
+			if(AInventory *coins = players[ConsolePlayer].mo->FindInventory(coinCls))
+				tokens = coins->amount;
+		}
+		msg.Format("\r    NO MESSAGES.\r    FOOD TOKENS: %u", tokens);
+	}
+
+	// Messages are \r-separated lines drawn 6px apart in the small font.
+	double y = 200-STATUSLINES+3;
+	FString line;
+	for(const char* ch = msg.GetChars();;++ch)
+	{
+		if(*ch == '\r' || *ch == '\0')
+		{
+			if(line.Len())
+				DrawString(SmallFont, line, 3, y, true, CR_GRAY);
+			if(*ch == '\0')
+				break;
+			line = "";
+			y += 6;
+		}
+		else
+			line += *ch;
+	}
+}
+
 void BlakeStatusBar::DrawString(FFont *font, const char* string, double x, double y, bool shadow, EColorRange color, bool center) const
 {
 	if(!font)
@@ -332,4 +405,10 @@ void BlakeStatusBar::Tick()
 		CurrentScore += scoreDelta/4;
 	else
 		CurrentScore += clamp<int>(scoreDelta, 0, 8);
+
+	if(InfoMessageTics > 0 && --InfoMessageTics == 0)
+	{
+		InfoMessage = "";
+		InfoMessagePriority = 0;
+	}
 }

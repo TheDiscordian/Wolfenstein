@@ -50,6 +50,9 @@ public:
 	virtual void RefreshBackground(bool noborder=false);
 	virtual void UpdateFace (int damage=0) {}
 	virtual void WeaponGrin () {}
+	// Blake Stone info area message; no-op for games without one. Time is
+	// in 70Hz tics; an equal or higher priority replaces the current message.
+	virtual void DisplayInfoMessage (const char *msg, int priority=0x200, int tics=300) {}
 };
 extern DBaseStatusBar *StatusBar;
 void	CreateStatusBar();

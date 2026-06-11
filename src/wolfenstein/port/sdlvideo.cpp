@@ -1014,6 +1014,110 @@ void SDLFB::Update ()
 		}
 	}
 
+#ifdef OF_PC
+	// Flip counter for keyscript log correlation.
+	static unsigned int flipCount;
+	++flipCount;
+
+	// TEMPORARY: env-gated key injection for headless tests.  Set
+	// OF_KEYSCRIPT="ms:keyname[:holdms],..." to push a KEYDOWN once that
+	// many milliseconds have elapsed and the matching KEYUP holdms
+	// (default 150) later.
+	{
+		static char *script;
+		static bool scriptInit;
+		static bool fired[64];
+		if (!scriptInit)
+		{
+			scriptInit = true;
+			const char *env = getenv("OF_KEYSCRIPT");
+			if (env)
+				script = strdup(env);
+		}
+		if (script)
+		{
+			struct PendingUp { unsigned int ms; SDL_Keycode sym; SDL_Scancode scan; };
+			static PendingUp ups[32];
+			static unsigned int numUps;
+			const unsigned int now = SDL_GetTicks();
+
+			// Heartbeat so dumps can be matched to wall-clock time.
+			static unsigned int lastBeat;
+			if (now - lastBeat >= 5000)
+			{
+				lastBeat = now;
+				fprintf(stderr, "[keyscript] beat %ums flip=%u\n", now, flipCount);
+			}
+
+			char *entry = script;
+			unsigned int entryIdx = 0;
+			for (;entry && *entry;++entryIdx)
+			{
+				char *next = strchr(entry, ',');
+				unsigned int when = (unsigned int)atoi(entry);
+				if (when <= now && entryIdx < countof(fired) && !fired[entryIdx])
+				{
+					fired[entryIdx] = true;
+					const char *colon = strchr(entry, ':');
+					if (colon && (!next || colon < next))
+					{
+						char keyname[64];
+						const char *end = next ? next : colon + 1 + strlen(colon + 1);
+						unsigned int hold = 150;
+						const char *colon2 = strchr(colon + 1, ':');
+						if (colon2 && colon2 < end)
+						{
+							hold = (unsigned int)atoi(colon2 + 1);
+							end = colon2;
+						}
+						size_t len = (size_t)(end - colon - 1);
+						if (len >= sizeof(keyname))
+							len = sizeof(keyname) - 1;
+						memcpy(keyname, colon + 1, len);
+						keyname[len] = 0;
+
+						SDL_Event ev;
+						memset(&ev, 0, sizeof(ev));
+						ev.type = SDL_KEYDOWN;
+						ev.key.state = SDL_PRESSED;
+						ev.key.keysym.sym = SDL_GetKeyFromName(keyname);
+						ev.key.keysym.scancode = SDL_GetScancodeFromName(keyname);
+						SDL_PushEvent(&ev);
+						fprintf(stderr, "[keyscript] %ums flip=%u fire %s hold=%u\n",
+							now, flipCount, keyname, hold);
+
+						if (numUps < countof(ups))
+						{
+							ups[numUps].ms = now + hold;
+							ups[numUps].sym = ev.key.keysym.sym;
+							ups[numUps].scan = ev.key.keysym.scancode;
+							++numUps;
+						}
+					}
+				}
+				entry = next ? next + 1 : NULL;
+			}
+
+			for (unsigned int i = 0; i < numUps; )
+			{
+				if (ups[i].ms <= now)
+				{
+					SDL_Event ev;
+					memset(&ev, 0, sizeof(ev));
+					ev.type = SDL_KEYUP;
+					ev.key.state = SDL_RELEASED;
+					ev.key.keysym.sym = ups[i].sym;
+					ev.key.keysym.scancode = ups[i].scan;
+					SDL_PushEvent(&ev);
+					ups[i] = ups[--numUps];
+				}
+				else
+					++i;
+			}
+		}
+	}
+#endif
+
 	if (UsingRenderer)
 	{
 		SDL_UnlockTexture (Texture);

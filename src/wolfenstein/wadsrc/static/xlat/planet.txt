@@ -1059,7 +1059,7 @@ things
 	{112, SectorGuard,              4, PATHING, 0}
 	{116, ScientistSpawner,         4, 0, 0}
 	{120, ScientistSpawner,         4, PATHING, 0}
-	// TODO: 124 -> Goldfire Spawn Site
+	// 124 (Goldfire spawn site) is collected in gamemap_planes.cpp
 	{125, MutantHuman,              0, 0, 3}
 	{126, TechWarrior,              4, 0, 0}
 	{130, TechWarrior,              4, PATHING, 0}
@@ -1070,7 +1070,7 @@ things
 	{138, ElectricArcBarrierOff,    0, 0, 0}
 	{139, ElectricArcBarrier,       0, 0, 0}
 	// No 140
-	// TODO: 141 -> Goldfire Spawn immediately
+	// 141 (Goldfire spawn immediately, PS) is collected in gamemap_planes.cpp
 	{142, GeneticGuard,             0, 0, 2}
 	{143, GeneticGuard,             0, 0, 3}
 	{144, SectorGuard,              4, 0, 2}

@@ -24,5 +24,6 @@ void    DamageActor (AActor *ob, AActor *attacker, unsigned damage);
 
 bool CheckSlidePass(unsigned int style, unsigned int intercept, unsigned int amount);
 bool CheckLine (const AActor *ob, const AActor *ob2);
+bool CheckLine (const AActor *ob, fixed x2, fixed y2, int tilex2, int tiley2);
 
 #endif

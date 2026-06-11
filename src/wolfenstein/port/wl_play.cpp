@@ -27,6 +27,7 @@
 #include "g_mapinfo.h"
 #include "a_inventory.h"
 #include "am_map.h"
+#include "g_blake/blake_goldstern.h"
 #include "of_ecwolf_gpu.h"
 
 /*
@@ -1372,6 +1373,8 @@ void PlayLoop (void)
 				ticPartStart = OF_WolfPerf_NowUS();
 				AActor::FinishSpawningActors();
 				OF_WolfPerf_Add(OF_WOLF_PERF_SIM_FINISH, ticPartStart);
+
+				Goldstern_Tick();
 
 				ticPartStart = OF_WolfPerf_NowUS();
 				GC::CheckGC();

@@ -36,6 +36,7 @@
 
 #include "doomerrors.h"
 #include "id_ca.h"
+#include "g_blake/blake_goldstern.h"
 #include "g_blake/blake_informant.h"
 #include "g_mapinfo.h"
 #include "gamemap.h"
@@ -1225,6 +1226,7 @@ void GameMap::ReadPlanesData()
 				TArray<unsigned int> barrierCells, switchLinkSrc, switchLinkDst;
 
 				Blake_ClearHints();
+				Goldstern_Clear();
 
 				unsigned int i = 0;
 				for(;i < size;++i)
@@ -1376,6 +1378,15 @@ void GameMap::ReadPlanesData()
 								}
 								continue;
 						}
+					}
+
+					// Blake Stone Goldfire spawn sites: 124 registers a
+					// tracking site for the timed warp-in hunt; 141 (PS)
+					// warps him in immediately.
+					if((FeatureFlags & Xlat::FF_GLOBALMETA) && (oldplane[i] == 124 || oldplane[i] == 141))
+					{
+						Goldstern_AddSite(i%header.width, i/header.width, oldplane[i] == 141);
+						continue;
 					}
 
 					// Blake Stone door locks: an access key code under a door

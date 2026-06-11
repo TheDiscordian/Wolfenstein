@@ -549,6 +549,12 @@ spectordemon/sight		{ DSGENSIT ALGENSIT PCGENSIT }
 spectordemon/death		{ DSPODDTH ALPODDTH PCPODDTH }
 
 goldfire/monster/attack	{ DSELCATK ALELCATK PCELCATK }
+goldfire/sight			{ DSGLDSIT ALGLDSIT PCGLDSIT }
+goldfire/laugh			{ DSGLDLAF ALGLDLAF PCGLDLAF }
+goldfire/attack			{ DSBLASTR ALBLASTR PCBLASTR }
+goldfire/warpin			{ DSWARPIN ALWARPIN PCWARPIN }
+goldfire/warpout		{ DSWARPOU ALWAPROU PCWAPROU }
+goldfire/beep			{ NULL ALELEVAT PCELEVAT }
 
 armoredstalker/attack	{ DSBLASTR ALBLASTR PCBLASTR }
 armoredstalker/sight	{ DSBLUSIT ALBLUSIT PCBLUSIT }

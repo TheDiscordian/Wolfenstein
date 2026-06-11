@@ -136,11 +136,11 @@ void ThinkerList::Tick(Priority list)
 	}
 }
 
-void ThinkerList::Serialize(FArchive &arc)
+void ThinkerList::Serialize(FArchive &arc, Priority start)
 {
 	if(arc.IsStoring())
 	{
-		for(unsigned int i = 0;i < NUM_TYPES;i++)
+		for(unsigned int i = start;i < NUM_TYPES;i++)
 		{
 			Iterator iter(thinkers[i]);
 			while(iter.Next())
@@ -155,7 +155,7 @@ void ThinkerList::Serialize(FArchive &arc)
 	}
 	else
 	{
-		for(unsigned int i = 0;i < NUM_TYPES;i++)
+		for(unsigned int i = start;i < NUM_TYPES;i++)
 		{
 			Thinker *thinker;
 			arc << thinker;

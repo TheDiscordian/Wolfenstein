@@ -42,6 +42,7 @@
 #include "farchive.h"
 #include "filesys.h"
 #include "g_blake/blake_barrier.h"
+#include "g_blake/blake_floor.h"
 #include "g_mapinfo.h"
 #include "gamemap.h"
 #include "id_ca.h"
@@ -783,6 +784,8 @@ static void Serialize(FArchive &arc)
 // Blake barrier table chunk. Saves without it predate the table; the version
 // string can't tell builds apart here (GIT_DATE_INT is a fixed placeholder).
 #define BARR_ID MAKE_ID('b','a','R','r')
+// Blake per-floor snapshots; same chunk-presence gating as the barriers.
+#define FLRS_ID MAKE_ID('f','l','R','s')
 
 bool Load(const FString &filename)
 {
@@ -842,6 +845,17 @@ bool Load(const FString &filename)
 			else
 				Blake_BarrierLoadLegacy();
 		}
+
+		{
+			unsigned int chunkLength = M_FindPNGChunk(png, FLRS_ID);
+			if(chunkLength > 0)
+			{
+				FPNGChunkArchive arc(fileh, FLRS_ID, chunkLength);
+				Blake_FloorSerialize(arc);
+			}
+			else
+				Blake_FloorClear();
+		}
 	}
 	catch(CRecoverableError &error)
 	{
@@ -852,6 +866,7 @@ bool Load(const FString &filename)
 		fclose(fileh);
 		printf("Load failed: %s\n", error.GetMessage());
 
+		Blake_FloorClear();
 		memcpy(gamestate.mapname, oldmap, sizeof(oldmap));
 		loadedgame = false;
 		if(ingame)
@@ -985,6 +1000,11 @@ bool Save(const FString &filename, const FString &title)
 	{
 		FPNGChunkArchive barrierArc(fileh, BARR_ID);
 		Blake_BarrierSerialize(barrierArc);
+	}
+
+	{
+		FPNGChunkArchive floorArc(fileh, FLRS_ID);
+		Blake_FloorSerialize(floorArc);
 	}
 
 	M_FinishPNG(fileh);

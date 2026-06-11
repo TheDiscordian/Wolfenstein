@@ -308,6 +308,7 @@ class GameMap
 
 		bool			ActivateTrigger(Trigger &trig, Trigger::Side direction, AActor *activator);
 		void			ClearVisibility();
+		void			CollectPlayerStarts();
 		const Header	&GetHeader() const { return header; }
 		void			GetHitlist(BYTE* hitlist) const;
 		int				GetMarketLumpNum() const { return markerLump; }

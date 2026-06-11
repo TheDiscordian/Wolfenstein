@@ -2,8 +2,8 @@
 // single-player data-load test does not require the sdl2_net package.
 // Mirrors the cross-build stubs in ../../sdk/include/SDL_net.h; shadows
 // it via an earlier -I path. Networking is never exercised by the test.
-#ifndef OF_BLAKESTONE_SDL_NET_STUB_H
-#define OF_BLAKESTONE_SDL_NET_STUB_H
+#ifndef OF_ECWOLF_SDL_NET_STUB_H
+#define OF_ECWOLF_SDL_NET_STUB_H
 
 #include <SDL2/SDL.h>
 #include <stdlib.h>

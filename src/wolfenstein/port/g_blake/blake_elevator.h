@@ -52,4 +52,7 @@ void Blake_PsClear();
 extern bool Blake_ElevatorRequested;
 void Blake_ElevatorCheck();
 
+// Overall mission ratio for the high-score table (bstone ss_justcalc).
+int Blake_MissionRatio();
+
 #endif

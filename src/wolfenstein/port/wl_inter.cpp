@@ -20,6 +20,7 @@
 #include "g_mapinfo.h"
 #include "colormatcher.h"
 #include "wl_iwad.h"
+#include "g_blake/blake_elevator.h"
 
 LRstruct LevelRatios;
 
@@ -1140,9 +1141,10 @@ void CheckHighScore (int32_t score, const LevelInfo *levelInfo)
 	else
 		myscore.graphic[0] = 0;
 
-	// The original stores the overall mission ratio; per-floor stats aren't
-	// tracked yet, so use the kill ratio.
-	if (gamestate.killtotal)
+	// Blake stores the overall mission ratio (bstone ss_justcalc ShowStats).
+	if (IWad::CheckGameFilter("Blake"))
+		myscore.ratio = Blake_MissionRatio();
+	else if (gamestate.killtotal)
 		myscore.ratio = (gamestate.killcount * 100) / gamestate.killtotal;
 	else
 		myscore.ratio = 0;

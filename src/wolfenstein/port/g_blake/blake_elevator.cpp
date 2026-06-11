@@ -549,6 +549,45 @@ static void ElevShowStats(int bx, int by)
 	ElevShowRatio(bx, by + 33, total, mission);
 }
 
+// Calc-only ElevShowRatio (bstone ss_justcalc); no totals = a free 100.
+static int ElevCalcRatio(int total, int accum)
+{
+	if(!total)
+		return 100;
+	return accum * 100 / total;
+}
+
+// Overall mission ratio for the high-score table (bstone CheckHighScore's
+// ss_justcalc ShowStats): refresh the current floor's cached sum, then
+// average the episode's stats floors.
+int Blake_MissionRatio()
+{
+	if(!levelInfo)
+		return 0;
+	const int lvl = levelInfo->LevelNumber;
+
+	const int p1 = ElevCalcRatio(gamestate.treasuretotal, gamestate.treasurecount);
+	const int p2 = ElevCalcRatio(Blake_InformantsTotal(lvl), Blake_InformantsAlive(lvl));
+	const int p3 = ElevCalcRatio(gamestate.killtotal, gamestate.killcount);
+	if(lvl >= 1 && lvl < (int)countof(floorMeta))
+		floorMeta[lvl].overallFloor = p1 + p2 + p3;
+
+	int mission = 0;
+	if(IsAOG())
+	{
+		const int base = EpisodeBase(lvl);
+		for(int f = 0;f < STATS_FLOORS;++f)
+		{
+			if(base + f < (int)countof(floorMeta))
+				mission += floorMeta[base + f].overallFloor;
+		}
+		return mission / (STATS_FLOORS * 3);
+	}
+	for(int f = 1;f <= PS_FLOORS;++f)
+		mission += floorMeta[f].overallFloor;
+	return mission / (PS_FLOORS * 3);
+}
+
 // =============================================================================
 // The AOG floor-select panel
 // =============================================================================

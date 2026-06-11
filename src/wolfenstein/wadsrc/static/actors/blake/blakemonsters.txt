@@ -340,6 +340,7 @@ actor GeneralScientist : WolfensteinMonster
 	dropitem "ConcessionCoin", 64
 	dropitem "ChargePack"
 	+DROPBASEDONTARGET
+	+FRIENDLY
 	states
 	{
 		Spawn:

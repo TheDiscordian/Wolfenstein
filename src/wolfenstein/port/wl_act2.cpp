@@ -21,6 +21,7 @@
 #include "wl_draw.h"
 #include "wl_game.h"
 #include "wl_net.h"
+#include "wl_play.h"
 #include "wl_state.h"
 
 static const angle_t dirangle[9] = {0,ANGLE_45,2*ANGLE_45,3*ANGLE_45,4*ANGLE_45,
@@ -613,7 +614,10 @@ ACTION_FUNCTION(A_Chase)
 	}
 	else
 	{
-		if (!(flags & CHF_NOSIGHTCHECK) && SightPlayer (self, 0, 0, 0, 180, self->SeeState))
+		// Friendly actors path obliviously until noise is made (bstone T_Path)
+		if (!(flags & CHF_NOSIGHTCHECK) &&
+			(!(self->flags & FL_FRIENDLY) || madenoise) &&
+			SightPlayer (self, 0, 0, 0, 180, self->SeeState))
 			return true;
 	}
 

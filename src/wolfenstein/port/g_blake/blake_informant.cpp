@@ -198,7 +198,7 @@ static void ProvokeScientist(AActor *ob, AActor *playerMo)
 	ob->speed = ob->runspeed;
 	if(ob->distance < 0)
 		ob->distance = 0;
-	ob->flags &= ~FL_PATHING;
+	ob->flags &= ~(FL_PATHING|FL_FRIENDLY);
 	ob->flags |= FL_ATTACKMODE|FL_FIRSTATTACK;
 	ob->target = playerMo;
 	if(ob->SeeState)

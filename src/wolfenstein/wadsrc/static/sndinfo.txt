@@ -411,6 +411,7 @@ treasure/xylanorb/pickup	{ DSBONUS4 ALBONUS4 PCBONUS4 }
 
 misc/coin_pickup		{ DSGETTKN ALGETTKN PCGETTKN }
 misc/concession			{ DSCONCES ALCONCES PCCONCES }
+misc/interrogate		{ NULL ALINTERR PCINTERR }
 misc/radar_pickup		{ DSGETRDR ALGETRDR PCGETRDR }
 
 misc/blake/explosion1	{ DSEXPLO1 ALEXPLO1 PCEXPLO1 }

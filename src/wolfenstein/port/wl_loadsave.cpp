@@ -41,6 +41,7 @@
 #include "doomerrors.h"
 #include "farchive.h"
 #include "filesys.h"
+#include "g_blake/blake_barrier.h"
 #include "g_mapinfo.h"
 #include "gamemap.h"
 #include "id_ca.h"
@@ -779,6 +780,9 @@ static void Serialize(FArchive &arc)
 }
 
 #define SNAP_ID MAKE_ID('s','n','A','p')
+// Blake barrier table chunk. Saves without it predate the table; the version
+// string can't tell builds apart here (GIT_DATE_INT is a fixed placeholder).
+#define BARR_ID MAKE_ID('b','a','R','r')
 
 bool Load(const FString &filename)
 {
@@ -826,6 +830,17 @@ bool Load(const FString &filename)
 			snapshot.Reopen();
 			FArchive snarc(snapshot);
 			Serialize(snarc);
+		}
+
+		{
+			unsigned int chunkLength = M_FindPNGChunk(png, BARR_ID);
+			if(chunkLength > 0)
+			{
+				FPNGChunkArchive arc(fileh, BARR_ID, chunkLength);
+				Blake_BarrierSerialize(arc);
+			}
+			else
+				Blake_BarrierLoadLegacy();
 		}
 	}
 	catch(CRecoverableError &error)
@@ -965,6 +980,11 @@ bool Save(const FString &filename, const FString &title)
 	{
 		FPNGChunkArchive snapshotArc(fileh, SNAP_ID);
 		snapshot.Serialize(snapshotArc);
+	}
+
+	{
+		FPNGChunkArchive barrierArc(fileh, BARR_ID);
+		Blake_BarrierSerialize(barrierArc);
 	}
 
 	M_FinishPNG(fileh);

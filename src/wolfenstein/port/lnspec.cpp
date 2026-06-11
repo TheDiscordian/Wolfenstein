@@ -47,6 +47,7 @@
 #include "wl_game.h"
 #include "wl_loadsave.h"
 #include "wl_play.h"
+#include "g_blake/blake_barrier.h"
 #include "g_mapinfo.h"
 #include "g_shared/a_keys.h"
 #include "textures/textures.h"
@@ -392,10 +393,25 @@ FUNC(Door_Open)
 	return 1;
 }
 
-// Toggles every Blake Stone barrier in the tagged group between its Active
-// and Inactive states and flips any wired switch walls to match.
+// Toggles the Blake Stone barrier group keyed by (arg1, arg2, arg3) in the
+// global table, converges the tagged actors (arg0; 0 for a cross-floor
+// switch with no local group) and wired switch walls, and shows the DOS
+// operate message. Saves older than the table carry triggers without the
+// key args and fall through to the legacy actor-probe toggle.
 FUNC(Barrier_Toggle)
 {
+	if(args[1])
+	{
+		const bool newOn = !Blake_BarrierGet(args[1], args[2], args[3]);
+		Blake_BarrierSet(args[1], args[2], args[3], newOn);
+		if(args[0])
+			Blake_BarrierSetActors(args[0], newOn);
+		Blake_BarrierRepaintSwitches(args[1], args[2], args[3], newOn);
+		Blake_BarrierOperateMsg(args[1], newOn);
+		PlaySoundLocMapSpot("switches/normbutn", spot);
+		return 1;
+	}
+
 	static const char* const barrierClassNames[4] = {
 		"ElectricArcBarrier", "ElectricPostBarrier",
 		"VerticalSpikeActive", "VerticalPostActive"

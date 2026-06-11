@@ -185,7 +185,12 @@ $(PCOBJ)/%.cpp.o: %.cpp
 
 -include $(PC_C_OBJS:.o=.d) $(PC_CXX_OBJS:.o=.d)
 
-test: app_pc_ecwolf
+# The PC test binary loads ecwolf.pk3 from the working directory.
+ecwolf.pk3: $(WADSRC_FILES)
+	@rm -f $@
+	@cd $(WADSRC_STATIC_DIR) && find . -type f | sed 's#^\./##' | sort | zip -q -X $(CURDIR)/$@ -@
+
+test: app_pc_ecwolf ecwolf.pk3
 app_pc_ecwolf: $(PC_C_OBJS) $(PC_CXX_OBJS)
 	$(PC_CXX) $(PC_C_OBJS) $(PC_CXX_OBJS) $(SDL_LIBS) $(PC_EXTRA_LIBS) -lm -o app_pc
 

@@ -247,6 +247,10 @@ typedef uint32_t angle_t;
 enum ActorFlag
 {
 	FL_SHOOTABLE        = 0x00000001,
+	FL_INTERROGATED     = 0x00000002, // Blake: scientist has been questioned once
+	FL_MUSTATTACK       = 0x00000004, // Blake: next interrogation turns hostile
+	FL_GAVEAMMO         = 0x00000008, // Blake: informant already gave a charge pack
+	FL_GAVETOKENS       = 0x00000080, // Blake: informant already gave food tokens
 	FL_ATTACKMODE       = 0x00000010,
 	FL_FIRSTATTACK      = 0x00000020,
 	FL_AMBUSH           = 0x00000040,

@@ -36,6 +36,7 @@
 
 #include "doomerrors.h"
 #include "id_ca.h"
+#include "g_blake/blake_informant.h"
 #include "g_mapinfo.h"
 #include "gamemap.h"
 #include "gamemap_common.h"
@@ -1223,6 +1224,8 @@ void GameMap::ReadPlanesData()
 				TArray<unsigned int> doorLinkSrc, doorLinkDst;
 				TArray<unsigned int> barrierCells, switchLinkSrc, switchLinkDst;
 
+				Blake_ClearHints();
+
 				unsigned int i = 0;
 				for(;i < size;++i)
 				{
@@ -1261,7 +1264,10 @@ void GameMap::ReadPlanesData()
 							default: break;
 							case 0xF1: // Informant messages
 							case 0xF2: // Scientist messages
-							case 0xF3: // Men scientist messages
+							case 0xF3: // Mean scientist messages
+								Blake_AddHint((oldplane[i]>>8) - 0xF1,
+									i%header.width, i/header.width, oldplane[i]&0xFF);
+								continue;
 							case 0xFA: // Quantity modifier
 								continue;
 							case 0xFC: // Concession machine credits: patch the

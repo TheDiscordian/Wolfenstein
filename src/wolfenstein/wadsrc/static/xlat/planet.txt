@@ -1057,8 +1057,8 @@ things
 	{107, MutantHuman,              0, 0, 2}
 	{108, SectorGuard,              4, 0, 0}
 	{112, SectorGuard,              4, PATHING, 0}
-	{116, GeneralScientist,         4, 0, 0}
-	{120, GeneralScientist,         4, PATHING, 0}
+	{116, ScientistSpawner,         4, 0, 0}
+	{120, ScientistSpawner,         4, PATHING, 0}
 	// TODO: 124 -> Goldfire Spawn Site
 	{125, MutantHuman,              0, 0, 3}
 	{126, TechWarrior,              4, 0, 0}
@@ -1075,8 +1075,8 @@ things
 	{143, GeneticGuard,             0, 0, 3}
 	{144, SectorGuard,              4, 0, 2}
 	{148, SectorGuard,              4, PATHING, 2}
-	{152, GeneralScientist,         4, 0, 2}
-	{156, GeneralScientist,         4, PATHING, 2}
+	{152, ScientistSpawner,         4, 0, 2}
+	{156, ScientistSpawner,         4, PATHING, 2}
 	{160, SecurityLight,            0, 0, 0}
 	{161, GurneyMutantSleep,        0, 0, 3} // TODO: Replace with GurneyMutantStatic when below skill
 	{162, TechWarrior,              4, 0, 2}
@@ -1093,8 +1093,8 @@ things
 	{179, ActiveSteamPipe,          0, 0, 0}
 	{180, SectorGuard,              4, 0, 3}
 	{184, SectorGuard,              4, PATHING, 3}
-	{188, GeneralScientist,         4, 0, 3}
-	{192, GeneralScientist,         4, PATHING, 3}
+	{188, ScientistSpawner,         4, 0, 3}
+	{192, ScientistSpawner,         4, PATHING, 3}
 	// No 196-197
 	{198, TechWarrior,              4, 0, 3}
 	{202, TechWarrior,              4, PATHING, 3}

@@ -12,6 +12,7 @@
 #include "id_us.h"
 #include "actor.h"
 #include "thingdef/thingdef.h"
+#include "g_blake/blake_informant.h"
 #include "lnspec.h"
 #include "wl_agent.h"
 #include "a_inventory.h"
@@ -1059,7 +1060,10 @@ void APlayerPawn::Cmd_Use()
 	}
 
 	if(doNothing)
-		PlaySoundLocActor("misc/do_nothing", this);
+	{
+		if(!Blake_TryInterrogate(this))
+			PlaySoundLocActor("misc/do_nothing", this);
+	}
 	else
 		P_ChangeSwitchTexture(spot, static_cast<MapTile::Side>(direction), isRepeatable, lastTrigger);
 }

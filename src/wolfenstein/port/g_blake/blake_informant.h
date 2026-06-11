@@ -1,0 +1,22 @@
+#ifndef __BLAKE_INFORMANT_H__
+#define __BLAKE_INFORMANT_H__
+
+class AActor;
+
+// Hint word types from map plane 1 (high byte 0xF1-0xF3).
+enum
+{
+	BLAKE_HINT_INFORMANT = 0,
+	BLAKE_HINT_NICE      = 1,
+	BLAKE_HINT_MEAN      = 2
+};
+
+// Called at map load before objects are parsed.
+void Blake_ClearHints();
+// Records one scientist hint word; msgnum is the 1-based message number.
+void Blake_AddHint(unsigned int type, unsigned int x, unsigned int y, unsigned int msgnum);
+// Interrogates the nearest friendly scientist in front of the player.
+// Returns false if there was nobody to question.
+bool Blake_TryInterrogate(AActor *playerMo);
+
+#endif

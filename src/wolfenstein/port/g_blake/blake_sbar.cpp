@@ -327,21 +327,76 @@ void BlakeStatusBar::DrawInfoArea()
 	}
 
 	// Messages are \r-separated lines drawn 6px apart in the small font.
+	// ^-prefixed control codes (bstone HandleControlCodes): ^FCxx picks the
+	// font colour by palette row, ^XX ends the message, the others are
+	// skipped along with their operands.
+	double x = 3;
 	double y = 200-STATUSLINES+3;
-	FString line;
-	for(const char* ch = msg.GetChars();;++ch)
+	EColorRange color = CR_GRAY;
+	FString segment;
+	for(const char* ch = msg.GetChars();;)
 	{
-		if(*ch == '\r' || *ch == '\0')
+		if(*ch == '\r' || *ch == '\0' || *ch == '^')
 		{
-			if(line.Len())
-				DrawString(SmallFont, line, 3, y, true, CR_GRAY);
+			if(segment.Len())
+			{
+				DrawString(SmallFont, segment, x, y, true, color);
+				word segWidth, segHeight;
+				VW_MeasurePropString(SmallFont, segment, segWidth, segHeight);
+				x += segWidth;
+				segment = "";
+			}
 			if(*ch == '\0')
 				break;
-			line = "";
-			y += 6;
+			if(*ch == '\r')
+			{
+				x = 3;
+				y += 6;
+				++ch;
+				continue;
+			}
+
+			++ch;
+			char code[2] = {0, 0};
+			for(unsigned int i = 0;i < 2 && *ch;++i)
+				code[i] = toupper(*ch++);
+
+			if(code[0] == 'X' && code[1] == 'X')
+				break;
+			if(code[0] == 'F' && code[1] == 'C')
+			{
+				unsigned int palColor = 0;
+				for(unsigned int i = 0;i < 2 && *ch;++i)
+				{
+					char digit = toupper(*ch++);
+					palColor <<= 4;
+					if(digit >= '0' && digit <= '9')
+						palColor |= digit - '0';
+					else if(digit >= 'A' && digit <= 'F')
+						palColor |= digit - 'A' + 10;
+				}
+				switch(palColor>>4)
+				{
+					case 0x1: color = CR_RED; break;
+					case 0x3: color = CR_YELLOW; break;
+					case 0x5: color = CR_GREEN; break;
+					case 0x7: color = CR_CYAN; break;
+					default: color = CR_GRAY; break;
+				}
+			}
+			else if((code[0] == 'B' && code[1] == 'G') || (code[0] == 'A' && code[1] == 'N'))
+			{
+				for(unsigned int i = 0;i < 2 && *ch;++i)
+					++ch;
+			}
+			else if((code[0] == 'S' && code[1] == 'H') || (code[0] == 'L' && code[1] == 'M'))
+			{
+				for(unsigned int i = 0;i < 3 && *ch;++i)
+					++ch;
+			}
+			continue;
 		}
-		else
-			line += *ch;
+		segment += *ch++;
 	}
 }
 

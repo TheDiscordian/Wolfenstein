@@ -33,6 +33,7 @@
 #include "scanner.h"
 #include "g_shared/a_keys.h"
 #include "g_blake/blake_barrier.h"
+#include "g_blake/blake_floor.h"
 #include "g_mapinfo.h"
 #include "wl_draw.h"
 #include "wl_inter.h"
@@ -622,6 +623,7 @@ void NewGame (int difficulty, FString map, bool displayBriefing, FName playerCla
 	// void cast can be removed when we move to C++11
 	memset ((void*)&gamestate,0,sizeof(gamestate));
 	Blake_BarrierClear();
+	Blake_FloorClear();
 
 	FName playerClassNames[MAXPLAYERS];
 	playerClassNames[ConsolePlayer] = playerClass != NAME_None ? playerClass : gameinfo.PlayerClasses[0];

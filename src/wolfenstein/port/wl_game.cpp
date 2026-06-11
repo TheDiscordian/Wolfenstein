@@ -33,6 +33,7 @@
 #include "colormatcher.h"
 #include "thingdef/thingdef.h"
 #include "doomerrors.h"
+#include "g_blake/blake_floor.h"
 #include "of_ecwolf_gpu.h"
 #include "of_ecwolf_opl_music.h"
 
@@ -316,7 +317,9 @@ void SetupGameLevel (void)
 // load the level
 //
 	InvalidateSimTileCaches ();
-	CA_CacheMap (gamestate.mapname, loadedgame);
+	// A pending floor snapshot restores over the parsed map like a save
+	// load does, so skip ScanTiles the same way.
+	CA_CacheMap (gamestate.mapname, loadedgame || Blake_FloorPending());
 	if (!loadedgame)
 		StartMusic ();
 
@@ -325,7 +328,10 @@ void SetupGameLevel (void)
 //
 	if(!loadedgame)
 	{
-		map->SpawnThings();
+		// Restore before the player spawns so hub references resolve to
+		// the traveling pawn; FinishTravel places it afterwards.
+		if(!Blake_FloorRestore())
+			map->SpawnThings();
 		CheckSpawnPlayer(true);
 	}
 
@@ -923,6 +929,7 @@ restartgame:
 					VL_FadeOut(0, 255, RPART(levelInfo->ExitFadeColor), GPART(levelInfo->ExitFadeColor), BPART(levelInfo->ExitFadeColor), levelInfo->ExitFadeDuration);
 
 				StartTravel ();
+				Blake_FloorCapture ();
 				if(dointermission)
 					LevelCompleted ();              // do the intermission
 

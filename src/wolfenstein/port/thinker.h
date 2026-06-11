@@ -66,7 +66,7 @@ extern class ThinkerList
 
 		Iterator GetHead(Priority list) { return thinkers[list].Head(); }
 		void	DestroyAll(Priority start=FIRST_TICKABLE);
-		void	Serialize(FArchive &arc);
+		void	Serialize(FArchive &arc, Priority start=TRAVEL);
 		void	Tick();
 		void	Tick(Priority list);
 

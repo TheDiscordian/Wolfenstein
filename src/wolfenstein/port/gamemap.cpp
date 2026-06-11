@@ -659,19 +659,13 @@ void GameMap::SetupLinks()
 	}
 }
 
-extern FRandom pr_spawnmobj;
-void GameMap::SpawnThings()
+// Collect player and deathmatch starts without spawning anything; needed
+// on its own when a level is reconstructed from a snapshot and SpawnThings
+// is skipped.
+void GameMap::CollectPlayerStarts()
 {
-#if 0
-	// Debug code - Show the number of things spawned at map start.
-	printf("Spawning %d things\n", things.Size());
-#endif
-
 	playerStarts.Clear();
 	deathmatchStarts.Clear();
-
-	// Since vanilla didn't have deathmatch we can collect monster spawn points as a fallback.
-	TArray<PlayerSpawn> deathmatchFallbackStarts;
 
 	for(unsigned int i = 0;i < things.Size();++i)
 	{
@@ -687,6 +681,33 @@ void GameMap::SpawnThings()
 				playerStarts.Insert(st - SMT_Player1Start, spawn);
 			else
 				deathmatchStarts.Push(spawn);
+		}
+	}
+}
+
+extern FRandom pr_spawnmobj;
+void GameMap::SpawnThings()
+{
+#if 0
+	// Debug code - Show the number of things spawned at map start.
+	printf("Spawning %d things\n", things.Size());
+#endif
+
+	CollectPlayerStarts();
+
+	// Since vanilla didn't have deathmatch we can collect monster spawn points as a fallback.
+	TArray<PlayerSpawn> deathmatchFallbackStarts;
+
+	for(unsigned int i = 0;i < things.Size();++i)
+	{
+		Thing &thing = things[i];
+		if(!thing.skill[gamestate.difficulty->SpawnFilter])
+			continue;
+
+		ESpecialThings st = SpecialThingNamesLookup(thing.type);
+		if(st != SMT_NumThings)
+		{
+			// Starts were collected above.
 		}
 		else
 		{

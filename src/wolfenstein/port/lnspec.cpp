@@ -1405,6 +1405,14 @@ FUNC(Teleport_Absolute)
 
 	const fixed x = (args[0]<<FRACBITS)+(FRACUNIT/2);
 	const fixed y = (args[1]<<FRACBITS)+(FRACUNIT/2);
+
+	if(activator->player)
+	{
+		StatusBar->DisplayInfoMessage("\r\r    TRANSPORTING...", 0x200, 120);
+		SD_PlaySound("blake/warpin");
+		ThreeDStartFadeIn();
+	}
+
 	activator->Teleport(x, y, activator->angle, false);
 	return 1;
 }

@@ -389,6 +389,9 @@ quiz/incorrect			{ DSNOBNS ALNOBNS PCNOBNS }
 
 $ifblake
 misc/health_pkup			{ DSHEAL1 ALHEAL1 PCHEAL1 }
+blake/elevbutton			{ NULL ALELEVAT PCELEVAT }
+blake/statstick				{ NULL ALSTATS1 PCSTATS1 }
+blake/statsdone				{ NULL ALSTATS2 PCSTATS2 }
 $endif
 
 doors/heavy_open		{ DSDR2OPN ALDR2OPN PCDR2OPN }

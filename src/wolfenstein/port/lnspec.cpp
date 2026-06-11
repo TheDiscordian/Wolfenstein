@@ -48,6 +48,7 @@
 #include "wl_loadsave.h"
 #include "wl_play.h"
 #include "g_blake/blake_barrier.h"
+#include "g_blake/blake_elevator.h"
 #include "g_mapinfo.h"
 #include "g_shared/a_keys.h"
 #include "textures/textures.h"
@@ -559,6 +560,22 @@ FUNC(Concession_Operate)
 	activator->health = player->health;
 	StatusBar->UpdateFace(oldhealth - activator->health);
 
+	return 1;
+}
+
+// Blake Stone elevator panel: defer to PlayLoop so the floor-select UI runs
+// between frames instead of inside the actor tick.
+FUNC(Elevator_SelectFloor)
+{
+	if(!activator || !activator->player)
+		return 0;
+
+	// One activation per use press.
+	if(control[activator->player->GetPlayerNum()].buttonheld[bt_use])
+		return 0;
+	control[activator->player->GetPlayerNum()].buttonheld[bt_use] = true;
+
+	Blake_ElevatorRequested = true;
 	return 1;
 }
 

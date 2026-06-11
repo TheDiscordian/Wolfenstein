@@ -245,6 +245,37 @@ Flat:
 	#14C414
 }
 
+// Flat ramps for the AOG elevator panel; each maps to one BLAKEPAL entry.
+BlakeElevBlue "Blake Elevator Blue"
+{
+	#0C0CAE  #0C0CAE
+Console:
+	#0C0CAE  #0C0CAE
+Flat:
+	// Panel message text (palette 0x97)
+	#0C0CAE
+}
+
+BlakeElevYellow "Blake Elevator Yellow"
+{
+	#B6BA1C  #B6BA1C
+Console:
+	#B6BA1C  #B6BA1C
+Flat:
+	// Panel floor digits (palette 0x38)
+	#B6BA1C
+}
+
+BlakeElevGreen "Blake Elevator Green"
+{
+	#00C300  #00C300
+Console:
+	#00C300  #00C300
+Flat:
+	// Stats "N/A" text (palette 0x57)
+	#00C300
+}
+
 // Since the for pg x of y
 DarkYellow
 {

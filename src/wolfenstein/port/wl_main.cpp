@@ -33,6 +33,7 @@
 #include "scanner.h"
 #include "g_shared/a_keys.h"
 #include "g_blake/blake_barrier.h"
+#include "g_blake/blake_elevator.h"
 #include "g_blake/blake_floor.h"
 #include "g_mapinfo.h"
 #include "wl_draw.h"
@@ -624,6 +625,7 @@ void NewGame (int difficulty, FString map, bool displayBriefing, FName playerCla
 	memset ((void*)&gamestate,0,sizeof(gamestate));
 	Blake_BarrierClear();
 	Blake_FloorClear();
+	Blake_FloorLocksNewGame();
 
 	FName playerClassNames[MAXPLAYERS];
 	playerClassNames[ConsolePlayer] = playerClass != NAME_None ? playerClass : gameinfo.PlayerClasses[0];

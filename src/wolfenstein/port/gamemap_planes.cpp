@@ -1011,6 +1011,9 @@ void GameMap::ReadPlanesData()
 	// Blake Stone barrier switch walls (tile 45=on, 57=off) noted in the
 	// tiles plane; the objects plane wires them to barrier groups.
 	TMap<unsigned int, WORD> switchCells;
+	// Blake Stone direct transport pads (tile 32); the objects plane holds
+	// the destination word.
+	TMap<unsigned int, WORD> transportCells;
 
 	// Read and store the info plane so we can reference it
 	TUniquePtr<WORD[]> infoplane(new WORD[size]);
@@ -1058,8 +1061,13 @@ void GameMap::ReadPlanesData()
 					else
 						mapPlane.map[i].SetTile(NULL);
 
-					if((FeatureFlags & Xlat::FF_GLOBALMETA) && (oldplane[i] == 45 || oldplane[i] == 57))
-						switchCells[i] = oldplane[i];
+					if(FeatureFlags & Xlat::FF_GLOBALMETA)
+					{
+						if(oldplane[i] == 45 || oldplane[i] == 57)
+							switchCells[i] = oldplane[i];
+						else if(oldplane[i] == 32)
+							transportCells[i] = oldplane[i];
+					}
 
 					Blake_ReservedDropCell(i%header.width, i/header.width, oldplane[i]);
 
@@ -1267,6 +1275,51 @@ void GameMap::ReadPlanesData()
 
 					if(FeatureFlags & Xlat::FF_GLOBALMETA)
 					{
+						// Direct transport pad (tile 32): the word at the pad
+						// cell is 0xF4xx (interlevel, low byte = the
+						// destination map index), 0xF5xx (in-level, the next
+						// word holds the destination), or a bare packed
+						// in-level destination (x<<8)|y.
+						if(transportCells.CheckKey(i))
+						{
+							Trigger trigger;
+							trigger.x = i%header.width;
+							trigger.y = i/header.width;
+							trigger.z = 0;
+							if((oldplane[i]&0xFF00) == 0xF400)
+							{
+								trigger.action = Specials::Teleport_NewMap;
+								// AOG packs 15 maps per episode and lands at
+								// the departure position; PS has a single
+								// linear set and uses the normal start spot.
+								if(EpisodeInfo::GetNumEpisodes() > 1)
+								{
+									trigger.arg[0] = ((levelInfo->LevelNumber-1)/15)*15 + (oldplane[i]&0xFF) + 1;
+									trigger.arg[2] = NEWMAP_KEEPPOSITION|NEWMAP_KEEPFACING;
+								}
+								else
+									trigger.arg[0] = (oldplane[i]&0xFF) + 1;
+							}
+							else
+							{
+								WORD coord = oldplane[i];
+								if((coord&0xFF00) == 0xF500)
+								{
+									if(i + 1 >= size)
+										continue;
+									coord = LittleShort(oldplane[i+1]);
+									++i;
+								}
+								trigger.action = Specials::Teleport_Absolute;
+								trigger.arg[0] = coord>>8;
+								trigger.arg[1] = coord&0xFF;
+							}
+							trigger.playerUse = true;
+							trigger.repeatable = true;
+							triggers.Push(trigger);
+							continue;
+						}
+
 						switch(oldplane[i]>>8)
 						{
 							default: break;
@@ -1329,41 +1382,6 @@ void GameMap::ReadPlanesData()
 										triggers.Push(trigger);
 									}
 								}
-								++i;
-								continue;
-							}
-							case 0xF4: // Interlevel transporter: low byte is the destination map index within the episode
-							{
-								Trigger trigger;
-								trigger.x = i%header.width;
-								trigger.y = i/header.width;
-								trigger.z = 0;
-								trigger.action = Specials::Teleport_NewMap;
-								// AOG packs 15 maps per episode; PS has a single linear set.
-								if(EpisodeInfo::GetNumEpisodes() > 1)
-									trigger.arg[0] = ((levelInfo->LevelNumber-1)/15)*15 + (oldplane[i]&0xFF) + 1;
-								else
-									trigger.arg[0] = (oldplane[i]&0xFF) + 1;
-								trigger.playerUse = true;
-								trigger.repeatable = true;
-								triggers.Push(trigger);
-								continue;
-							}
-							case 0xF5: // Intralevel warp: next word holds the destination (x<<8)|y
-							{
-								if(i + 1 >= size)
-									continue;
-								const WORD coord = LittleShort(oldplane[i+1]);
-								Trigger trigger;
-								trigger.x = i%header.width;
-								trigger.y = i/header.width;
-								trigger.z = 0;
-								trigger.action = Specials::Teleport_Absolute;
-								trigger.arg[0] = coord>>8;
-								trigger.arg[1] = coord&0xFF;
-								trigger.playerUse = true;
-								trigger.repeatable = true;
-								triggers.Push(trigger);
 								++i;
 								continue;
 							}
@@ -1500,7 +1518,12 @@ void GameMap::ReadPlanesData()
 					uint32_t tsFlags = 0;
 
 					if((tsFlags = xlat.TranslateThing(thing, trigger, flags, oldplane[i])) == 0)
-						printf("Unknown old type %d @ (%d,%d)\n", oldplane[i], i%header.width, i/header.width);
+					{
+						// Blake Stone maps carry inert editor leftovers in the
+						// objects plane; the original scan skips them silently.
+						if(!(FeatureFlags & Xlat::FF_GLOBALMETA))
+							printf("Unknown old type %d @ (%d,%d)\n", oldplane[i], i%header.width, i/header.width);
+					}
 					else
 					{
 						if(tsFlags & Xlat::TSF_ISTRIGGER)

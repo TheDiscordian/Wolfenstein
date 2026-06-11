@@ -1298,6 +1298,9 @@ void PlayLoop (void)
 	frameon = 0;
 	funnyticount = 0;
 	memset (control[ConsolePlayer].buttonstate, 0, sizeof (control[ConsolePlayer].buttonstate));
+	// Seed bt_use so a press held across the level change isn't a fresh
+	// press on arrival (AOG transporter pads share coordinates).
+	control[ConsolePlayer].buttonstate[bt_use] = true;
 	ClearPaletteShifts ();
 
 	if(automap != AMA_Off)

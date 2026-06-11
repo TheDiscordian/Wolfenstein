@@ -1211,7 +1211,7 @@ bool SightPlayer (AActor *ob, double minseedist, double maxseedist, double maxhe
 		if (player >= 0)
 		{
 			ob->target = players[player].mo;
-			ob->flags &= ~FL_AMBUSH;
+			ob->flags &= ~(FL_AMBUSH|FL_FRIENDLY);
 
 			--ob->sighttime; // We need to somehow mark we started.
 			ob->sightrandom = 1; // Account for tic.

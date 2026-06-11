@@ -162,9 +162,34 @@ copy: all
 package: all
 	@$(ROOT)/scripts/package.sh $(APP)
 
-test: app_pc
+# ── Desktop (SDL2) test build ────────────────────────────────────────
+# The shared sdk.mk app_pc rule compiles every TU with one compiler,
+# which breaks ECWolf: the C zlib/lzma/bzip2 sources get compiled as
+# C++, and the C++ engine needs CXXFLAGS.  Compile C and C++ separately
+# and link with c++.  pc_stubs/ shadows SDL_net.h so a single-player
+# data-load test needs no sdl2_net package.
+PCOBJ        = $(OBJ_DIR)/pc
+PC_C_ALL     = $(PC_SRCS) $(SDK_DIR)/pc/of_sdl2.c $(OF_INIT_SRC)
+PC_CXX_ALL   = $(PC_SRCS_CXX)
+PC_C_OBJS    = $(patsubst %,$(PCOBJ)/%.o,$(PC_C_ALL))
+PC_CXX_OBJS  = $(patsubst %,$(PCOBJ)/%.o,$(PC_CXX_ALL))
+PC_C_BUILD   = $(ALL_PC_CFLAGS) $(SDL_CFLAGS)
+PC_CXX_BUILD = -Ipc_stubs $(SDK_PC_CFLAGS) $(PC_CXXFLAGS) $(PC_EXTRA_CFLAGS) $(SDL_CFLAGS)
+
+$(PCOBJ)/%.c.o: %.c
+	@mkdir -p $(dir $@)
+	$(PC_CC) $(PC_C_BUILD) -c -o $@ $<
+$(PCOBJ)/%.cpp.o: %.cpp
+	@mkdir -p $(dir $@)
+	$(PC_CXX) $(PC_CXX_BUILD) -c -o $@ $<
+
+-include $(PC_C_OBJS:.o=.d) $(PC_CXX_OBJS:.o=.d)
+
+test: app_pc_ecwolf
+app_pc_ecwolf: $(PC_C_OBJS) $(PC_CXX_OBJS)
+	$(PC_CXX) $(PC_C_OBJS) $(PC_CXX_OBJS) $(SDL_LIBS) $(PC_EXTRA_LIBS) -lm -o app_pc
 
 clean: sdk-clean
 	rm -rf $(OUT)
 
-.PHONY: all release debug copy package test clean
+.PHONY: all release debug copy package test clean app_pc_ecwolf

@@ -789,6 +789,8 @@ static void Serialize(FArchive &arc)
 #define FLRS_ID MAKE_ID('f','l','R','s')
 // Blake elevator floor locks; same chunk-presence gating.
 #define FLLK_ID MAKE_ID('f','l','L','k')
+// Blake PS teleport snapshots; compressed, the radar grids are large.
+#define FLRD_ID MAKE_ID('f','l','R','d')
 
 bool Load(const FString &filename)
 {
@@ -870,6 +872,21 @@ bool Load(const FString &filename)
 			else
 				Blake_FloorLocksLoadLegacy();
 		}
+
+		{
+			unsigned int chunkLength = M_FindPNGChunk(png, FLRD_ID);
+			if(chunkLength > 0)
+			{
+				FPNGChunkArchive arc(fileh, FLRD_ID, chunkLength);
+				FCompressedMemFile psFile;
+				psFile.Serialize(arc);
+				psFile.Reopen();
+				FArchive psarc(psFile);
+				Blake_PsSerialize(psarc);
+			}
+			else
+				Blake_PsClear();
+		}
 	}
 	catch(CRecoverableError &error)
 	{
@@ -881,6 +898,7 @@ bool Load(const FString &filename)
 		printf("Load failed: %s\n", error.GetMessage());
 
 		Blake_FloorClear();
+		Blake_PsClear();
 		memcpy(gamestate.mapname, oldmap, sizeof(oldmap));
 		loadedgame = false;
 		if(ingame)
@@ -1024,6 +1042,17 @@ bool Save(const FString &filename, const FString &title)
 	{
 		FPNGChunkArchive lockArc(fileh, FLLK_ID);
 		Blake_FloorLockSerialize(lockArc);
+	}
+
+	{
+		FCompressedMemFile psFile;
+		psFile.Open();
+		{
+			FArchive arc(psFile);
+			Blake_PsSerialize(arc);
+		}
+		FPNGChunkArchive psArc(fileh, FLRD_ID);
+		psFile.Serialize(psArc);
 	}
 
 	M_FinishPNG(fileh);

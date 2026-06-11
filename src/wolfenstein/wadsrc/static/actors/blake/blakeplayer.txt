@@ -13,4 +13,5 @@ actor BlakePlayer : PlayerPawn
 	player.weaponslot 4, "DualNeutronDisruptor"
 	player.weaponslot 5, "PlasmaDischargeUnit"
 	player.weaponslot 6, "AntiPlasmaCannon"
+	player.weaponslot 7, "PlasmaDetonatorWeapon"
 }

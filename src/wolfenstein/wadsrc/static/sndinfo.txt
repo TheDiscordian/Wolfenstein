@@ -392,6 +392,7 @@ misc/health_pkup			{ DSHEAL1 ALHEAL1 PCHEAL1 }
 blake/elevbutton			{ NULL ALELEVAT PCELEVAT }
 blake/statstick				{ NULL ALSTATS1 PCSTATS1 }
 blake/statsdone				{ NULL ALSTATS2 PCSTATS2 }
+blake/rollscore				{ NULL ALSCORE PCSCORE }
 $endif
 
 doors/heavy_open		{ DSDR2OPN ALDR2OPN PCDR2OPN }
@@ -423,6 +424,7 @@ misc/blake/explosion2	{ DSEXPLO2 ALEXPLO2 PCEXPLO2 }
 barrier/zap				{ DSARCZAP ALARCZAP PCARCZAP }
 
 misc/plasmadetonator/pickup	{ DSGETDET ALGETDET PCGETDET }
+misc/plasmadetonator/drop	{ NULL ALROBSRV PCROBSRV }
 $random misc/plasmadetonator/explosion { misc/blake/explosion1 misc/blake/explosion2 }
 
 $random crate/explode { misc/blake/explosion1 misc/blake/explosion2 }

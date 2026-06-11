@@ -51,8 +51,10 @@
 #include "id_vl.h"
 #include "language.h"
 #include "lnspec.h"
+#include "m_random.h"
 #include "thinker.h"
 #include "v_font.h"
+#include "v_palette.h"
 #include "v_video.h"
 #include "w_wad.h"
 #include "wl_agent.h"
@@ -99,6 +101,9 @@ static FloorMeta floorMeta[128];
 static const int FLOORS_PER_EPISODE = 15;
 static const int STATS_FLOORS = 11;
 
+// PS has a single episode: LevelNumbers 1-20 on the teleport panel.
+static const int PS_FLOORS = 20;
+
 static bool IsBlake()
 {
 	return IWad::CheckGameFilter("Blake");
@@ -123,6 +128,7 @@ static int EpisodeBase(int levelNum)
 void Blake_FloorLocksNewGame()
 {
 	memset(floorMeta, 0, sizeof(floorMeta));
+	Blake_PsClear();
 }
 
 void Blake_FloorEntered()
@@ -159,11 +165,18 @@ void Blake_FloorLocksLoadLegacy()
 	// Saves that predate the lock table progressed floor by floor, so open
 	// everything up to the floor the save is on.
 	memset(floorMeta, 0, sizeof(floorMeta));
+	Blake_PsClear();
 	if(!IsBlake() || !levelInfo)
 		return;
 	const int lvl = levelInfo->LevelNumber;
 	if(lvl < 1 || lvl >= (int)countof(floorMeta))
 		return;
+	if(!IsAOG())
+	{
+		for(int f = 1;f <= MIN(lvl, PS_FLOORS);++f)
+			floorMeta[f].unlocked = true;
+		return;
+	}
 	const int base = EpisodeBase(lvl);
 	for(int f = FloorIndex(lvl);f >= 0;--f)
 		floorMeta[base + f].unlocked = true;
@@ -314,11 +327,13 @@ static void ElevDrawBottomBox(const FString &text)
 // 64x64 radar replica of bstone ShowOverhead(14, 71, 32, 0,
 // OV_KEYS|OV_WHOLE_MAP): floors 0x55, doors by state, player 0xF0, keys
 // 0xF3; walls and unrevealed tiles keep the unmapped colour.  Hidden-area
-// shading is not tracked here.
-static void ElevDrawOverhead(int bx, int by)
+// shading is not tracked here.  The grid render is split out so the PS
+// panel can snapshot it per floor (bstone SaveOverheadChunk).
+static void ElevOverheadGrid(BYTE *grid, bool playerDot, BYTE unmappedColor)
 {
-	const BYTE UNMAPPED_COLOR = 0x06;
 	const BYTE MAPPED_COLOR = 0x55;
+
+	memset(grid, unmappedColor, 64*64);
 
 	const unsigned int mapwidth = MIN<unsigned int>(map->GetHeader().width, 64);
 	const unsigned int mapheight = MIN<unsigned int>(map->GetHeader().height, 64);
@@ -341,9 +356,9 @@ static void ElevDrawOverhead(int bx, int by)
 		MapSpot spot = map->GetSpot(0, my, 0);
 		for(unsigned int mx = 0;mx < mapwidth;++mx, ++spot)
 		{
-			BYTE color = UNMAPPED_COLOR;
+			BYTE color = unmappedColor;
 
-			if((int)mx == ptilex && (int)my == ptiley)
+			if(playerDot && (int)mx == ptilex && (int)my == ptiley)
 				color = 0xF0;
 			else if((spot->amFlags & AM_Visible) || gamestate.fullmap)
 			{
@@ -385,7 +400,7 @@ static void ElevDrawOverhead(int bx, int by)
 				else
 					color = MAPPED_COLOR;
 
-				if(color == MAPPED_COLOR || color == UNMAPPED_COLOR)
+				if(color == MAPPED_COLOR || color == unmappedColor)
 				{
 					for(unsigned int k = 0;k < keySpots.Size();++k)
 					{
@@ -398,9 +413,25 @@ static void ElevDrawOverhead(int bx, int by)
 				}
 			}
 
-			ElevBar(color, bx + (int)mx, by + (int)my, 1, 1);
+			grid[my*64 + mx] = color;
 		}
 	}
+}
+
+static void ElevBlitGrid(const BYTE *grid, int bx, int by)
+{
+	for(int my = 0;my < 64;++my)
+	{
+		for(int mx = 0;mx < 64;++mx)
+			ElevBar(grid[my*64 + mx], bx + mx, by + my, 1, 1);
+	}
+}
+
+static void ElevDrawOverhead(int bx, int by)
+{
+	BYTE grid[64*64];
+	ElevOverheadGrid(grid, true, 0x06);
+	ElevBlitGrid(grid, bx, by);
 }
 
 // =============================================================================
@@ -431,6 +462,13 @@ static int ElevShowRatio(int bx, int by, int total, int accum)
 	const int numbars = maxperc * 48 / 100;
 
 	ElevBar(0x07, bx, by, BAR_W, BAR_H);
+
+	// bstone PrintStatPercent: seed the readout with 0% so a stale N/A from
+	// the previous selection cannot linger when no bars are drawn.
+	ElevBar(0, nx, by, 19, BAR_H);
+	PrintX = nx + 9;
+	PrintY = by;
+	US_Print(SmallFont, "0%", pctColor);
 
 	int percentage = 1;
 	for(int loop = 0;loop < numbars;++loop)
@@ -762,15 +800,366 @@ static int ElevInputFloor()
 	return result >= 1 ? result : -1;
 }
 
-void Blake_ElevatorCheck()
+// =============================================================================
+// The PS teleport panel (bstone ps_input_floor)
+//
+// Per-floor snapshots (bstone OverheadChunk): radar grid plus the stats the
+// panel replays for floors other than the current one, and the departure
+// pad so travelling back to a visited floor lands on its transporter.
+// =============================================================================
+
+struct PsChunk
 {
-	if(!Blake_ElevatorRequested)
-		return;
-	Blake_ElevatorRequested = false;
+	BYTE valid;
+	BYTE padValid;
+	fixed padX, padY;
+	angle_t padAngle;
+	DWORD treasureTotal, treasureCount;
+	DWORD killTotal, killCount;
+	BYTE radar[64*64];
+};
+static PsChunk psChunks[PS_FLOORS + 1]; // keyed by LevelNumber, slot 0 unused
 
-	if(!IsBlake() || !IsAOG() || playstate != ex_stillplaying)
+void Blake_PsClear()
+{
+	memset(psChunks, 0, sizeof(psChunks));
+}
+
+bool Blake_PsFloorUnlocked(int lvl)
+{
+	if(lvl < 1 || lvl >= (int)countof(floorMeta))
+		return false;
+	return floorMeta[lvl].unlocked != 0;
+}
+
+void Blake_PsUnlockFloor(int lvl)
+{
+	if(lvl < 1 || lvl >= (int)countof(floorMeta))
+		return;
+	floorMeta[lvl].unlocked = true;
+}
+
+void Blake_PsSerialize(FArchive &arc)
+{
+	DWORD count = countof(psChunks);
+	arc << count;
+	if(!arc.IsStoring())
+		Blake_PsClear();
+	for(DWORD i = 0;i < count;++i)
+	{
+		PsChunk local;
+		PsChunk &chunk = i < countof(psChunks) ? psChunks[i] : local;
+		arc << chunk.valid << chunk.padValid
+			<< chunk.padX << chunk.padY << chunk.padAngle
+			<< chunk.treasureTotal << chunk.treasureCount
+			<< chunk.killTotal << chunk.killCount;
+		if(chunk.valid)
+		{
+			if(arc.IsStoring())
+				arc.Write(chunk.radar, sizeof(chunk.radar));
+			else
+				arc.Read(chunk.radar, sizeof(chunk.radar));
+		}
+	}
+}
+
+// Teleport unit positions on the TELETOP installation map, 0-based.
+static const int PS_TELE_X[PS_FLOORS] =
+	{16,40,86,23,44,62,83,27,118,161,161,161,213,213,184,205,226,256,276,276};
+static const int PS_TELE_Y[PS_FLOORS] =
+	{13,26,9,50,50,50,50,62,42,17,26,35,41,50,62,62,62,10,10,30};
+
+// Radar viewport (bstone TOV_X/TOV_Y).
+static const int PS_TOV_X = 16;
+static const int PS_TOV_Y = 132;
+
+static FRandom pr_telenoise("TeleNoise");
+
+static void PsDrawPic(const char *name, int x, int y)
+{
+	FTextureID texid = TexMan.CheckForTexture(name, FTexture::TEX_Any);
+	if(texid.isValid())
+		VWB_DrawGraphic(TexMan(texid), x, y);
+}
+
+// bstone VWB_DrawMPic: the unit and arrow pics are masked, palette index 255
+// is transparent.  The textures are opaque, so blit column runs around the
+// mask colour instead of using VWB_DrawGraphic.
+static void PsDrawPicMasked(const char *name, int x, int y)
+{
+	FTextureID texid = TexMan.CheckForTexture(name, FTexture::TEX_Any);
+	if(!texid.isValid())
 		return;
 
+	FTexture *tex = TexMan(texid);
+	const BYTE *pixels = tex->GetPixels();
+	const int w = tex->GetWidth(), h = tex->GetHeight();
+	const BYTE mask = GPalette.Remap[255];
+	for(int px = 0;px < w;++px)
+	{
+		const BYTE *col = pixels + px*h;
+		for(int py = 0;py < h;)
+		{
+			if(col[py] == mask)
+			{
+				++py;
+				continue;
+			}
+
+			const BYTE c = col[py];
+			const int start = py;
+			while(py < h && col[py] == c)
+				++py;
+			ElevBar(c, x + px, y + start, 1, py - start);
+		}
+	}
+}
+
+static void PsDrawUnit(int tp, bool lit)
+{
+	FString name;
+	name.Format(lit ? "TELEON%02d" : "TELEOF%02d", tp + 1);
+	PsDrawPicMasked(name, PS_TELE_X[tp], PS_TELE_Y[tp]);
+}
+
+// Selector arrows light while a direction is held (dir <0 up, >0 down).
+static void PsDrawArrows(int dir)
+{
+	PsDrawPicMasked(dir < 0 ? "TELEUPON" : "TELEUPOF", 34, 91);
+	PsDrawPicMasked(dir < 0 ? "TELEUPON" : "TELEUPOF", 270, 91);
+	PsDrawPicMasked(dir > 0 ? "TELEDNON" : "TELEDNOF", 34, 104);
+	PsDrawPicMasked(dir > 0 ? "TELEDNON" : "TELEDNOF", 270, 104);
+}
+
+// bstone if_noImage: placeholder text for floors without a radar snapshot.
+static void PsDrawNoImage()
+{
+	static const char* const lines[6] =
+		{"   AREA", "  UNMAPPED", "", "", " PRESS ENTER", " TO TELEPORT"};
+
+	static const EColorRange color = V_FindFontColor("BlakeElevGreen");
+
+	ElevBar(0x52, PS_TOV_X, PS_TOV_Y, 64, 64);
+	int y = PS_TOV_Y + 13;
+	for(unsigned int i = 0;i < countof(lines);++i)
+	{
+		PrintX = PS_TOV_X + 5;
+		PrintY = y;
+		US_Print(SmallFont, lines[i], color);
+		y += 6;
+	}
+}
+
+// Locked floors show static on the radar (bstone ShowOverhead zoom<0 snow).
+static void PsDrawNoise()
+{
+	for(int my = 0;my < 64;++my)
+	{
+		for(int mx = 0;mx < 64;++mx)
+			ElevBar(0x42 + (pr_telenoise() & 3), PS_TOV_X + mx, PS_TOV_Y + my, 1, 1);
+	}
+}
+
+// bstone DisplayTeleportName: location bar between the two backgrounds.
+static void PsDrawTeleportName(int tp, bool locked)
+{
+	static const EColorRange lockedColor = V_FindFontColor("BlakeTeleBright");
+	static const EColorRange nameColor = V_FindFontColor("BlakeElevGreen");
+
+	word w, h;
+	ElevBar(0x52, 54, 101, 212, 9);
+
+	FString text;
+	EColorRange color;
+	if(locked)
+	{
+		text = "-- TELEPORT DISABLED --";
+		color = lockedColor;
+	}
+	else
+	{
+		FString key;
+		key.Format("BLAKE_AREA_%d", tp + 1);
+		text = language[key];
+		text.ReplaceChars('\r', ' ');
+		text.ReplaceChars('\n', ' ');
+		text.StripRight();
+		color = nameColor;
+	}
+
+	VW_MeasurePropString(SmallFont, text, w, h);
+	ElevShadowText(SmallFont, text, 160 - w/2, 103, color);
+}
+
+// PS stats column (bstone ShowStats at 235,138): three ratio bars, the
+// floor total, and the 20-floor mission total.  statsLvl >= 1 caches the
+// floor sum like the AOG panel does.
+static void PsShowStats(int bx, int by, int statsLvl,
+	DWORD tt, DWORD tc, DWORD kt, DWORD kc, bool quick)
+{
+	statsQuick = quick;
+
+	const int p1 = ElevShowRatio(bx, by, tt, tc);
+	const int p2 = ElevShowRatio(bx, by + 7, 0, 0);
+	const int p3 = ElevShowRatio(bx, by + 14, kt, kc);
+
+	const int floorSum = p1 + p2 + p3;
+	const int maxPerFloor = (tt || kt) ? 300 : 0;
+	if(statsLvl >= 1 && statsLvl < (int)countof(floorMeta))
+		floorMeta[statsLvl].overallFloor = floorSum;
+	ElevShowRatio(bx, by + 27, maxPerFloor, floorSum);
+
+	int mission = 0;
+	for(int f = 1;f <= PS_FLOORS;++f)
+		mission += floorMeta[f].overallFloor;
+	ElevShowRatio(bx, by + 34, PS_FLOORS * 300, mission);
+}
+
+// Returns the chosen unit (0-based) or -1 for cancel.
+static int PsInputFloor()
+{
+	static const EColorRange helpColor = V_FindFontColor("BlakeTeleWhite");
+
+	const int lvl = levelInfo->LevelNumber;
+	int tpNum = lvl - 1;
+	int lastTpNum = tpNum;
+
+	// Snapshot the current floor for later visits (bstone SaveOverheadChunk).
+	PsChunk &cur = psChunks[lvl];
+	cur.valid = 1;
+	cur.treasureTotal = gamestate.treasuretotal;
+	cur.treasureCount = gamestate.treasurecount;
+	cur.killTotal = gamestate.killtotal;
+	cur.killCount = gamestate.killcount;
+	ElevOverheadGrid(cur.radar, true, 0x52);
+
+	VW_FadeOut();
+
+	PsDrawPic("TELETOP", 0, 0);
+	PsDrawPic("TELEBOT", 0, 96);
+
+	bool locked = false;
+	PsDrawTeleportName(tpNum, locked);
+	PsDrawUnit(tpNum, true);
+	PsDrawArrows(0);
+	ElevBlitGrid(cur.radar, PS_TOV_X, PS_TOV_Y);
+	ElevShadowText(SmallFont, "UP/DN MOVES SELECTOR - ENTER ACTIVATES", 115, 188, helpColor);
+
+	IN_ClearKeysDown();
+
+	int result = -2;
+	bool buttonsDrawn = false;
+	DWORD nextMove = 0;
+
+	// Seed edge detection with whatever is still held from Cmd_Use.
+	ControlInfo ci, prev;
+	ReadAnyControl(&prev);
+
+	while(result == -2)
+	{
+		ReadAnyControl(&ci);
+		const ScanCode scan = LastScan;
+		IN_ClearKeysDown();
+
+		const int dir =
+			(ci.dir == dir_North || ci.dir == dir_West) ? -1 :
+			(ci.dir == dir_South || ci.dir == dir_East) ? 1 : 0;
+
+		if(scan == sc_Escape || (ci.button1 && !prev.button1))
+			result = -1;
+		else if(scan == sc_Space || scan == sc_Enter || (ci.button0 && !prev.button0))
+		{
+			if(locked)
+				SD_PlaySound("player/usefail");
+			else
+			{
+				result = tpNum;
+
+				// Acknowledge flash on the chosen unit.
+				for(int loop = 0;loop < 10;++loop)
+				{
+					PsDrawUnit(tpNum, false);
+					VW_UpdateScreen();
+					VW_WaitVBL(4);
+					PsDrawUnit(tpNum, true);
+					VW_UpdateScreen();
+					VW_WaitVBL(4);
+				}
+			}
+		}
+
+		// Held directions step once per 10 tics.
+		if(result == -2 && dir && (DWORD)GetTimeCount() >= nextMove)
+		{
+			if(dir < 0 && tpNum > 0)
+				--tpNum;
+			else if(dir > 0 && tpNum < PS_FLOORS - 1)
+				++tpNum;
+			nextMove = (DWORD)GetTimeCount() + 10;
+		}
+
+		if(dir)
+		{
+			PsDrawArrows(dir);
+			buttonsDrawn = true;
+		}
+		else if(buttonsDrawn)
+		{
+			PsDrawArrows(0);
+			buttonsDrawn = false;
+		}
+
+		prev = ci;
+
+		if(tpNum != lastTpNum)
+		{
+			locked = !Blake_PsFloorUnlocked(tpNum + 1);
+
+			PsDrawTeleportName(tpNum, locked);
+			PsDrawUnit(lastTpNum, false);
+			PsDrawUnit(tpNum, true);
+
+			const PsChunk &chunk = psChunks[tpNum + 1];
+			if(!locked)
+			{
+				if(chunk.valid)
+					ElevBlitGrid(chunk.radar, PS_TOV_X, PS_TOV_Y);
+				else
+					PsDrawNoImage();
+			}
+			PsShowStats(235, 138, tpNum + 1 == lvl ? lvl : -1,
+				chunk.treasureTotal, chunk.treasureCount,
+				chunk.killTotal, chunk.killCount, true);
+
+			lastTpNum = tpNum;
+		}
+
+		if(locked)
+			PsDrawNoise();
+
+		VW_UpdateScreen();
+
+		if(screenfaded)
+		{
+			VW_FadeIn();
+			PsShowStats(235, 138, lvl,
+				cur.treasureTotal, cur.treasureCount,
+				cur.killTotal, cur.killCount, false);
+			IN_ClearKeysDown();
+		}
+	}
+
+	IN_ClearKeysDown();
+
+	return result;
+}
+
+// =============================================================================
+// Panel entry
+// =============================================================================
+
+static void ElevatorCheckAOG()
+{
 	const int lvl = levelInfo->LevelNumber;
 	const int currentFloor = FloorIndex(lvl);
 	if(currentFloor < 1 || currentFloor > 10)
@@ -792,4 +1181,63 @@ void Blake_ElevatorCheck()
 	{
 		DrawPlayScreen();
 	}
+}
+
+static void ElevatorCheckPS()
+{
+	const int lvl = levelInfo->LevelNumber;
+	if(lvl < 1 || lvl > PS_FLOORS)
+		return;
+
+	const int tp = PsInputFloor();
+
+	if(tp >= 0 && tp + 1 != lvl)
+	{
+		AActor *playermo = players[ConsolePlayer].mo;
+
+		// Departure pad: travelling back to this floor lands here, facing
+		// away from the pad (bstone select_floor).
+		PsChunk &cur = psChunks[lvl];
+		cur.padValid = 1;
+		cur.padX = playermo->x;
+		cur.padY = playermo->y;
+		cur.padAngle = playermo->angle + ANGLE_180;
+
+		playstate = ex_newmap;
+		NewMap.newmap = tp + 1;
+		const PsChunk &dst = psChunks[tp + 1];
+		if(dst.padValid)
+		{
+			NewMap.flags = NEWMAP_KEEPPOSITION|NEWMAP_KEEPFACING;
+			NewMap.x = dst.padX;
+			NewMap.y = dst.padY;
+			NewMap.angle = dst.padAngle;
+		}
+		else
+		{
+			NewMap.flags = 0;
+			NewMap.x = playermo->x;
+			NewMap.y = playermo->y;
+			NewMap.angle = playermo->angle;
+		}
+	}
+	else
+	{
+		DrawPlayScreen();
+	}
+}
+
+void Blake_ElevatorCheck()
+{
+	if(!Blake_ElevatorRequested)
+		return;
+	Blake_ElevatorRequested = false;
+
+	if(!IsBlake() || playstate != ex_stillplaying)
+		return;
+
+	if(IsAOG())
+		ElevatorCheckAOG();
+	else
+		ElevatorCheckPS();
 }

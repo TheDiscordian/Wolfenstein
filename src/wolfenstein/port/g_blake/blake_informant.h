@@ -2,6 +2,7 @@
 #define __BLAKE_INFORMANT_H__
 
 class AActor;
+class FArchive;
 
 // Hint word types from map plane 1 (high byte 0xF1-0xF3).
 enum
@@ -18,5 +19,14 @@ void Blake_AddHint(unsigned int type, unsigned int x, unsigned int y, unsigned i
 // Interrogates the nearest friendly scientist in front of the player.
 // Returns false if there was nobody to question.
 bool Blake_TryInterrogate(AActor *playerMo);
+
+// Per-floor informant census for the panel stats (bstone total_inf/accum_inf),
+// keyed by LevelNumber.  Spawns count via AActor::Spawn; deaths decrement.
+void Blake_InformantsClear();
+void Blake_InformantsReset();
+void Blake_InformantSpawned(AActor *actor);
+int Blake_InformantsTotal(int lvl);
+int Blake_InformantsAlive(int lvl);
+void Blake_InformantSerialize(FArchive &arc);
 
 #endif

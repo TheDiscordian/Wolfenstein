@@ -37,6 +37,7 @@
 #include "farchive.h"
 #include "gamemap.h"
 #include "g_blake/blake_drops.h"
+#include "g_blake/blake_informant.h"
 #include "g_mapinfo.h"
 #include "id_ca.h"
 #include "id_sd.h"
@@ -817,6 +818,7 @@ AActor *AActor::Spawn(const ClassDef *type, fixed x, fixed y, fixed z, int flags
 		++gamestate.treasuretotal;
 	if(actor->flags & FL_COUNTSECRET)
 		++gamestate.secrettotal;
+	Blake_InformantSpawned(actor);
 
 	if(levelInfo && levelInfo->SecretDeathSounds)
 	{

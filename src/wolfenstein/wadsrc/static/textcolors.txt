@@ -296,6 +296,16 @@ Flat:
 	#FFFFFF
 }
 
+BlakeStatusBlue "Blake Status Blue"
+{
+	#9A9AE7  #9A9AE7
+Console:
+	#9A9AE7  #9A9AE7
+Flat:
+	// Status bar health/ammo percentage text (palette 0x9D)
+	#9A9AE7
+}
+
 // Since the for pg x of y
 DarkYellow
 {

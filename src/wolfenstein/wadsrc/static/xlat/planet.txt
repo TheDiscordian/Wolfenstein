@@ -19,11 +19,12 @@ tiles
 		repeatable = true;
 	}
 
-	// Transporter/elevator unit: exits to the next map.
+	// Transporter unit: opens the teleport floor-select panel.
 	trigger 21
 	{
-		action = "Exit_Normal";
+		action = "Elevator_SelectFloor";
 		playeruse = true;
+		repeatable = true;
 	}
 
 	// AOG win tile: crossing it boards the shuttle and ends the episode.
@@ -1291,7 +1292,7 @@ things
 	{483, BreakableCrate3Cannon,     0, 0, 0}
 	{484, BreakableCrate3BlueKey,    0, 0, 0}
 	{485, BreakableCrate3Box,        0, 0, 0}
-	{486, PlasmaDetonator,          0, 0, 0}
+	{486, PlasmaDetonatorWeapon,    0, 0, 0}
 	{487, BlakeRubble,              0, 0, 0}
 	{488, RadarPack,                0, 0, 0}
 	{489, BonziTree,                0, 0, 0}

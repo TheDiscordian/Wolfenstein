@@ -276,6 +276,26 @@ Flat:
 	#00C300
 }
 
+BlakeTeleBright "Blake Teleport Bright"
+{
+	#00FA00  #00FA00
+Console:
+	#00FA00  #00FA00
+Flat:
+	// PS teleport "DISABLED" text (palette 0xF5)
+	#00FA00
+}
+
+BlakeTeleWhite "Blake Teleport White"
+{
+	#FFFFFF  #FFFFFF
+Console:
+	#FFFFFF  #FFFFFF
+Flat:
+	// PS teleport help line (palette 0xAF)
+	#FFFFFF
+}
+
 // Since the for pg x of y
 DarkYellow
 {

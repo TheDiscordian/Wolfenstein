@@ -165,16 +165,18 @@ static FString PickInformantHint(AActor *ob)
 	if(!list.Size())
 		return "";
 
+	// Low byte only: the high byte carries the PS reserved-drop code.
+	const int sticky = ob->temp1 & 0xFF;
 	unsigned int pick;
-	if(ob->temp1 > 0 && (unsigned int)(ob->temp1 - 1) < hintWords[BLAKE_HINT_INFORMANT].Size()
-		&& HintWordZone(hintWords[BLAKE_HINT_INFORMANT][ob->temp1 - 1]) == wantZone)
+	if(sticky > 0 && (unsigned int)(sticky - 1) < hintWords[BLAKE_HINT_INFORMANT].Size()
+		&& HintWordZone(hintWords[BLAKE_HINT_INFORMANT][sticky - 1]) == wantZone)
 	{
-		pick = ob->temp1 - 1;
+		pick = sticky - 1;
 	}
 	else
 	{
 		pick = list[pr_interrogate(list.Size())];
-		ob->temp1 = pick + 1;
+		ob->temp1 = (short)((ob->temp1 & ~0xFF) | (pick + 1));
 	}
 
 	return HintText(BLAKE_HINT_INFORMANT, hintWords[BLAKE_HINT_INFORMANT][pick].msgnum);

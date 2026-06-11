@@ -36,6 +36,7 @@
 #include "a_inventory.h"
 #include "farchive.h"
 #include "gamemap.h"
+#include "g_blake/blake_drops.h"
 #include "g_mapinfo.h"
 #include "id_ca.h"
 #include "id_sd.h"
@@ -291,6 +292,9 @@ void AActor::Die()
 		T_ExplodeProjectile(this, NULL);
 		return;
 	}
+
+	// PS reserved-item drop riding temp1's high byte.
+	Blake_CheckReservedDrop(this);
 
 	DropList *dropitems = GetDropList();
 	if(dropitems)

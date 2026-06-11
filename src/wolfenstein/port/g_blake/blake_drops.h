@@ -1,5 +1,5 @@
 /*
-** blake_elevator.h
+** blake_drops.h
 **
 **---------------------------------------------------------------------------
 ** Copyright 2026 TheDiscordian
@@ -30,26 +30,17 @@
 **---------------------------------------------------------------------------
 */
 
-#ifndef __BLAKE_ELEVATOR_H__
-#define __BLAKE_ELEVATOR_H__
+#ifndef __BLAKE_DROPS_H__
+#define __BLAKE_DROPS_H__
 
-class FArchive;
+class AActor;
 
-// Floor lock table (bstone gamestuff.level[].locked); keyed by LevelNumber.
-void Blake_FloorLocksNewGame();
-void Blake_FloorEntered();
-void Blake_FloorLockSerialize(FArchive &arc);
-void Blake_FloorLocksLoadLegacy();
-
-// PS teleport security (bstone gamestuff.level[].locked, inverted sense:
-// floors start locked until their Security Cube is destroyed).
-bool Blake_PsFloorUnlocked(int lvl);
-void Blake_PsUnlockFloor(int lvl);
-void Blake_PsSerialize(FArchive &arc);
-void Blake_PsClear();
-
-// Set by Elevator_SelectFloor; PlayLoop runs the panel between frames.
-extern bool Blake_ElevatorRequested;
-void Blake_ElevatorCheck();
+// PS reserved-item markers (bstone FL2_DROP_*): plane-0 tiles 72-77 under an
+// enemy spawn make it drop a key/weapon/detonator where it dies.  The code
+// rides the high byte of temp1 so it survives saves and floor snapshots.
+void Blake_ReservedDropClear();
+void Blake_ReservedDropCell(unsigned int x, unsigned int y, unsigned int tile);
+void Blake_ReservedDropAttach();
+void Blake_CheckReservedDrop(AActor *ob);
 
 #endif

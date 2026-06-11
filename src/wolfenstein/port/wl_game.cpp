@@ -33,6 +33,7 @@
 #include "colormatcher.h"
 #include "thingdef/thingdef.h"
 #include "doomerrors.h"
+#include "g_blake/blake_drops.h"
 #include "g_blake/blake_elevator.h"
 #include "g_blake/blake_floor.h"
 #include "of_ecwolf_gpu.h"
@@ -332,7 +333,11 @@ void SetupGameLevel (void)
 		// Restore before the player spawns so hub references resolve to
 		// the traveling pawn; FinishTravel places it afterwards.
 		if(!Blake_FloorRestore())
+		{
 			map->SpawnThings();
+			// Fresh spawn only: restored actors carry temp1 already.
+			Blake_ReservedDropAttach();
+		}
 		CheckSpawnPlayer(true);
 
 		// Reaching a floor unlocks its elevator button.

@@ -1,4 +1,4 @@
-actor PlasmaDetonator : Inventory
+actor PlasmaDetonator : Ammo
 {
 	inventory.amount 1
 	inventory.maxamount 100
@@ -11,15 +11,53 @@ actor PlasmaDetonator : Inventory
 	}
 }
 
+actor PlasmaDetonatorWeapon : Weapon
+{
+	inventory.pickupsound "misc/plasmadetonator/pickup"
+	weapon.ammotype1 "PlasmaDetonator"
+	weapon.ammogive1 1
+	weapon.ammouse1 0
+	+WEAPON.NOAUTOFIRE
+
+	action native A_BlakeDropDetonator();
+
+	states
+	{
+		Ready:
+			TNT1 A 1 A_WeaponReady
+			loop
+		Select:
+			TNT1 A 0 A_Raise
+			loop
+		Deselect:
+			TNT1 A 0 A_Lower
+			loop
+		Fire:
+			TNT1 A 10 A_BlakeDropDetonator
+			goto Ready
+		Spawn:
+			DBOM A -1
+			stop
+	}
+}
+
 actor PlasmaDetonatorDrop : SmartAnimation
 {
+	health 1
+	+SHOOTABLE
 	deathsound "misc/plasmadetonator/explosion"
+
+	action native A_BlakeDetonatorExplode();
+
 	states
 	{
 		Spawn:
-			DBOM ABABABABABAB 10
+			DBOM ABABABABABABABABABABABAB 10
+			goto Death
 		Death:
 			PEXP A 0 A_Scream
+			PEXP A 0 A_Explode(500, 128, XF_HURTSOURCE, true)
+			PEXP A 0 A_BlakeDetonatorExplode
 			PEXP A random(1.5, 3) A_InitSmartAnim(random(3, 6))
 			PEXP BCDEFGH 1.5 A_SmartAnimDelay
 			stop
@@ -31,13 +69,19 @@ actor SecurityCube
 	health 175
 	+SOLID
 	+DONTRIP
+	deathsound "misc/blake/explosion1"
+
+	action native A_BlakeCubeUnlocked();
+
 	states
 	{
 		Spawn:
 			CUBE ABCDEFGHIJ 2.5 bright
 			loop
 		Death:
+			CUBE K 0 bright A_Scream
 			CUBE KLMNOPQR 2.5 bright
+			CUBE S 0 bright A_BlakeCubeUnlocked
 			CUBE S -1 bright
 			stop
 	}

@@ -37,6 +37,7 @@
 #include "doomerrors.h"
 #include "id_ca.h"
 #include "g_blake/blake_barrier.h"
+#include "g_blake/blake_drops.h"
 #include "g_blake/blake_goldstern.h"
 #include "g_blake/blake_informant.h"
 #include "g_mapinfo.h"
@@ -1045,7 +1046,8 @@ void GameMap::ReadPlanesData()
 
 				TArray<WORD> fillSpots;
 				TMap<WORD, Xlat::ModZone> changeTriggerSpots;
-				
+				Blake_ReservedDropClear();
+
 
 				for(unsigned int i = 0;i < size;++i)
 				{
@@ -1058,6 +1060,8 @@ void GameMap::ReadPlanesData()
 
 					if((FeatureFlags & Xlat::FF_GLOBALMETA) && (oldplane[i] == 45 || oldplane[i] == 57))
 						switchCells[i] = oldplane[i];
+
+					Blake_ReservedDropCell(i%header.width, i/header.width, oldplane[i]);
 
 					Xlat::ModZone zone;
 					if(xlat.GetModZone(oldplane[i], zone))

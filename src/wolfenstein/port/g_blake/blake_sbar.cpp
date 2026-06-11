@@ -44,6 +44,7 @@
 #include "v_video.h"
 #include "wl_agent.h"
 #include "wl_def.h"
+#include "wl_iwad.h"
 #include "wl_play.h"
 #include "xs_Float.h"
 #include "thingdef/thingdef.h"
@@ -57,7 +58,12 @@ enum
 class BlakeStatusBar : public DBaseStatusBar
 {
 public:
-	BlakeStatusBar() : CurrentScore(0), InfoMessagePriority(0), InfoMessageTics(0) {}
+	BlakeStatusBar() : CurrentScore(0), InfoMessagePriority(0), InfoMessageTics(0),
+		EcgScrollTics(0), HeartTics(0), HeartBright(false)
+	{
+		memset(EcgLegend, 0, sizeof(EcgLegend));
+		memset(EcgSegments, 0, sizeof(EcgSegments));
+	}
 
 	void DrawStatusBar();
 	unsigned int GetHeight(bool top)
@@ -73,6 +79,11 @@ public:
 		InfoMessage = "";
 		InfoMessagePriority = 0;
 		InfoMessageTics = 0;
+		memset(EcgLegend, 0, sizeof(EcgLegend));
+		memset(EcgSegments, 0, sizeof(EcgSegments));
+		EcgScrollTics = 0;
+		HeartTics = 0;
+		HeartBright = false;
 	}
 
 	void Tick();
@@ -97,6 +108,13 @@ private:
 	FString InfoMessage;
 	int InfoMessagePriority;
 	int InfoMessageTics;
+
+	// AoG health monitor state (bstone DrawHealthMonitor).
+	int EcgLegend[6];
+	int EcgSegments[6];
+	int EcgScrollTics;
+	int HeartTics;
+	bool HeartBright;
 };
 
 DBaseStatusBar *CreateStatusBar_Blake() { return new BlakeStatusBar(); }
@@ -205,9 +223,42 @@ void BlakeStatusBar::DrawStatusBar()
 	// Draw bottom information
 	DrawInfoArea();
 
-	FString health;
-	health.Format("%3d", players[ConsolePlayer].health);
-	DrawString(HealthFont, health, 128, 162, false);
+	// AoG and PS lay out the right half of the bar differently (bstone
+	// DrawHealthNum/DrawWeaponPic/DrawAmmoNum/DrawKeyPics coordinates).
+	static const bool isPS = IWad::GetGame().Name.CompareNoCase("Planet Strike") == 0;
+	static const EColorRange statusBlue = V_FindFontColor("BlakeStatusBlue");
+
+	const int curHealth = players[ConsolePlayer].health;
+	if(isPS)
+	{
+		FString health;
+		health.Format("%3d", curHealth);
+		DrawString(HealthFont, health, 128, 162, false);
+	}
+	else
+	{
+		// ECG trace, heart sign, and percentage on the health monitor grid.
+		for(int i = 0;i < 6;++i)
+		{
+			FString seg;
+			seg.Format("ECGBET%02d", EcgSegments[i]);
+			VWB_DrawGraphic(TexMan(seg), 120+8*i, 160);
+		}
+
+		const char* heart = "ECGGRID";
+		if(curHealth > 0)
+		{
+			if(curHealth < 40)
+				heart = "ECGBAD";
+			else if(HeartBright)
+				heart = "ECGGOOD";
+		}
+		VWB_DrawGraphic(TexMan(heart), 120, 184);
+
+		FString health;
+		health.Format("%3d%%", curHealth);
+		DrawString(IndexFont, health, 149, 186, false, statusBlue);
+	}
 
 	FString score;
 	score.Format("%7d", CurrentScore);
@@ -215,11 +266,13 @@ void BlakeStatusBar::DrawStatusBar()
 
 	if(players[ConsolePlayer].ReadyWeapon)
 	{
-		FTexture *weapon = TexMan(players[ConsolePlayer].ReadyWeapon->icon);
+		AWeapon *readyWeapon = players[ConsolePlayer].ReadyWeapon;
+
+		FTexture *weapon = TexMan(readyWeapon->icon);
 		if(weapon)
 		{
-			stx = 248;
-			sty = 176;
+			stx = isPS ? 248 : 176;
+			sty = isPS ? 176 : 152;
 			stw = weapon->GetScaledWidthDouble();
 			sth = weapon->GetScaledHeightDouble();
 			screen->VirtualToRealCoords(stx, sty, stw, sth, 320, 200, true, true);
@@ -229,16 +282,43 @@ void BlakeStatusBar::DrawStatusBar()
 				TAG_DONE);
 		}
 
-		// TODO: Fix color
-		unsigned int amount = players[ConsolePlayer].ReadyWeapon->ammo[AWeapon::PrimaryFire]->amount;
-		DrawLed(static_cast<double>(amount)/static_cast<double>(players[ConsolePlayer].ReadyWeapon->ammo[AWeapon::PrimaryFire]->maxamount), 243, 155);
+		// The auto charge pistol recharges, so it gets a READY/WAIT message
+		// instead of the ammo gauge (bstone DrawAmmoMsg/DrawAmmoGuage).
+		static const ClassDef * const autochargeCls = ClassDef::FindClass("AutoChargePistol");
+		const bool autocharge = autochargeCls && readyWeapon->IsKindOf(autochargeCls);
 
-		FString ammo;
-		ammo.Format("%3d%%", amount);
-		DrawString(IndexFont, ammo, 252, 190, false, CR_LIGHTBLUE);
+		unsigned int amount = readyWeapon->ammo[AWeapon::PrimaryFire]->amount;
+		if(autocharge)
+			VWB_DrawGraphic(TexMan(amount > 0 ? "STREADY" : "STWAIT"), isPS ? 240 : 232, 152);
+		else
+			DrawLed(static_cast<double>(amount)/static_cast<double>(readyWeapon->ammo[AWeapon::PrimaryFire]->maxamount), isPS ? 243 : 234, 155);
+
+		// AoG hides the percentage for the auto charge pistol; PS always
+		// shows it along with the weapon number corner pic.
+		if(isPS || !autocharge)
+		{
+			if(isPS && weapon && weapon->Name.Len() == 7)
+			{
+				FString corner;
+				corner.Format("STCWEAP%c", weapon->Name[6]);
+				FTextureID cornerId = TexMan.CheckForTexture(corner, FTexture::TEX_Any);
+				if(cornerId.isValid())
+					VWB_DrawGraphic(TexMan(cornerId), 248, 184);
+			}
+
+			// Right aligned at a fixed 5px digit stride.
+			int ammoX = isPS ? 252 : 211;
+			if(amount < 100) ammoX += 5;
+			if(amount < 10) ammoX += 5;
+
+			FString ammo;
+			ammo.Format("%u%%", amount);
+			DrawString(IndexFont, ammo, ammoX, 190, false, statusBlue);
+		}
 	}
 
-	if(players[ConsolePlayer].mo)
+	// Radar gauge and magnification pic are PS only.
+	if(isPS && players[ConsolePlayer].mo)
 	{
 		static const ClassDef * const radarPackCls = ClassDef::FindClass("RadarPack");
 		AInventory *radarPack = players[ConsolePlayer].mo->FindInventory(radarPackCls);
@@ -246,6 +326,7 @@ void BlakeStatusBar::DrawStatusBar()
 			DrawLed(static_cast<double>(radarPack->amount)/static_cast<double>(radarPack->maxamount), 235, 155);
 		else
 			DrawLed(0, 235, 155);
+		VWB_DrawGraphic(TexMan("STMAG1X"), 176, 152);
 	}
 
 	// Find keys in inventory. AoG's VGAGRAPH has no key pics; the original
@@ -273,21 +354,34 @@ void BlakeStatusBar::DrawStatusBar()
 		}
 	}
 
-	// Display order red, yellow, green, blue, gold; colours from BLAKEPAL.
-	static const unsigned int keyOrder[5] = {0, 1, 3, 2, 4};
-	static const int keyOffColors[5] = {0x11, 0x31, 0x91, 0x51, 0x21};
-	static const int keyOnColors[5] = {0xC9, 0xB9, 0x9C, 0x5B, 0x2B};
-	for(unsigned int i = 0;i < 5;++i)
+	if(isPS)
 	{
-		const unsigned int key = keyOrder[i];
-		const int color = (presentKeys & (1<<key)) ? keyOnColors[key] : keyOffColors[key];
+		// PS has dedicated key slot pics under the health readout.
+		for(unsigned int i = 0;i < 3;++i)
+		{
+			FString pic;
+			pic.Format("STKEYS%d", (presentKeys & (1<<i)) ? i+1 : 0);
+			VWB_DrawGraphic(TexMan(pic), 120+16*i, 179);
+		}
+	}
+	else
+	{
+		// Display order red, yellow, green, blue, gold; colours from BLAKEPAL.
+		static const unsigned int keyOrder[5] = {0, 1, 3, 2, 4};
+		static const int keyOffColors[5] = {0x11, 0x31, 0x91, 0x51, 0x21};
+		static const int keyOnColors[5] = {0xC9, 0xB9, 0x9C, 0x5B, 0x2B};
+		for(unsigned int i = 0;i < 5;++i)
+		{
+			const unsigned int key = keyOrder[i];
+			const int color = (presentKeys & (1<<key)) ? keyOnColors[key] : keyOffColors[key];
 
-		stx = 257+8*i;
-		sty = 177;
-		stw = 7;
-		sth = 7;
-		screen->VirtualToRealCoords(stx, sty, stw, sth, 320, 200, true, true);
-		VWB_Clear(color, stx, sty, stx+stw, sty+sth);
+			stx = 257+8*i;
+			sty = 177;
+			stw = 7;
+			sth = 7;
+			screen->VirtualToRealCoords(stx, sty, stw, sth, 320, 200, true, true);
+			VWB_Clear(color, stx, sty, stx+stw, sty+sth);
+		}
 	}
 }
 
@@ -465,5 +559,90 @@ void BlakeStatusBar::Tick()
 	{
 		InfoMessage = "";
 		InfoMessagePriority = 0;
+	}
+
+	// AoG health monitor (bstone DrawHealthMonitor). ECG segment indices:
+	// 0 silence, 1-8 shape #1 (66%+), 9-17 shape #2 (33-65%), 18-27 shape #3.
+	const int curHealth = players[ConsolePlayer].health;
+	if(++EcgScrollTics >= 7)
+	{
+		EcgScrollTics = 0;
+
+		bool carry = false;
+		for(int i = 5;i >= 0;--i)
+		{
+			if(carry)
+			{
+				carry = false;
+				EcgLegend[i] = EcgLegend[i + 1];
+				EcgSegments[i] = EcgSegments[i + 1] - 4;
+			}
+			else if(EcgSegments[i] != 0)
+			{
+				++EcgSegments[i];
+
+				bool useCarry = false;
+				if(EcgLegend[i] == 1 && EcgSegments[i] == 5)
+					useCarry = true;
+				else if(EcgLegend[i] == 2 && EcgSegments[i] == 13)
+					useCarry = true;
+				if(EcgLegend[i] == 3 &&
+					(EcgSegments[i] == 22 || EcgSegments[i] == 27))
+					useCarry = true;
+
+				if(useCarry)
+					carry = true;
+				else
+				{
+					bool skip = false;
+					if(EcgLegend[i] == 1 && EcgSegments[i] > 8)
+						skip = true;
+					else if(EcgLegend[i] == 2 && EcgSegments[i] > 17)
+						skip = true;
+					if(EcgLegend[i] == 3 && EcgSegments[i] > 27)
+						skip = true;
+
+					if(skip)
+					{
+						EcgLegend[i] = 0;
+						EcgSegments[i] = 0;
+					}
+				}
+			}
+		}
+
+		if(curHealth > 0 && EcgLegend[5] == 0)
+		{
+			if(curHealth < 33)
+			{
+				EcgLegend[5] = 3;
+				EcgSegments[5] = 18;
+			}
+			else if(curHealth >= 66)
+			{
+				if(EcgLegend[4] != 1)
+				{
+					EcgLegend[5] = 1;
+					EcgSegments[5] = 1;
+				}
+			}
+			else
+			{
+				EcgLegend[5] = 2;
+				EcgSegments[5] = 9;
+			}
+		}
+	}
+
+	// Heart sign pulses at HEALTH_PULSE/2; steady when dead or below 40%.
+	if(curHealth < 40)
+	{
+		HeartTics = 0;
+		HeartBright = false;
+	}
+	else if(++HeartTics >= 35)
+	{
+		HeartTics = 0;
+		HeartBright = !HeartBright;
 	}
 }

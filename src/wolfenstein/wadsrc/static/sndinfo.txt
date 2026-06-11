@@ -556,6 +556,8 @@ goldfire/warpin			{ DSWARPIN ALWARPIN PCWARPIN }
 goldfire/warpout		{ DSWARPOU ALWAPROU PCWAPROU }
 goldfire/beep			{ NULL ALELEVAT PCELEVAT }
 
+projgen/gone			{ NULL ALVITAL PCVITAL }
+
 armoredstalker/attack	{ DSBLASTR ALBLASTR PCBLASTR }
 armoredstalker/sight	{ DSBLUSIT ALBLUSIT PCBLUSIT }
 armoredstalker/death	{ DSMTHDTH ALMTHDTH PCMTHDTH }

@@ -299,6 +299,7 @@ map "MAP12" lookup "BLAKE_AREA_12"
 map "MAP13" lookup "BLAKE_AREA_13"
 {
 	next = "MAP02"
+	victorynext = "EndTitle"
 	music = "DRKHALLA"
 	cluster = 1
 	DefaultLighting = 178

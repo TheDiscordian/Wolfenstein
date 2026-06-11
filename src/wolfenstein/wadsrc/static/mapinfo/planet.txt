@@ -36,6 +36,7 @@ gameinfo
 	doorsoundsequence = "DoorNormal"
 	pushwallsoundsequence = "PushwallNormal"
 	gibfactor = 1
+	extrapoints = 400000
 	highscoresfont = "SmallFont"
 	quitmessages = "$ENDSTR01", "$ENDSTR02", "$ENDSTR03", "$ENDSTR04", "$ENDSTR05", "$ENDSTR06", "$ENDSTR07", "$ENDSTR08", "$ENDSTR09"
 	gamecolormap = "COLORMAP"

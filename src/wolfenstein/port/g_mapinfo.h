@@ -100,6 +100,7 @@ public:
 	FName	DoorSoundSequence;
 	FName	PushwallSoundSequence;
 	fixed	GibFactor;
+	int		ExtraPoints;
 
 	TArray<FName>	PlayerClasses;
 	TArray<FString>	QuitMessages;

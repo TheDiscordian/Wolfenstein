@@ -180,8 +180,6 @@ static inline uint32_t TICS2MS(uint32_t tics) { return tics * 100 / 7; }
 
 //----------------
 
-#define EXTRAPOINTS     40000
-
 #define PLAYERSPEED     3000
 #define RUNSPEED        6000
 

@@ -36,6 +36,7 @@
 
 #include "doomerrors.h"
 #include "id_ca.h"
+#include "g_blake/blake_barrier.h"
 #include "g_blake/blake_goldstern.h"
 #include "g_blake/blake_informant.h"
 #include "g_mapinfo.h"
@@ -1227,6 +1228,7 @@ void GameMap::ReadPlanesData()
 
 				Blake_ClearHints();
 				Goldstern_Clear();
+				Blake_BarrierStartLevel();
 
 				unsigned int i = 0;
 				for(;i < size;++i)
@@ -1291,16 +1293,37 @@ void GameMap::ReadPlanesData()
 									continue;
 								const WORD coord = LittleShort(oldplane[i+1]);
 								const int level = oldplane[i]&0xFF;
-								// 0xFF targets the current floor. Cross-floor
-								// links need floor state persistence, which is
-								// not supported yet.
 								if(EpisodeInfo::GetNumEpisodes() > 1 &&
-									(level == 0xFF || level == ((int)levelInfo->LevelNumber-1)%15) &&
 									switchCells.CheckKey(i) &&
 									(coord>>8) < header.width && (coord&0xFF) < header.height)
 								{
-									switchLinkSrc.Push(i);
-									switchLinkDst.Push((coord&0xFF)*header.width + (coord>>8));
+									// 0xFF targets the current floor.
+									if(level == 0xFF || level == ((int)levelInfo->LevelNumber-1)%15)
+									{
+										switchLinkSrc.Push(i);
+										switchLinkDst.Push((coord&0xFF)*header.width + (coord>>8));
+									}
+									else if(level < 15)
+									{
+										// Cross-floor link: toggles a group on
+										// another floor of this episode through
+										// the global table.
+										const unsigned int target = ((levelInfo->LevelNumber-1)/15)*15 + level + 1;
+										Blake_BarrierEnsure(target, coord>>8, coord&0xFF, true);
+										Blake_BarrierAddSwitchCell(i%header.width, i/header.width, target, coord>>8, coord&0xFF);
+
+										Trigger trigger;
+										trigger.x = i%header.width;
+										trigger.y = i/header.width;
+										trigger.z = 0;
+										trigger.action = Specials::Barrier_Toggle;
+										trigger.arg[1] = target;
+										trigger.arg[2] = coord>>8;
+										trigger.arg[3] = coord&0xFF;
+										trigger.playerUse = true;
+										trigger.repeatable = true;
+										triggers.Push(trigger);
+									}
 								}
 								++i;
 								continue;
@@ -1578,18 +1601,40 @@ void GameMap::ReadPlanesData()
 					for(unsigned int l = 0;l < switchLinkSrc.Size();++l)
 					{
 						const unsigned int s = switchLinkSrc[l], d = switchLinkDst[l];
-						if(!barrierMap.CheckKey(d))
+
+						// The link coordinate itself need not be a barrier;
+						// bstone also connects through its neighbours.
+						TArray<unsigned int> seeds;
+						seeds.Push(d);
+						if(d%header.width > 0)
+							seeds.Push(d-1);
+						if(d%header.width < header.width-1)
+							seeds.Push(d+1);
+						if(d >= header.width)
+							seeds.Push(d-header.width);
+						if(d+header.width < size)
+							seeds.Push(d+header.width);
+
+						unsigned int tag = 0;
+						bool haveGroup = false;
+						for(unsigned int n = 0;n < seeds.Size() && !haveGroup;++n)
+						{
+							if(const unsigned int *st = groupTag.CheckKey(seeds[n]))
+							{
+								tag = *st; // Group already flooded by another switch
+								haveGroup = true;
+							}
+							else if(barrierMap.CheckKey(seeds[n]))
+								haveGroup = true;
+						}
+						if(!haveGroup)
 							continue; // Stray or unsupported link
 
-						unsigned int tag;
-						if(const unsigned int *dt = groupTag.CheckKey(d))
-							tag = *dt; // Group already flooded by another switch
-						else
+						if(!tag)
 						{
 							tag = ((d%header.width)<<8)|(d/header.width);
 
-							TArray<unsigned int> stack;
-							stack.Push(d);
+							TArray<unsigned int> stack(seeds);
 							while(stack.Size())
 							{
 								const unsigned int c = stack[stack.Size()-1];
@@ -1615,12 +1660,23 @@ void GameMap::ReadPlanesData()
 							SetSpotTag(GetSpot(s%header.width, s/header.width, 0), tag);
 						}
 
+						// AOG groups default on (bstone inserts true); PS
+						// takes the state from the switch tile.
+						const bool defaultOn = EpisodeInfo::GetNumEpisodes() > 1 ||
+							*switchCells.CheckKey(s) == 45;
+						Blake_BarrierEnsure(levelInfo->LevelNumber, d%header.width, d/header.width, defaultOn);
+						Blake_BarrierAddSwitchCell(s%header.width, s/header.width,
+							levelInfo->LevelNumber, d%header.width, d/header.width);
+
 						Trigger trigger;
 						trigger.x = s%header.width;
 						trigger.y = s/header.width;
 						trigger.z = 0;
 						trigger.action = Specials::Barrier_Toggle;
 						trigger.arg[0] = tag;
+						trigger.arg[1] = levelInfo->LevelNumber;
+						trigger.arg[2] = d%header.width;
+						trigger.arg[3] = d/header.width;
 						trigger.playerUse = true;
 						trigger.repeatable = true;
 						triggers.Push(trigger);

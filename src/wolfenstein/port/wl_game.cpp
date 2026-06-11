@@ -33,6 +33,7 @@
 #include "colormatcher.h"
 #include "thingdef/thingdef.h"
 #include "doomerrors.h"
+#include "g_blake/blake_elevator.h"
 #include "g_blake/blake_floor.h"
 #include "of_ecwolf_gpu.h"
 #include "of_ecwolf_opl_music.h"
@@ -333,6 +334,9 @@ void SetupGameLevel (void)
 		if(!Blake_FloorRestore())
 			map->SpawnThings();
 		CheckSpawnPlayer(true);
+
+		// Reaching a floor unlocks its elevator button.
+		Blake_FloorEntered();
 	}
 
 #ifdef OF_ECWOLF_OPENFPGA

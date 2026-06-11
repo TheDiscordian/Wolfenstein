@@ -28,6 +28,7 @@
 #include "a_inventory.h"
 #include "am_map.h"
 #include "g_blake/blake_barrier.h"
+#include "g_blake/blake_elevator.h"
 #include "g_blake/blake_goldstern.h"
 #include "of_ecwolf_gpu.h"
 
@@ -1388,6 +1389,8 @@ void PlayLoop (void)
 		OF_WolfPerf_Add(OF_WOLF_PERF_SIM, perfStart);
 
 		PlayFrame();
+
+		Blake_ElevatorCheck();
 
 		//
 		// MAKE FUNNY FACE IF BJ DOESN'T MOVE FOR AWHILE

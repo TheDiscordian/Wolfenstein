@@ -65,6 +65,16 @@ tiles
 		textureeast = "ELEVPANL";
 		texturewest = "ELEVPANL";
 	}
+	// AOG elevator: the floor-select panel replaces the straight exit.
+	// Only the east/west faces hold the panel art; the emblem sides are
+	// inert. Overlays onto the planet.txt entry, so playeruse persists.
+	trigger 21
+	{
+		action = "Elevator_SelectFloor";
+		repeatable = true;
+		activatenorth = false;
+		activatesouth = false;
+	}
 	tile 23
 	{
 		texturenorth = "GBRKBLD1";

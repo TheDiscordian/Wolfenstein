@@ -564,6 +564,11 @@ static void DetermineIntermissionMode()
 
 void LevelCompleted (void)
 {
+	// Blake has no inter-floor tally; the elevator panel already showed the
+	// stats, and travel goes straight to the loading screen.
+	if(IWad::CheckGameFilter("Blake"))
+		return;
+
 	DetermineIntermissionMode();
 
 	InterState.bonus = 0;

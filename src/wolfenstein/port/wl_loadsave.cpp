@@ -42,6 +42,7 @@
 #include "farchive.h"
 #include "filesys.h"
 #include "g_blake/blake_barrier.h"
+#include "g_blake/blake_elevator.h"
 #include "g_blake/blake_floor.h"
 #include "g_mapinfo.h"
 #include "gamemap.h"
@@ -786,6 +787,8 @@ static void Serialize(FArchive &arc)
 #define BARR_ID MAKE_ID('b','a','R','r')
 // Blake per-floor snapshots; same chunk-presence gating as the barriers.
 #define FLRS_ID MAKE_ID('f','l','R','s')
+// Blake elevator floor locks; same chunk-presence gating.
+#define FLLK_ID MAKE_ID('f','l','L','k')
 
 bool Load(const FString &filename)
 {
@@ -855,6 +858,17 @@ bool Load(const FString &filename)
 			}
 			else
 				Blake_FloorClear();
+		}
+
+		{
+			unsigned int chunkLength = M_FindPNGChunk(png, FLLK_ID);
+			if(chunkLength > 0)
+			{
+				FPNGChunkArchive arc(fileh, FLLK_ID, chunkLength);
+				Blake_FloorLockSerialize(arc);
+			}
+			else
+				Blake_FloorLocksLoadLegacy();
 		}
 	}
 	catch(CRecoverableError &error)
@@ -1005,6 +1019,11 @@ bool Save(const FString &filename, const FString &title)
 	{
 		FPNGChunkArchive floorArc(fileh, FLRS_ID);
 		Blake_FloorSerialize(floorArc);
+	}
+
+	{
+		FPNGChunkArchive lockArc(fileh, FLLK_ID);
+		Blake_FloorLockSerialize(lockArc);
 	}
 
 	M_FinishPNG(fileh);

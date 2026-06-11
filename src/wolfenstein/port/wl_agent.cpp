@@ -288,7 +288,7 @@ void player_t::GivePoints (int32_t points)
 	score += FixedMul(points, gamestate.difficulty->ScoreMultiplier);
 	while (score >= nextextra)
 	{
-		nextextra += EXTRAPOINTS;
+		nextextra += gameinfo.ExtraPoints;
 		GiveExtraMan (1);
 	}
 }
@@ -1357,7 +1357,7 @@ void player_t::Reborn()
 	{
 		lives = gamestate.difficulty->LivesCount;
 		score = oldscore = 0;
-		nextextra = EXTRAPOINTS;
+		nextextra = gameinfo.ExtraPoints;
 		frags = 0;
 	}
 

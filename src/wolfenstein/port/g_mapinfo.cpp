@@ -591,7 +591,7 @@ protected:
 
 GameInfo gameinfo;
 
-GameInfo::GameInfo() : PageIndexText("pg %d of %d")
+GameInfo::GameInfo() : PageIndexText("pg %d of %d"), ExtraPoints(40000)
 {
 }
 
@@ -693,6 +693,8 @@ protected:
 			sc.MustGetToken(TK_FloatConst);
 			gameinfo.GibFactor = static_cast<fixed>(sc->decimal*FRACUNIT);
 		}
+		else if(key.CompareNoCase("extrapoints") == 0)
+			ParseIntAssignment(gameinfo.ExtraPoints);
 		else if(key.CompareNoCase("signon") == 0)
 			ParseStringAssignment(gameinfo.SignonLump);
 		else if(key.CompareNoCase("menufade") == 0)

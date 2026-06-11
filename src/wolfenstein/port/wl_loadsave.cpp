@@ -44,6 +44,7 @@
 #include "g_blake/blake_barrier.h"
 #include "g_blake/blake_elevator.h"
 #include "g_blake/blake_floor.h"
+#include "g_blake/blake_informant.h"
 #include "g_mapinfo.h"
 #include "gamemap.h"
 #include "id_ca.h"
@@ -791,6 +792,8 @@ static void Serialize(FArchive &arc)
 #define FLLK_ID MAKE_ID('f','l','L','k')
 // Blake PS teleport snapshots; compressed, the radar grids are large.
 #define FLRD_ID MAKE_ID('f','l','R','d')
+// Blake informant census; same chunk-presence gating.
+#define INFS_ID MAKE_ID('i','n','F','s')
 
 bool Load(const FString &filename)
 {
@@ -887,6 +890,17 @@ bool Load(const FString &filename)
 			else
 				Blake_PsClear();
 		}
+
+		{
+			unsigned int chunkLength = M_FindPNGChunk(png, INFS_ID);
+			if(chunkLength > 0)
+			{
+				FPNGChunkArchive arc(fileh, INFS_ID, chunkLength);
+				Blake_InformantSerialize(arc);
+			}
+			else
+				Blake_InformantsClear();
+		}
 	}
 	catch(CRecoverableError &error)
 	{
@@ -899,6 +913,7 @@ bool Load(const FString &filename)
 
 		Blake_FloorClear();
 		Blake_PsClear();
+		Blake_InformantsClear();
 		memcpy(gamestate.mapname, oldmap, sizeof(oldmap));
 		loadedgame = false;
 		if(ingame)
@@ -1042,6 +1057,11 @@ bool Save(const FString &filename, const FString &title)
 	{
 		FPNGChunkArchive lockArc(fileh, FLLK_ID);
 		Blake_FloorLockSerialize(lockArc);
+	}
+
+	{
+		FPNGChunkArchive infArc(fileh, INFS_ID);
+		Blake_InformantSerialize(infArc);
 	}
 
 	{

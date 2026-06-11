@@ -38,6 +38,7 @@
 
 #include "wl_def.h"
 #include "blake_elevator.h"
+#include "blake_informant.h"
 #include "a_inventory.h"
 #include "am_map.h"
 #include "farchive.h"
@@ -525,9 +526,9 @@ static void ElevShowStats(int bx, int by)
 
 	statsQuick = false;
 
-	// TOTAL POINTS, INFORMANTS ALIVE (not tracked yet), ENEMY DESTROYED.
+	// TOTAL POINTS, INFORMANTS ALIVE, ENEMY DESTROYED.
 	const int p1 = ElevShowRatio(bx, by, gamestate.treasuretotal, gamestate.treasurecount);
-	const int p2 = ElevShowRatio(bx, by + 7, 0, 0);
+	const int p2 = ElevShowRatio(bx, by + 7, Blake_InformantsTotal(lvl), Blake_InformantsAlive(lvl));
 	const int p3 = ElevShowRatio(bx, by + 14, gamestate.killtotal, gamestate.killcount);
 
 	// OVERALL FLOOR, cached for the mission row.
@@ -993,18 +994,22 @@ static void PsDrawTeleportName(int tp, bool locked)
 
 // PS stats column (bstone ShowStats at 235,138): three ratio bars, the
 // floor total, and the 20-floor mission total.  statsLvl >= 1 caches the
-// floor sum like the AOG panel does.
-static void PsShowStats(int bx, int by, int statsLvl,
+// floor sum like the AOG panel does.  Informant counts come straight from
+// the census table (it is per-floor already, so no snapshot copy needed).
+static void PsShowStats(int bx, int by, int statsLvl, int infLvl,
 	DWORD tt, DWORD tc, DWORD kt, DWORD kc, bool quick)
 {
 	statsQuick = quick;
 
+	const DWORD it = Blake_InformantsTotal(infLvl);
+	const DWORD ia = Blake_InformantsAlive(infLvl);
+
 	const int p1 = ElevShowRatio(bx, by, tt, tc);
-	const int p2 = ElevShowRatio(bx, by + 7, 0, 0);
+	const int p2 = ElevShowRatio(bx, by + 7, it, ia);
 	const int p3 = ElevShowRatio(bx, by + 14, kt, kc);
 
 	const int floorSum = p1 + p2 + p3;
-	const int maxPerFloor = (tt || kt) ? 300 : 0;
+	const int maxPerFloor = (tt || kt || it) ? 300 : 0;
 	if(statsLvl >= 1 && statsLvl < (int)countof(floorMeta))
 		floorMeta[statsLvl].overallFloor = floorSum;
 	ElevShowRatio(bx, by + 27, maxPerFloor, floorSum);
@@ -1127,7 +1132,7 @@ static int PsInputFloor()
 				else
 					PsDrawNoImage();
 			}
-			PsShowStats(235, 138, tpNum + 1 == lvl ? lvl : -1,
+			PsShowStats(235, 138, tpNum + 1 == lvl ? lvl : -1, tpNum + 1,
 				chunk.treasureTotal, chunk.treasureCount,
 				chunk.killTotal, chunk.killCount, true);
 
@@ -1142,7 +1147,7 @@ static int PsInputFloor()
 		if(screenfaded)
 		{
 			VW_FadeIn();
-			PsShowStats(235, 138, lvl,
+			PsShowStats(235, 138, lvl, lvl,
 				cur.treasureTotal, cur.treasureCount,
 				cur.killTotal, cur.killCount, false);
 			IN_ClearKeysDown();

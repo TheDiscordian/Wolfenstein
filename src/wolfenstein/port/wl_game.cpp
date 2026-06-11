@@ -36,6 +36,7 @@
 #include "g_blake/blake_drops.h"
 #include "g_blake/blake_elevator.h"
 #include "g_blake/blake_floor.h"
+#include "g_blake/blake_informant.h"
 #include "of_ecwolf_gpu.h"
 #include "of_ecwolf_opl_music.h"
 
@@ -334,6 +335,7 @@ void SetupGameLevel (void)
 		// the traveling pawn; FinishTravel places it afterwards.
 		if(!Blake_FloorRestore())
 		{
+			Blake_InformantsReset();
 			map->SpawnThings();
 			// Fresh spawn only: restored actors carry temp1 already.
 			Blake_ReservedDropAttach();

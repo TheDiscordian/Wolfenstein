@@ -38,6 +38,8 @@
 #include "wl_def.h"
 #include "a_inventory.h"
 #include "blake_informant.h"
+#include "farchive.h"
+#include "g_mapinfo.h"
 #include "gamemap.h"
 #include "id_ca.h"
 #include "m_random.h"
@@ -318,6 +320,86 @@ bool Blake_TryInterrogate(AActor *playerMo)
 	return true;
 }
 
+// =============================================================================
+// Informant census (bstone stats.total_inf/accum_inf)
+//
+// Per-floor totals for the panel's INFORMANTS ALIVE ratio, keyed by
+// LevelNumber.  AActor::Spawn counts informants as they spawn (covering the
+// ScientistSpawner roll, which resolves on the first thinker tick); deaths
+// decrement.  Saved in its own inFs chunk; chunk absent = legacy save.
+// =============================================================================
+
+struct InformantStats
+{
+	BYTE total;
+	BYTE alive;
+};
+static InformantStats infStats[128];
+
+void Blake_InformantsClear()
+{
+	memset(infStats, 0, sizeof(infStats));
+}
+
+// Fresh spawns only: a floor snapshot restore keeps its census.
+void Blake_InformantsReset()
+{
+	if(!levelInfo)
+		return;
+	const int lvl = levelInfo->LevelNumber;
+	if(lvl < 1 || lvl >= (int)countof(infStats))
+		return;
+	infStats[lvl].total = infStats[lvl].alive = 0;
+}
+
+void Blake_InformantSpawned(AActor *actor)
+{
+	static const ClassDef * const infCls = ClassDef::FindClass("InformantScientist");
+	if(!infCls || !actor->IsKindOf(infCls) || !levelInfo)
+		return;
+	const int lvl = levelInfo->LevelNumber;
+	if(lvl < 1 || lvl >= (int)countof(infStats))
+		return;
+	if(infStats[lvl].total < 255)
+	{
+		++infStats[lvl].total;
+		++infStats[lvl].alive;
+	}
+}
+
+int Blake_InformantsTotal(int lvl)
+{
+	if(lvl < 1 || lvl >= (int)countof(infStats))
+		return 0;
+	return infStats[lvl].total;
+}
+
+int Blake_InformantsAlive(int lvl)
+{
+	if(lvl < 1 || lvl >= (int)countof(infStats))
+		return 0;
+	return infStats[lvl].alive;
+}
+
+void Blake_InformantSerialize(FArchive &arc)
+{
+	DWORD count = countof(infStats);
+	arc << count;
+	if(!arc.IsStoring())
+		Blake_InformantsClear();
+	for(DWORD i = 0;i < count;++i)
+	{
+		BYTE total = i < countof(infStats) ? infStats[i].total : 0;
+		BYTE alive = i < countof(infStats) ? infStats[i].alive : 0;
+		arc << total << alive;
+		if(i < countof(infStats))
+		{
+			infStats[i].total = total;
+			infStats[i].alive = alive;
+		}
+	}
+}
+
 // Shown when an informant is killed; once per level plus a 25/256 chance
 // on repeats (bstone tracks the once-flag per game instead).
 ACTION_FUNCTION(A_InformantDeath)
@@ -329,6 +411,13 @@ ACTION_FUNCTION(A_InformantDeath)
 		"  THAT SHOOT AT YOU!\r"
 		"^FC19        DO NOT SHOOT\r"
 		"        INFORMANTS!!\r";
+
+	if(levelInfo)
+	{
+		const int lvl = levelInfo->LevelNumber;
+		if(lvl >= 1 && lvl < (int)countof(infStats) && infStats[lvl].alive > 0)
+			--infStats[lvl].alive;
+	}
 
 	if(!informantWarned || pr_interrogate() < 25)
 	{

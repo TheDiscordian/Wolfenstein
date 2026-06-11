@@ -974,17 +974,54 @@ actor DeadStarTrooper
 	}
 }
 
-// AOG security cube projection generator. Destruction wiring comes with the
-// episode 6 win counting.
+// AOG security cube projection generator (bstone rotating_cubeobj).
+// Destroying every one on the floor wins the game; the victory check runs a
+// full dead cycle after the die animation.
 actor ProjectionGenerator
 {
+	points 50000
+	health 150, 175, 375, 450
 	radius 32
+	painchance 256
+	deathsound "misc/blake/explosion1"
 	+SOLID
+	+SHOOTABLE
+	+COUNTKILL
+	action native A_GeneratorOuch();
+	action native A_GeneratorGone();
+	action native A_GeneratorMessage();
+	action native A_GeneratorVictory();
 	states
 	{
 		Spawn:
-			EXDE A -1
+			EXDE A -1 bright
 			stop
+		Pain:
+			EXDE M 0 A_GeneratorOuch
+			EXDE M 11.5 bright
+			goto Spawn
+		Death:
+			EXDE B 0 A_Scream
+			EXDE B 0 A_GeneratorGone
+			EXDE B 3.5 bright
+			EXDE C 3.5 bright A_GeneratorMessage
+			EXDE D 3.5 bright
+			EXDE E 0 bright A_GeneratorMessage
+			EXDE E 3.5 bright A_Explode(20, 128, XF_HURTSOURCE, true)
+			EXDE F 3.5 bright
+			EXDE G 3.5 bright
+			EXDE H 3.5 bright
+			EXDE I 3.5 bright
+		Dead:
+			EXDE J 8
+			EXDE K 8
+			EXDE L 8
+			EXDE J 0 A_GeneratorVictory
+		DeadCycle:
+			EXDE J 8
+			EXDE K 8
+			EXDE L 8
+			loop
 	}
 }
 

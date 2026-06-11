@@ -252,6 +252,7 @@ enum ActorFlag
 	FL_GAVEAMMO         = 0x00000008, // Blake: informant already gave a charge pack
 	FL_GAVETOKENS       = 0x00000080, // Blake: informant already gave food tokens
 	FL_FRIENDLY         = 0x00000400, // Blake: pathing scientist ignores the player until noise is made
+	FL_VITALOUCHED      = 0x00000200, // Blake: projection generator already showed its ouch frame
 	FL_ATTACKMODE       = 0x00000010,
 	FL_FIRSTATTACK      = 0x00000020,
 	FL_AMBUSH           = 0x00000040,

@@ -15,6 +15,7 @@
 #include "g_mapinfo.h"
 #include "id_ca.h"
 #include "textures/textures.h"
+#include "g_blake/blake_briefing.h"
 
 /*
 =============================================================================
@@ -973,6 +974,14 @@ bool EndText (int exitClusterNum, int enterClusterNum)
 // Episode start execute entertext.
 void EnterText(unsigned int cluster)
 {
+	// Blake renders pre-mission briefings through the JAM Text Presenter
+	// (BRIEFI<cluster> VGAGRAPH chunk), not the Wolf cluster EnterText.
+	if (IWad::CheckGameFilter("Blake"))
+	{
+		Blake_ShowBriefing(cluster);
+		return;
+	}
+
 	ClusterInfo &clusterInfo = ClusterInfo::Find(cluster);
 
 	if(!clusterInfo.EnterText.IsEmpty())

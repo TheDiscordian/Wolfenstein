@@ -437,12 +437,26 @@ void CreateMenus()
 			playerClasses.addItem(new MenuItem(displayName, SetPlayerClassAndJoin));
 	}
 
-	episodes.setHeadText(IWad::CheckGameFilter("Blake") ? "CHOOSE A MISSION" : language["STR_WHICHEPISODE"]);
+	const bool blakeMenus = IWad::CheckGameFilter("Blake");
+	episodes.setHeadText(blakeMenus ? "CHOOSE A MISSION" : language["STR_WHICHEPISODE"]);
+	// Blake lists the missions in a left column with the per-mission preview on
+	// the right (DrawNewEpisode/DrawEpisodePic), not a Wolf-style left icon, so
+	// drop the wide left indent the episode menu reserves for that icon.
+	if(blakeMenus)
+		episodes.setIndent(24);
 	for(unsigned int i = 0;i < EpisodeInfo::GetNumEpisodes();++i)
 	{
 		EpisodeInfo &episode = EpisodeInfo::GetEpisode(i);
 		MenuItem *tmp = new MenuSwitcherMenuItem(episode.EpisodeName, skills, SetEpisodeAndSwitchToSkill);
-		if(!episode.EpisodePicture.IsEmpty())
+		if(blakeMenus)
+		{
+			// Mission preview (M_EPIS1..6) anchored on the right; the selected
+			// row draws last, so its preview shows on top.
+			FString missionPic;
+			missionPic.Format("M_EPIS%u", i + 1);
+			tmp->setPicture(missionPic, episodes.getX() + 235, 80);
+		}
+		else if(!episode.EpisodePicture.IsEmpty())
 			tmp->setPicture(episode.EpisodePicture);
 		if(!GameMap::CheckMapExists(episode.StartMap))
 			tmp->setHighlighted(2);

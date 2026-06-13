@@ -194,7 +194,7 @@ class Menu
 		bool				headTextInStripes;
 		bool				headPictureIsAlternate;
 		int					height;
-		const int			indent;
+		int					indent;
 		TArray<MenuItem *>	items;
 		const int			x;
 		const int			y;
@@ -236,6 +236,7 @@ class Menu
 		void			setCurrentPosition(int position);
 		void			setHeadPicture(const char* picture, bool isAlt=false);
 		void			setHeadText(const char text[36], bool drawInStripes=false);
+		void			setIndent(int newIndent) { indent = newIndent; }
 		void			show();
 		/**
 		 * Should this menu show the Key, Mse. and Joy headers?

@@ -464,10 +464,16 @@ void OPL_Pump(void)
 	int freeFrames = of_audio_free();
 	if (freeFrames <= 0)
 		return;
-	// Cap per call so one pump can't render an unbounded backlog.
-	if (freeFrames > OPL_MUSIC_RATE / 20)   // ~50 ms of audio
-		freeFrames = OPL_MUSIC_RATE / 20;
-	OPL_Feed(freeFrames, 4000 /* us */);
+	// Cap per call to roughly the ring depth (of_audio_free never exceeds it).
+	// The old 50 ms cap meant one pump could never recover a drain bigger than
+	// 50 ms, so any level load / title transition (which drains the whole
+	// ~341 ms ring) left an audible gap that later pumps clawed back too slowly.
+	// In steady play the ring stays near full, so freeFrames is small and the
+	// pump stays cheap regardless of this cap; the larger budget only does real
+	// work when there is actually a drain to refill.
+	if (freeFrames > OPL_MUSIC_RATE / 3)    // ~ring depth (~333 ms)
+		freeFrames = OPL_MUSIC_RATE / 3;
+	OPL_Feed(freeFrames, 12000 /* us */);
 }
 
 #ifdef OF_PC

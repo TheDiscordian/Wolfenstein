@@ -1463,7 +1463,12 @@ void SDLFB::ResetSDLRenderer ()
 
 void SDLFB::SetVSync (bool vsync)
 {
-#if SDL_VERSION_ATLEAST(2,0,0)
+#if OF_ECWOLF_DIRECT_VIDEO
+	// Fixed-mode device: vsync isn't runtime-toggleable, and tearing down the
+	// renderer here nulls the GPU draw frame while a menu still holds the
+	// direct-framebuffer lock, so the next present fatals.
+	(void)vsync;
+#elif SDL_VERSION_ATLEAST(2,0,0)
 	ResetSDLRenderer ();
 #endif
 }

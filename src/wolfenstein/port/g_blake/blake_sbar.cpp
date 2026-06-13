@@ -59,7 +59,7 @@ class BlakeStatusBar : public DBaseStatusBar
 {
 public:
 	BlakeStatusBar() : CurrentScore(0), InfoMessagePriority(0), InfoMessageTics(0),
-		EcgScrollTics(0), HeartTics(0), HeartBright(false)
+		StartupMsgPending(false), EcgScrollTics(0), HeartTics(0), HeartBright(false)
 	{
 		memset(EcgLegend, 0, sizeof(EcgLegend));
 		memset(EcgSegments, 0, sizeof(EcgSegments));
@@ -84,7 +84,20 @@ public:
 		EcgScrollTics = 0;
 		HeartTics = 0;
 		HeartBright = false;
+
+		// Blake's start-of-game info-area greeting (bstone DrawPlayScreen's
+		// InitInfoMsg path): armed by NewGameMessage() when a game is (re)started
+		// or the player respawns after dying, and shown here, after the clear
+		// above, so it survives into the level.  Priority 0 leaves it overridable
+		// by any gameplay message, matching the original's "system" message.
+		if(StartupMsgPending)
+		{
+			StartupMsgPending = false;
+			DisplayInfoMessage("R.E.B.A.\rAGENT: BLAKE STONE\rALL SYSTEMS READY.", 0, 300);
+		}
 	}
+
+	void NewGameMessage() { StartupMsgPending = true; }
 
 	void Tick();
 
@@ -108,6 +121,7 @@ private:
 	FString InfoMessage;
 	int InfoMessagePriority;
 	int InfoMessageTics;
+	bool StartupMsgPending;   // show the new-game greeting on the next NewGame()
 
 	// AoG health monitor state (bstone DrawHealthMonitor).
 	int EcgLegend[6];

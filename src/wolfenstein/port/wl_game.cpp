@@ -747,6 +747,11 @@ restartgame:
 #endif
 	VW_FadeOut();
 	DrawPlayScreen ();
+	// Blake shows its info-area greeting when a NEW game is started here (and
+	// after a respawn below), but never when loading a save (bstone
+	// DrawPlayScreen early-outs on loadedgame) nor on floor-to-floor travel.
+	if (!loadedgame)
+		StatusBar->NewGameMessage ();
 	died = false;
 	dointermission = true;
 	do
@@ -969,6 +974,7 @@ restartgame:
 			case ex_died:
 				Died ();
 				died = true;                    // don't "get psyched!"
+				StatusBar->NewGameMessage ();   // re-greet on respawn (Blake)
 
 				if ((players[0].lives > -1) || (gamestate.difficulty->LivesCount < 0))
 					break;                          // more lives left

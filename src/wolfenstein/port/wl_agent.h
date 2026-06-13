@@ -53,6 +53,9 @@ public:
 	// Blake Stone info area message; no-op for games without one. Time is
 	// in 70Hz tics; an equal or higher priority replaces the current message.
 	virtual void DisplayInfoMessage (const char *msg, int priority=0x200, int tics=300) {}
+	// Arm the Blake "new game" info-area greeting; shown on the next NewGame()
+	// (which clears any prior message). No-op for games without an info area.
+	virtual void NewGameMessage () {}
 };
 extern DBaseStatusBar *StatusBar;
 void	CreateStatusBar();

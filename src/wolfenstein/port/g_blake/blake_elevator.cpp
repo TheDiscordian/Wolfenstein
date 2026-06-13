@@ -449,6 +449,13 @@ static int ElevShowRatio(int bx, int by, int total, int accum)
 	static const EColorRange naColor = V_FindFontColor("BlakeElevGreen");
 	static const EColorRange pctColor = CR_WHITE;
 
+	// The bars are placed via VirtualToRealCoords(320,200,...); route the percent
+	// readouts through the SAME transform (pa=MENU_NONE) rather than the menu's
+	// MenuToRealCoords (pa=MENU_CENTER default), so the digits sit on their bars
+	// instead of drifting off them.
+	const int oldpa = pa;
+	pa = MENU_NONE;
+
 	if(!total)
 	{
 		ElevBar(0, bx, by, BAR_W, BAR_H);
@@ -456,6 +463,7 @@ static int ElevShowRatio(int bx, int by, int total, int accum)
 		PrintX = nx;
 		PrintY = by;
 		US_Print(SmallFont, "N/A", naColor);
+		pa = oldpa;
 		return 100;
 	}
 
@@ -517,6 +525,7 @@ static int ElevShowRatio(int bx, int by, int total, int accum)
 		}
 	}
 
+	pa = oldpa;
 	return maxperc;
 }
 

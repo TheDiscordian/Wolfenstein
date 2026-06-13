@@ -442,4 +442,8 @@ void CA_CacheScreen(FTexture* tex, bool noaspect)
 			TAG_DONE);
 	}
 	screen->Unlock();
+	// Decoding a full-screen VGAGRAPH chunk (title/credits/high-score swaps in
+	// the demo loop) is a multi-frame, unpumped SD-bound operation; top the
+	// music ring up afterwards so it does not skip between intro pictures.
+	OPLMusic_Pump();
 }

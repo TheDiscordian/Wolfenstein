@@ -1096,12 +1096,21 @@ static bool CheckSightTo (AActor *ob, AActor *target, double minseedist, double 
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 		if(fov > 179.5 && fov < 180.5)
 		{
-			const unsigned int fineangle = ob->angle >> ANGLETOFINESHIFT;
-			const int64_t dot =
-				(int64_t)deltax * finecosine[fineangle] -
-				(int64_t)deltay * finesine[fineangle];
-			if(dot <= 0)
-				return false;
+			// Only cull the rear hemisphere for actors that are actually
+			// moving.  A standing actor has a fixed facing and dir==nodir;
+			// culling behind that fixed angle leaves it permanently frozen
+			// (and locked to its back sprite) when approached from the rear,
+			// where it should still wake.  bstone keys this cull on the
+			// movement direction, so nodir never culls.
+			if(ob->dir != nodir)
+			{
+				const unsigned int fineangle = ob->angle >> ANGLETOFINESHIFT;
+				const int64_t dot =
+					(int64_t)deltax * finecosine[fineangle] -
+					(int64_t)deltay * finesine[fineangle];
+				if(dot <= 0)
+					return false;
+			}
 		}
 		else
 #endif

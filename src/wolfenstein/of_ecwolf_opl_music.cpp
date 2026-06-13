@@ -20,12 +20,17 @@
 //  other.  The chip is built once (Setup() brute-force calibrates the
 //  envelope tables and costs seconds on this CPU) and reused across songs.
 //
-//  Pump: on device the main loop calls OPLMusic_Pump() (dbopl rendering is
-//  far too heavy for the timer ISR, and of_timer's single callback slot
-//  belongs to the SDK MIDI player); on the desktop test the SDL_mixer
-//  PostMix hook (audio-thread rate, real SDL_mixer) drives the same render.
-//  Both paths throttle on of_audio_free() and a wall-clock budget so the
-//  continuous dbopl render can never monopolise the CPU.
+//  Async pump (device): the heavy DBOPL render / SD cache read runs on the
+//  main loop (the producer), writing PCM ahead into a multi-second RAM ring;
+//  a ~100 Hz timer ISR (the consumer) copies that PCM into the OS audio ring.
+//  Because the ISR keeps feeding the audio ring even while the main loop is
+//  blocked (level loads, screen fades, menu transitions), the music no longer
+//  stutters across those stalls.  The ISR only COPIES -- it never synthesises
+//  and never touches the SD card -- so it stays inside a tiny bounded budget,
+//  like the SDK MIDI pump.  The timer's single callback slot is free here:
+//  ECWolf only reaches this OPL player when no SDK-MIDI song is playing.
+//  On the desktop test (OF_PC) there is no ISR: the SDL_mixer PostMix hook
+//  drives the same producer straight into of_audio_write.
 //
 
 #include "of_ecwolf_opl_music.h"
@@ -43,8 +48,12 @@
 
 extern "C" {
 #include "of_audio.h"   // OF_AUDIO_RATE, of_audio_write/free/init
-#include "of_timer.h"   // of_time_us
+#include "of_timer.h"   // of_time_us, of_timer_set_callback
 }
+
+#ifndef OF_PC
+#include "of_fastram.h"  // OF_FASTDATA -- pin ISR-touched cursors to BRAM
+#endif
 
 #ifdef OF_PC
 #include <SDL_mixer.h>  // Mix_SetPostMix on the desktop test build
@@ -311,13 +320,121 @@ bool OPL_ServiceTick()
 	return true;
 }
 
-// Stream pre-rendered PCM from the music cache into the mixer: the cache-hit
-// twin of the DBOPL render below.  The pack is rendered at MAX_VOLUME, so
-// MULTIPLY_VOLUME(MusicVolume) -- the same per-sample curve the emulators
-// apply -- is baked into a Q15 gain here, scaled by the pack's RMS makeup
-// (the DBOPL fallback saturates, so the clean pack PCM sits below its
-// loudness); hits and misses track the volume setting identically, and the
-// per-sample clamp clips only where the fallback itself would.
+// === Async RAM ring + timer-ISR drain ===================================
+//
+// Single-producer (main loop) / single-consumer (timer ISR) PCM ring, so no
+// locks.  The producer renders/reads music PCM ahead into this ring; the ISR
+// copies it into the OS audio ring even while the main loop is stalled.  PCM
+// is stored interleaved-stereo so the ISR hands of_audio_write a pointer
+// straight into the ring (splitting only at the wrap) -- it performs NO data
+// stores to SDRAM, sidestepping the ISR-store-vs-GPU race entirely.  Only the
+// cursors live in BRAM: the ISR writes pcmTail, and an ISR store to SDRAM
+// would race with GPU/bridge bus traffic (see of_smp_voice.c).
+#ifndef OF_PC
+// 1<<18 frames = ~5.46 s at 48 kHz (1 MB SDRAM, interleaved stereo).  Deep
+// enough to outlast any level load / transition that stalls the producer;
+// power of two so the ring index is a cheap mask.
+#define PCM_RING_FRAMES  (1u << 18)
+#define PCM_RING_MASK    (PCM_RING_FRAMES - 1u)
+
+int16_t                      *pcmRing;  // SDRAM, interleaved stereo, malloc'd once
+OF_FASTDATA volatile uint32_t pcmHead;  // producer frame cursor (main loop)
+OF_FASTDATA volatile uint32_t pcmTail;  // consumer frame cursor (timer ISR)
+OF_FASTDATA volatile int      drainOn;  // gates the ISR off during teardown
+#endif
+
+// Mono frames the producer may emit right now: ring room on device, OS audio
+// ring room on the desktop test.
+inline int OPL_SinkFree()
+{
+#ifndef OF_PC
+	return (int)(PCM_RING_FRAMES - (pcmHead - pcmTail));
+#else
+	return of_audio_free();
+#endif
+}
+
+// Emit `n` mono frames (gain already applied), duplicated to stereo.  Device:
+// store into the RAM ring for the ISR to drain.  Desktop: push straight to
+// of_audio_write (the PostMix hook is the consumer there).
+void OPL_Emit(const int16_t *mono, int n)
+{
+#ifndef OF_PC
+	uint32_t head = pcmHead;
+	for (int i = 0; i < n; ++i)
+	{
+		const uint32_t f = (head + (uint32_t)i) & PCM_RING_MASK;
+		const int16_t  s = mono[i];
+		pcmRing[f * 2]     = s;
+		pcmRing[f * 2 + 1] = s;
+	}
+	__asm__ volatile("" ::: "memory");   // publish the data before the cursor
+	pcmHead = head + (uint32_t)n;
+#else
+	int16_t block[256 * 2];
+	int done = 0;
+	while (done < n)
+	{
+		int c = n - done;
+		if (c > 256) c = 256;
+		for (int i = 0; i < c; ++i)
+		{
+			block[i * 2]     = mono[done + i];
+			block[i * 2 + 1] = mono[done + i];
+		}
+		of_audio_write(block, c);
+		done += c;
+	}
+#endif
+}
+
+#ifndef OF_PC
+// Timer ISR (~100 Hz): copy buffered stereo PCM into the OS audio ring until
+// it is full or the RAM ring runs dry.  No synthesis, no file I/O, no ECALLs
+// -- bounded work safe for interrupt context (cf. of_midi_pump).
+void OPL_DrainISR(void)
+{
+	if (!drainOn || pcmRing == NULL)
+		return;
+
+	int freeFrames = of_audio_free();
+	if (freeFrames <= 0)
+		return;
+	// Bound per-tick work; a few ticks still refill a fully drained OS ring
+	// (~341 ms) after a stall.
+	if (freeFrames > OPL_MUSIC_RATE / 8)
+		freeFrames = OPL_MUSIC_RATE / 8;
+
+	uint32_t tail = pcmTail;
+	while (freeFrames > 0)
+	{
+		uint32_t avail = pcmHead - tail;
+		if (avail == 0)
+			break;                       // producer fell behind
+		uint32_t idx = tail & PCM_RING_MASK;
+		int run = (int)(PCM_RING_FRAMES - idx);   // contiguous frames to the wrap
+		if (run > freeFrames)      run = freeFrames;
+		if ((uint32_t)run > avail) run = (int)avail;
+		int wrote = of_audio_write(&pcmRing[idx * 2], run);
+		if (wrote <= 0)
+			break;
+		tail += (uint32_t)wrote;
+		freeFrames -= wrote;
+		if (wrote < run)
+			break;                       // OS ring filled mid-write
+	}
+	__asm__ volatile("" ::: "memory");
+	pcmTail = tail;
+}
+#endif
+
+// Stream pre-rendered PCM from the music cache: read mono samples, apply the
+// volume/makeup gain, and emit them.  The cache-hit twin of the DBOPL render
+// below.  The pack is rendered at MAX_VOLUME, so MULTIPLY_VOLUME(MusicVolume)
+// -- the same per-sample curve the emulators apply -- is baked into a Q15 gain
+// here, scaled by the pack's RMS makeup (the DBOPL fallback saturates, so the
+// clean pack PCM sits below its loudness); the per-sample clamp clips only
+// where the fallback itself would.
 void OPL_FeedStream(int maxFrames, uint32_t budgetUs)
 {
 	M.volume = MusicVolume;
@@ -329,7 +446,6 @@ void OPL_FeedStream(int maxFrames, uint32_t budgetUs)
 	const uint32_t startUs = OPL_NowUs();
 	int produced = 0;
 	int16_t mono[256];
-	int16_t block[256 * 2];
 
 	while (produced < maxFrames)
 	{
@@ -366,12 +482,9 @@ void OPL_FeedStream(int maxFrames, uint32_t budgetUs)
 			int32_t v = (int32_t)(((int64_t)(int16_t)LittleShort(mono[i]) * gain) >> 15);
 			if (v > 32767) v = 32767;
 			else if (v < -32768) v = -32768;
-			const int16_t s = (int16_t)v;
-			block[i * 2]     = s;
-			block[i * 2 + 1] = s;
+			mono[i] = (int16_t)v;
 		}
-
-		of_audio_write(block, want);
+		OPL_Emit(mono, want);
 		produced += want;
 		M.streamPos += (uint32_t)want;
 
@@ -380,8 +493,8 @@ void OPL_FeedStream(int maxFrames, uint32_t budgetUs)
 	}
 }
 
-// Produce and push up to `maxFrames` stereo frames into the mixer, honoring a
-// wall-clock budget.  Shared by the main-loop pump (device) and PostMix (PC).
+// Produce up to `maxFrames` mono frames from the DBOPL render and emit them,
+// honoring a wall-clock budget.  Stream-mode songs defer to OPL_FeedStream.
 void OPL_Feed(int maxFrames, uint32_t budgetUs)
 {
 	if (!M.active)
@@ -397,7 +510,7 @@ void OPL_Feed(int maxFrames, uint32_t budgetUs)
 
 	const uint32_t startUs = OPL_NowUs();
 	int produced = 0;
-	int16_t block[256 * 2];
+	int16_t mono[256];
 
 	while (produced < maxFrames)
 	{
@@ -407,10 +520,8 @@ void OPL_Feed(int maxFrames, uint32_t budgetUs)
 		{
 			if (!OPL_ServiceTick())
 			{
-				// Non-looping sequence ended.  Just go inactive here -- never
-				// detach the pump from inside it (on PC this runs in the
-				// PostMix audio thread).  Full teardown happens later via
-				// SD_MusicOff -> OPLMusic_Stop.
+				// Non-looping sequence ended.  Just go inactive; full teardown
+				// happens later via SD_MusicOff -> OPLMusic_Stop.
 				M.active = false;
 				return;
 			}
@@ -426,27 +537,18 @@ void OPL_Feed(int maxFrames, uint32_t budgetUs)
 		if (want <= 0)
 			break;
 
-		// Render `want` frames of the current tick directly.
+		// Render `want` (<=256) frames of the current tick in one call.
 		Bit32s buf[256];
-		int rendered = 0;
-		while (rendered < want)
+		M.chip->SetVolume(M.volume);
+		M.chip->GenerateBlock2((Bitu)want, buf);
+		for (int i = 0; i < want; ++i)
 		{
-			int chunk = want - rendered;
-			if (chunk > 256) chunk = 256;
-			M.chip->SetVolume(M.volume);
-			M.chip->GenerateBlock2((Bitu)chunk, buf);
-			for (int i = 0; i < chunk; ++i)
-			{
-				Bit32s s = buf[i] << 2;
-				if (s > 32767) s = 32767;
-				else if (s < -32768) s = -32768;
-				block[(rendered + i) * 2]     = (int16_t)s;
-				block[(rendered + i) * 2 + 1] = (int16_t)s;
-			}
-			rendered += chunk;
+			Bit32s s = buf[i] << 2;
+			if (s > 32767) s = 32767;
+			else if (s < -32768) s = -32768;
+			mono[i] = (int16_t)s;
 		}
-
-		of_audio_write(block, want);
+		OPL_Emit(mono, want);
 		produced += want;
 		M.samplesLeftInTick -= want;
 
@@ -457,6 +559,34 @@ void OPL_Feed(int maxFrames, uint32_t budgetUs)
 
 // --- Pump drivers ---------------------------------------------------------
 
+#ifndef OF_PC
+// Main-loop producer: render/read ahead into the RAM ring so the ISR always
+// has PCM to drain.  Fills whatever room the ring has, bounded by a wall-clock
+// budget so a single call never stalls the frame.
+void OPL_Produce(void)
+{
+	if (!M.active || pcmRing == NULL)
+		return;
+	int room = OPL_SinkFree();
+	if (room <= 0)
+		return;
+	OPL_Feed(room, 8000 /* us */);
+}
+
+// Fill the ring before the ISR starts draining so it can't underrun at song
+// start; cap the wall-clock so a heavy DBOPL prefill can't hang the very
+// transition that started the song.
+void OPL_Prefill(void)
+{
+	const uint32_t startUs = OPL_NowUs();
+	while (M.active && OPL_SinkFree() > 256)
+	{
+		OPL_Feed(OPL_SinkFree(), 4000 /* us */);
+		if ((uint32_t)(OPL_NowUs() - startUs) > 250000)   // 250 ms cap
+			break;
+	}
+}
+#else
 void OPL_Pump(void)
 {
 	if (!M.active)
@@ -464,19 +594,11 @@ void OPL_Pump(void)
 	int freeFrames = of_audio_free();
 	if (freeFrames <= 0)
 		return;
-	// Cap per call to roughly the ring depth (of_audio_free never exceeds it).
-	// The old 50 ms cap meant one pump could never recover a drain bigger than
-	// 50 ms, so any level load / title transition (which drains the whole
-	// ~341 ms ring) left an audible gap that later pumps clawed back too slowly.
-	// In steady play the ring stays near full, so freeFrames is small and the
-	// pump stays cheap regardless of this cap; the larger budget only does real
-	// work when there is actually a drain to refill.
-	if (freeFrames > OPL_MUSIC_RATE / 3)    // ~ring depth (~333 ms)
+	if (freeFrames > OPL_MUSIC_RATE / 3)
 		freeFrames = OPL_MUSIC_RATE / 3;
 	OPL_Feed(freeFrames, 12000 /* us */);
 }
 
-#ifdef OF_PC
 void OPL_PostMix(void *udata, Uint8 *stream, int len)
 {
 	(void)udata; (void)stream; (void)len;
@@ -487,14 +609,17 @@ void OPL_PostMix(void *udata, Uint8 *stream, int len)
 }
 #endif
 
-// On device there is nothing to install: the main loop drives OPLMusic_Pump()
-// and M.active gates it.
+// Device: drive the drain ISR via the periodic timer.  Desktop: hook
+// SDL_mixer's PostMix.
 void OPL_InstallPump()
 {
 	if (M.pumpInstalled)
 		return;
 #ifdef OF_PC
 	Mix_SetPostMix(OPL_PostMix, NULL);
+#else
+	drainOn = 1;
+	of_timer_set_callback(OPL_DrainISR, 100);
 #endif
 	M.pumpInstalled = true;
 }
@@ -505,6 +630,10 @@ void OPL_RemovePump()
 		return;
 #ifdef OF_PC
 	Mix_SetPostMix(NULL, NULL);
+#else
+	// Detach the ISR BEFORE clearing state so it can't run mid-teardown.
+	of_timer_set_callback(NULL, 0);
+	drainOn = 0;
 #endif
 	M.pumpInstalled = false;
 }
@@ -519,6 +648,29 @@ void OPL_FreeData()
 	M.dataLen = 0;
 	M.seqStart = M.seqPtr = NULL;
 	M.seqLen = M.seqTotalLen = 0;
+}
+
+// Common tail of both start paths: ready the RAM ring (device), reset the OS
+// audio ring, mark the song active, prefill, and start the pump.
+bool OPL_BeginPlayback(void)
+{
+#ifndef OF_PC
+	if (pcmRing == NULL)
+	{
+		// Allocated once and reused across songs (freed only at process exit).
+		pcmRing = (int16_t *)malloc((size_t)PCM_RING_FRAMES * 2 * sizeof(int16_t));
+		if (pcmRing == NULL)
+			return false;
+	}
+	pcmHead = pcmTail = 0;
+#endif
+	of_audio_init();
+	M.active = true;
+#ifndef OF_PC
+	OPL_Prefill();
+#endif
+	OPL_InstallPump();
+	return true;
 }
 
 } // namespace
@@ -589,10 +741,7 @@ bool OPLMusic_Start(const uint8_t *imf, int len, bool loop)
 			M.streamSamples = samples;
 			M.streamPos     = 0;
 
-			of_audio_init();
-			M.active = true;
-			OPL_InstallPump();
-			return true;
+			return OPL_BeginPlayback();
 		}
 	}
 
@@ -646,16 +795,18 @@ bool OPLMusic_Start(const uint8_t *imf, int len, bool loop)
 	}
 	OPL_ResetChip();
 
-	of_audio_init();
-	M.active = true;
-	OPL_InstallPump();
-	return true;
+	return OPL_BeginPlayback();
 }
 
 void OPLMusic_Stop(void)
 {
-	M.active = false;
+	// Detach the ISR first (inside OPL_RemovePump) so it can't drain a ring
+	// we're about to reset, then tear the rest down.
 	OPL_RemovePump();
+	M.active = false;
+#ifndef OF_PC
+	pcmHead = pcmTail = 0;   // discard the previous song's buffered PCM
+#endif
 	if (M.chipReady)
 	{
 		// Key everything off so no operator tail bleeds into the next song.
@@ -674,7 +825,7 @@ void OPLMusic_Stop(void)
 void OPLMusic_Pump(void)
 {
 #ifndef OF_PC
-	OPL_Pump();
+	OPL_Produce();
 #endif
 }
 

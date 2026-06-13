@@ -437,7 +437,7 @@ void CreateMenus()
 			playerClasses.addItem(new MenuItem(displayName, SetPlayerClassAndJoin));
 	}
 
-	episodes.setHeadText(language["STR_WHICHEPISODE"]);
+	episodes.setHeadText(IWad::CheckGameFilter("Blake") ? "CHOOSE A MISSION" : language["STR_WHICHEPISODE"]);
 	for(unsigned int i = 0;i < EpisodeInfo::GetNumEpisodes();++i)
 	{
 		EpisodeInfo &episode = EpisodeInfo::GetEpisode(i);
@@ -449,7 +449,7 @@ void CreateMenus()
 		episodes.addItem(tmp);
 	}
 
-	skills.setHeadText(language["STR_HOWTOUGH"]);
+	skills.setHeadText(IWad::CheckGameFilter("Blake") ? "DIFFICULTY LEVEL" : language["STR_HOWTOUGH"]);
 	for(unsigned int i = 0;i < SkillInfo::GetNumSkills();++i)
 	{
 		SkillInfo &skill = SkillInfo::GetSkill(i);

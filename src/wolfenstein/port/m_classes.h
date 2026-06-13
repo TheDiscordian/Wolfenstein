@@ -41,6 +41,7 @@ class MenuItem
 		int			pictureY;
 		char		string[80];
 		bool		visible;
+		bool		smallFont;	// Blake list entries draw in SmallFont, not BigFont
 		const Menu	*menu;
 		FString		activateSound;
 
@@ -64,6 +65,7 @@ class MenuItem
 		void		setHighlighted(int highlight=1) { this->highlight = highlight; }
 		void		setMenu(const Menu *menu) { this->menu = menu; }
 		void		setPicture(const char* picture, int x=-1, int y=-1);
+		void		setSmallFont();
 		void		setText(const char string[80]);
 		void		setVisible(bool visible=true) { this->visible = visible; }
 
@@ -197,7 +199,7 @@ class Menu
 		int					indent;
 		TArray<MenuItem *>	items;
 		const int			x;
-		const int			y;
+		int					y;	// non-const: Blake moves the list origin per-game
 		const int			w;
 
 		unsigned int			itemOffset; // scrolling menus
@@ -220,6 +222,9 @@ class Menu
 		unsigned int	countItems() const;
 		void			drawMenu() const;
 		virtual void	draw() const;
+		// The MENUSTYLE_Blake selection bar suits the bar-highlighted main/options
+		// menus; the LINC mission/difficulty screens select by colour only.
+		virtual bool	usesSelectionBar() const { return true; }
 		int				handle();
 		int				getCurrentPosition() const { return curPos; }
 		/**
@@ -237,6 +242,7 @@ class Menu
 		void			setHeadPicture(const char* picture, bool isAlt=false);
 		void			setHeadText(const char text[36], bool drawInStripes=false);
 		void			setIndent(int newIndent) { indent = newIndent; }
+		void			setY(int newY) { y = newY; }
 		void			show();
 		/**
 		 * Should this menu show the Key, Mse. and Joy headers?
@@ -245,6 +251,26 @@ class Menu
 		void			validateCurPos();
 
 		MenuItem		*operator[] (int index) { return getIndex(index); }
+};
+
+// Blake Stone's "CHOOSE A MISSION" / "DIFFICULTY LEVEL" screens: the LINC
+// terminal background, a big-font centred title, the small-font two-line list,
+// an optional centred inset (difficulty hint), and the footer instructions --
+// the original's custom layout rather than the generic Wolf list. Outside Blake
+// it falls back to Menu::draw, so the same globals serve both games.
+class BlakeMenu : public Menu
+{
+	public:
+		BlakeMenu(int x, int y, int w, int indent, MENU_LISTENER_PROTOTYPE(entryListener)=NULL)
+			: Menu(x, y, w, indent, entryListener) {}
+
+		void	setInset(const char *line1, const char *line2) { inset1 = line1; inset2 = line2; }
+		void	draw() const;
+		bool	usesSelectionBar() const { return false; }
+
+	private:
+		FString	inset1;
+		FString	inset2;
 };
 
 extern Menu	mainMenu;

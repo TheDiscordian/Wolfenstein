@@ -305,7 +305,9 @@ void ReadConfig(void)
 	}
 	viewsize = config.GetSetting("ViewSize")->GetInteger();
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
-	viewsize = 21;
+	// viewsize 20 = full-screen 3D view WITH the status bar; 21 drops the bar
+	// (no HUD).  Blake is meant to show its status bar, so force 20 on device.
+	viewsize = 20;
 	config.GetSetting("ViewSize")->SetValue(viewsize);
 #endif
 	mousexadjustment = config.GetSetting("MouseXAdjustment")->GetInteger();

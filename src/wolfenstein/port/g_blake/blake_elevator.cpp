@@ -735,7 +735,7 @@ static int ElevInputFloor()
 			if(--targetFloor < 1) targetFloor = 10;
 			drawCursor = true;
 		}
-		else if(scan == sc_Space || scan == sc_Enter || (ci.button0 && !prev.button0))
+		else if(scan == sc_Enter || (ci.button0 && !prev.button0))
 		{
 			targetLevel = targetFloor;
 			drawCursor = true;
@@ -1111,7 +1111,7 @@ static int PsInputFloor()
 
 		if(scan == sc_Escape || (ci.button1 && !prev.button1))
 			result = -1;
-		else if(scan == sc_Space || scan == sc_Enter || (ci.button0 && !prev.button0))
+		else if(scan == sc_Enter || (ci.button0 && !prev.button0))
 		{
 			if(locked)
 				SD_PlaySound("player/usefail");
@@ -1284,4 +1284,14 @@ void Blake_ElevatorCheck()
 		ElevatorCheckAOG();
 	else
 		ElevatorCheckPS();
+
+	// The buttons the panel cancelled/confirmed on are still latched/held when
+	// it returns: Start synthesises Escape (which CheckKeys would turn into a
+	// main-menu open), and the B / Use button that opened the panel is still
+	// down (so the next Cmd_Use would immediately re-request it).  Consume both
+	// as held so neither leaks into the frame after the panel closes.
+	control[ConsolePlayer].buttonstate[bt_esc] = false;
+	control[ConsolePlayer].buttonheld[bt_esc] = true;
+	control[ConsolePlayer].buttonstate[bt_use] = true;
+	control[ConsolePlayer].buttonheld[bt_use] = true;
 }

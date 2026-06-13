@@ -64,8 +64,8 @@ Menu automapMenu(40, 55, 260, 56);
 Menu mouseSensitivity(20, 50, 300, 24);
 Menu joySensitivity(20, 30, 300, 24);
 Menu playerClasses(NM_X, NM_Y, NM_W, 24);
-Menu episodes(NE_X+4, NE_Y-1, NE_W+7, 83);
-Menu skills(SKILL_X, NM_Y, NM_W, 24);
+BlakeMenu episodes(NE_X+4, NE_Y-1, NE_W+7, 83);
+BlakeMenu skills(SKILL_X, NM_Y, NM_W, 24);
 Menu controls(15, 70, 310, 24);
 Menu resolutionMenu(90, 25, 150, 24);
 
@@ -439,22 +439,27 @@ void CreateMenus()
 
 	const bool blakeMenus = IWad::CheckGameFilter("Blake");
 	episodes.setHeadText(blakeMenus ? "CHOOSE A MISSION" : language["STR_WHICHEPISODE"]);
-	// Blake lists the missions in a left column with the per-mission preview on
-	// the right (DrawNewEpisode/DrawEpisodePic), not a Wolf-style left icon, so
-	// drop the wide left indent the episode menu reserves for that icon.
+	// Blake's "CHOOSE A MISSION" is a custom LINC screen (bstone DrawNewEpisode):
+	// a small-font two-line list down the left at x=58/y=54 (16px step) with the
+	// per-mission preview pic on the right, not the Wolf-style left icon list.
 	if(blakeMenus)
-		episodes.setIndent(24);
+	{
+		episodes.setIndent(44);   // label x = getX()(14) + 44 = 58
+		episodes.setY(54);
+	}
 	for(unsigned int i = 0;i < EpisodeInfo::GetNumEpisodes();++i)
 	{
 		EpisodeInfo &episode = EpisodeInfo::GetEpisode(i);
 		MenuItem *tmp = new MenuSwitcherMenuItem(episode.EpisodeName, skills, SetEpisodeAndSwitchToSkill);
 		if(blakeMenus)
 		{
-			// Mission preview (M_EPIS1..6) anchored on the right; the selected
-			// row draws last, so its preview shows on top.
+			tmp->setSmallFont();
+			// Mission preview (M_EPIS1..6) anchored on the right at bstone's
+			// 176,72; every row draws it there, so the selected row (drawn last)
+			// shows on top.
 			FString missionPic;
 			missionPic.Format("M_EPIS%u", i + 1);
-			tmp->setPicture(missionPic, episodes.getX() + 235, 80);
+			tmp->setPicture(missionPic, 176, 72);
 		}
 		else if(!episode.EpisodePicture.IsEmpty())
 			tmp->setPicture(episode.EpisodePicture);
@@ -463,12 +468,27 @@ void CreateMenus()
 		episodes.addItem(tmp);
 	}
 
-	skills.setHeadText(IWad::CheckGameFilter("Blake") ? "DIFFICULTY LEVEL" : language["STR_HOWTOUGH"]);
+	skills.setHeadText(blakeMenus ? "DIFFICULTY LEVEL" : language["STR_HOWTOUGH"]);
+	// Blake's "DIFFICULTY LEVEL" custom screen (bstone DrawNewGameDiff): the same
+	// small-font two-line list (x=71/y=66), the agent-face preview on the right,
+	// and the centred hint above the footer.
+	if(blakeMenus)
+	{
+		skills.setIndent(16);     // label x = getX()(55) + 16 = 71
+		skills.setY(66);
+		skills.setInset("HIGHER DIFFICULTY LEVELS CONTAIN", "MORE, STRONGER ENEMIES");
+	}
 	for(unsigned int i = 0;i < SkillInfo::GetNumSkills();++i)
 	{
 		SkillInfo &skill = SkillInfo::GetSkill(i);
 		MenuItem *tmp = new MenuItem(skill.Name, StartNewGame);
-		if(!skill.SkillPicture.IsEmpty())
+		if(blakeMenus)
+		{
+			tmp->setSmallFont();
+			if(!skill.SkillPicture.IsEmpty())
+				tmp->setPicture(skill.SkillPicture, 192, 77);
+		}
+		else if(!skill.SkillPicture.IsEmpty())
 			tmp->setPicture(skill.SkillPicture, skills.getX() + 185, skills.getY() + 7);
 		skills.addItem(tmp);
 	}

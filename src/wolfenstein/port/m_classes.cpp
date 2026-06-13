@@ -28,7 +28,7 @@ EColorRange MenuItem::getTextColor() const
 
 MenuItem::MenuItem(const char string[80], MENU_LISTENER_PROTOTYPE(activateListener)) :
 	activateListener(activateListener), enabled(true), highlight(false),
-	picture(NULL), pictureX(-1), pictureY(-1), visible(true),
+	picture(NULL), pictureX(-1), pictureY(-1), visible(true), smallFont(false),
 	activateSound("menu/activate")
 {
 	setText(string);
@@ -45,8 +45,18 @@ void MenuItem::draw()
 	if(picture)
 		VWB_DrawGraphic(picture, pictureX == -1 ? menu->getX() + 32 : pictureX, pictureY == -1 ? PrintY : pictureY, MENU_CENTER);
 
-	US_Print(BigFont, getString(), getTextColor());
+	US_Print(smallFont ? SmallFont : BigFont, getString(), getTextColor());
 	PrintX = menu->getX() + menu->getIndent();
+}
+
+// Blake's mission/level entries render in the small green LINC font, not the
+// wide BigFont (which overran the screen border). Each entry is two lines
+// ("MISSION n:" / name); fix the slot height to the original's 16px step so the
+// list spacing and the selection highlight bar size stay correct.
+void MenuItem::setSmallFont()
+{
+	smallFont = true;
+	height = 16;
 }
 
 bool MenuItem::isSelected() const
@@ -687,7 +697,7 @@ void Menu::drawMenu() const
 		y += getIndex(i)->getHeight();
 	}
 
-	if(MenuStyle == MENUSTYLE_Blake)
+	if(MenuStyle == MENUSTYLE_Blake && usesSelectionBar())
 	{
 		double curx = getX() + getIndent() - 1;
 		double curw = getWidth() - getIndent() + 1;
@@ -753,6 +763,47 @@ void Menu::draw() const
 	if(cursor && !isAnimating() && countItems() > 0)
 		VWB_DrawGraphic (cursor, x - 4, y + getHeight(curPos) - 2, MENU_CENTER);
 	VW_UpdateScreen ();
+}
+
+void BlakeMenu::draw() const
+{
+	// Outside Blake these globals are ordinary Wolf menus.
+	if(MenuStyle != MENUSTYLE_Blake)
+	{
+		Menu::draw();
+		return;
+	}
+
+	ClearMScreen();   // the LINC terminal background (BACKDROP)
+
+	// Title: the big green digital font, centred near the top of the screen.
+	WindowX = 0;
+	WindowW = 320;
+	PrintY = 32;
+	US_CPrint(BigFont, headText, gameinfo.FontColors[GameInfo::MENU_TITLE]);
+
+	// The two-line small-font list (+ the MENUSTYLE_Blake selection bar).
+	drawMenu();
+
+	// Difficulty's centred hint, sitting just above the footer.
+	if(inset1.IsNotEmpty())
+	{
+		WindowX = 0;
+		WindowW = 320;
+		PrintY = 140;
+		US_CPrint(SmallFont, inset1.GetChars(), gameinfo.FontColors[GameInfo::MENU_LABEL]);
+		PrintY = 147;
+		US_CPrint(SmallFont, inset2.GetChars(), gameinfo.FontColors[GameInfo::MENU_LABEL]);
+	}
+
+	// Footer instructions, centred at the bottom of the terminal screen.
+	WindowX = 0;
+	WindowW = 320;
+	PrintY = 164;
+	US_CPrint(SmallFont, "UP/DN SELECTS - ENTER CHOOSES - ESC EXITS",
+		gameinfo.FontColors[GameInfo::MENU_LABEL]);
+
+	VW_UpdateScreen();
 }
 
 int Menu::handle()

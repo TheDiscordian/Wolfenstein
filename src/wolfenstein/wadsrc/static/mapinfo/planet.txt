@@ -56,7 +56,7 @@ automap
 
 skill baby
 {
-	name = "$STR_DADDY"
+	name = "LEVEL 1:\nNOVICE AGENT"
 	picname = "M_BABY"
 	spawnfilter = 1
 	damagefactor = 0.25
@@ -64,21 +64,21 @@ skill baby
 
 skill easy
 {
-	name = "$STR_HURTME"
+	name = "LEVEL 2:\nSKILLED AGENT"
 	picname = "M_EASY"
 	spawnfilter = 2
 }
 
 skill normal
 {
-	name = "$STR_BRINGEM"
+	name = "LEVEL 3:\nEXPERT AGENT"
 	picname = "M_NORMAL"
 	spawnfilter = 3
 }
 
 skill hard
 {
-	name = "$STR_DEATH"
+	name = "LEVEL 4:\nVETERAN AGENT"
 	picname = "M_HARD"
 	spawnfilter = 4
 }

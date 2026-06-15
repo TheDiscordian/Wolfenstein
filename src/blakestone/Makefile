@@ -52,13 +52,13 @@ PC_EXTRA_LIBS += $(shell pkg-config --libs SDL2_mixer 2>/dev/null || echo -lSDL2
 PC_EXTRA_LIBS += $(shell pkg-config --libs SDL2_net 2>/dev/null)
 
 CFLAGS   += -DOF_SDL2_EXTERNAL -DOF_ECWOLF_OPENFPGA \
-	-DBZ_NO_STDIO -DUSE_GPL -DOF_ECWOLF_PERF_DISABLED \
+	-DBZ_NO_STDIO -DUSE_GPL \
 	$(ECWOLF_INCLUDES) -I$(ZLIB_SRC_DIR) -I$(LZMA_SRC_DIR) -I$(BZIP2_SRC_DIR)
 CFLAGS   += -Wno-old-style-definition -Wno-implicit-fallthrough \
 	-Wno-unused-parameter -Wno-unused-function -Wno-unused-variable \
 	-Wno-unused-but-set-variable
 CXXFLAGS += -DOF_SDL2_EXTERNAL -DOF_ECWOLF_OPENFPGA \
-	-DNO_GTK=1 -DUSE_GPL -DOF_ECWOLF_PERF_DISABLED -DOF_BOOT_LOGO_BLAKE
+	-DNO_GTK=1 -DUSE_GPL -DOF_BOOT_LOGO_BLAKE
 CXXFLAGS += -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp
 CXXFLAGS += -DBZ_NO_STDIO -Icxx_compat $(ECWOLF_INCLUDES) -I$(ZLIB_SRC_DIR) \
 	-I$(LZMA_SRC_DIR) -I$(BZIP2_SRC_DIR) -std=gnu++11 -fexceptions

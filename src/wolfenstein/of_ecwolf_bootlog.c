@@ -18,7 +18,7 @@ static int of_bootlog_registered;
 
 void OF_BootLog(const char *fmt, ...)
 {
-    char line[256];
+    char line[512];
     va_list ap;
     int n, m;
     FILE *f;

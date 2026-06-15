@@ -12,6 +12,7 @@
 #include "of_gpu.h"
 #include "of_timer.h"
 #include "of_video.h"
+#include "of_ecwolf_bootlog.h"
 #include "r_data/colormaps.h"
 #include "wl_def.h"
 
@@ -271,7 +272,9 @@ void OF_WolfPerf_FrameEnd(void)
 	const unsigned int frame_avg =
 		(unsigned int)(wolf_perf_frame_total / wolf_perf_frames);
 
-	printf("perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u sk=%u spr=%u wp=%u ul=%u ov=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u t=%u.%u\n",
+	char pbuf[512];
+	snprintf(pbuf, sizeof(pbuf),
+		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u sk=%u spr=%u wp=%u ul=%u ov=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u t=%u.%u",
 		fps_x10 / 10, fps_x10 % 10, frame_avg,
 		wolf_perf_avg(OF_WOLF_PERF_EVENTS),
 		wolf_perf_avg(OF_WOLF_PERF_SIM),
@@ -303,6 +306,10 @@ void OF_WolfPerf_FrameEnd(void)
 		(unsigned int)gpu_dbg_fence_late,
 		(unsigned int)gpu_dbg_forced_swaps,
 		tics_x10 / 10, tics_x10 % 10);
+	printf("%s\n", pbuf);
+	// Mirror the report into the bootlog save file (slot 19, ofbootlog.sav) so
+	// the per-phase breakdown is readable off the card without a UART console.
+	OF_BootLog("%s", pbuf);
 
 	memset(wolf_perf_accum, 0, sizeof(wolf_perf_accum));
 	wolf_perf_frame_total = 0;

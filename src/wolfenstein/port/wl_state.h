@@ -18,7 +18,7 @@ void SelectDodgeDir (AActor *ob);
 void SelectRunDir (AActor *ob);
 void SelectWanderDir (AActor *ob);
 bool MoveObj (AActor *ob, int32_t move);
-bool SightPlayer (AActor *ob, double minseedist, double maxseedist, double maxheardist, double fov, const Frame *state);
+bool SightPlayer (AActor *ob, float minseedist, float maxseedist, float maxheardist, float fov, const Frame *state);
 
 void    DamageActor (AActor *ob, AActor *attacker, unsigned damage);
 

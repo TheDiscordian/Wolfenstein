@@ -844,15 +844,13 @@ sprites
 	"OOZ3A0", // White
 	"OOZ3B0",
 	"OOZ3C0",
-	"OOZ4A0", // Black
-	"OOZ4B0",
-	"OOZ4C0",
-
-	// More Pickups
-	"CNDYA0", // Candy Bar
-	"CNDYB0", // - Eaten
-	"SNDWA0", // Sandwich
-	"SNDWB0", // - Eaten
+	"OOZ4A0", // Black -- AOG's VSWAP has only this one black-ooze frame.  The
+	          // OOZ4 B/C, Candy and Sandwich entries that used to follow were
+	          // phantom (Planet Strike sprites, absent from the AOG VSWAP): they
+	          // actually named the Blake episode-ending pages below, so naming
+	          // them here shifted every sprite after page 921 by six (food and
+	          // ooze rendered as the Blake figure).  Removed to realign the list
+	          // to the VSWAP's 814 sprite pages.
 
 	// Blake (Episode Endings)
 	"BLKEA0",

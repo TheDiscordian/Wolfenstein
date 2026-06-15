@@ -48,7 +48,6 @@
 #include "wl_play.h"
 #include "xs_Float.h"
 #include "thingdef/thingdef.h"
-#include "of_ecwolf_gpu.h"
 
 enum
 {
@@ -199,84 +198,114 @@ void BlakeStatusBar::DrawStatusBar()
 	int topy = xs_ToInt(static_cast<real64>(sth));
 	const double topStw = stw, topSth = sth;
 
-	// The bar background (STBAR/STTOP, ~20K scaled pixels) is static, but the
-	// slow per-pixel CPU blit of it every frame dominated the frame time
-	// (~30ms, ~36%).  Composite it once into a cache, then memcpy the two bar
-	// bands back each frame; the dynamic readouts below still redraw over a
-	// fresh background, so nothing smears.  Full-width only -- a narrow view has
-	// side borders the band cache wouldn't capture, so it redraws fully.
+	// Re-rendering the whole bar (~30 text glyphs + several blits) every frame
+	// dominated the frame (~28ms / 36%), though the readouts rarely change.
+	// Cache the whole composited bar keyed on the readout values: when nothing
+	// changed, restore it with a memcpy and redraw only the ECG heartbeat (which
+	// animates every frame).  Full-width only -- a narrow view has side borders
+	// the band cache wouldn't capture, so it redraws fully.
 	const bool sbarFullWidth = (unsigned)viewwidth == (unsigned)SCREENWIDTH;
 	const int sbarPitch = SCREENPITCH;
 	const int sbarH = SCREENHEIGHT;
 	const int sbarTopBytes = topy > 0 ? topy * sbarPitch : 0;
 	const int sbarBotBytes = boty < sbarH ? (sbarH - boty) * sbarPitch : 0;
-	static byte *sbarBgCache = NULL;
-	static int sbarCacheTopy = -1, sbarCacheBoty = -1, sbarCachePitch = -1,
-		sbarCacheH = -1;
-	const bool sbarCacheHit = sbarFullWidth && sbarBgCache != NULL &&
-		sbarCacheTopy == topy && sbarCacheBoty == boty &&
-		sbarCachePitch == sbarPitch && sbarCacheH == sbarH;
 
-	const uint32_t sbarBgStart = OF_WolfPerf_NowUS();
-	if(sbarCacheHit)
+	static const bool isPS = IWad::GetGame().Name.CompareNoCase("Planet Strike") == 0;
+	const int curHealth = players[ConsolePlayer].health;
+
+	// The ECG trace + heart animate independently of the readout values, so they
+	// are redrawn every frame -- even on a cache hit.  (AoG only.)
+	auto drawEcg = [&]() {
+		if(isPS)
+			return;
+		for(int i = 0;i < 6;++i)
+		{
+			FString seg;
+			seg.Format("ECGBET%02d", EcgSegments[i]);
+			VWB_DrawGraphic(TexMan(seg), 120+8*i, 160);
+		}
+		const char* heart = "ECGGRID";
+		if(curHealth > 0)
+		{
+			if(curHealth < 40)
+				heart = "ECGBAD";
+			else if(HeartBright)
+				heart = "ECGGOOD";
+		}
+		VWB_DrawGraphic(TexMan(heart), 120, 184);
+	};
+
+	// Key = everything the bar draws except the ECG animation.  A change forces a
+	// full redraw + re-cache; otherwise the cached bar is restored.
+	uint32_t sbarKey[8] = {0};
+	sbarKey[0] = (uint32_t)curHealth;
+	sbarKey[1] = (uint32_t)players[ConsolePlayer].lives;
+	sbarKey[2] = (uint32_t)levelInfo->LevelNumber;
+	sbarKey[3] = (uint32_t)CurrentScore;
+	sbarKey[4] = (uint32_t)InfoMessageTics;
+	if(AActor *pmo = players[ConsolePlayer].mo)
+	{
+		static const ClassDef * const coinCls = ClassDef::FindClass("ConcessionCoin");
+		if(AInventory *c = coinCls ? pmo->FindInventory(coinCls) : NULL)
+			sbarKey[5] = (uint32_t)c->amount;
+		if(AWeapon *rw = players[ConsolePlayer].ReadyWeapon)
+		{
+			sbarKey[6] = (uint32_t)(uintptr_t)rw;
+			if(rw->ammo[AWeapon::PrimaryFire])
+				sbarKey[6] ^= (uint32_t)rw->ammo[AWeapon::PrimaryFire]->amount << 1;
+		}
+		unsigned int keymask = 0;
+		for(AInventory *item = pmo->inventory;item != NULL;item = item->inventory)
+			if(item->IsKindOf(NATIVE_CLASS(Key)))
+				keymask ^= (unsigned int)(uintptr_t)item->GetClass();
+		sbarKey[7] = keymask;
+	}
+
+	static byte *sbarCache = NULL;
+	static int sbarCTopy = -1, sbarCBoty = -1, sbarCPitch = -1, sbarCH = -1;
+	static uint32_t sbarCKey[8] = {0};
+	const bool sbarHit = sbarFullWidth && sbarCache != NULL &&
+		sbarCTopy == topy && sbarCBoty == boty && sbarCPitch == sbarPitch &&
+		sbarCH == sbarH && memcmp(sbarKey, sbarCKey, sizeof(sbarKey)) == 0;
+
+	if(sbarHit)
 	{
 		byte *fb = screen->GetBuffer();
 		if(sbarTopBytes)
-			memcpy(fb, sbarBgCache, sbarTopBytes);
+			memcpy(fb, sbarCache, sbarTopBytes);
 		if(sbarBotBytes)
-			memcpy(fb + (size_t)boty * sbarPitch, sbarBgCache + sbarTopBytes,
+			memcpy(fb + (size_t)boty * sbarPitch, sbarCache + sbarTopBytes,
 				sbarBotBytes);
+		drawEcg();
+		return;
 	}
-	else
+
+	// --- Full redraw: a readout changed (or no cache yet). ---
+	screen->DrawTexture(TexMan(STBar), botStx, botSty,
+		DTA_DestWidthF, botStw,
+		DTA_DestHeightF, botSth,
+		TAG_DONE);
+
+	screen->DrawTexture(TexMan(STBarTop), 0.0, 0.0,
+		DTA_DestWidthF, topStw,
+		DTA_DestHeightF, topSth,
+		TAG_DONE);
+
+	if(viewsize < 20)
 	{
-		screen->DrawTexture(TexMan(STBar), botStx, botSty,
-			DTA_DestWidthF, botStw,
-			DTA_DestHeightF, botSth,
-			TAG_DONE);
-
-		screen->DrawTexture(TexMan(STBarTop), 0.0, 0.0,
-			DTA_DestWidthF, topStw,
-			DTA_DestHeightF, topSth,
-			TAG_DONE);
-
-		if(viewsize < 20)
+		// Draw outset border
+		static byte colors[3] =
 		{
-			// Draw outset border
-			static byte colors[3] =
-			{
-				ColorMatcher.Pick(RPART(gameinfo.Border.topcolor), GPART(gameinfo.Border.topcolor), BPART(gameinfo.Border.topcolor)),
-				ColorMatcher.Pick(RPART(gameinfo.Border.bottomcolor), GPART(gameinfo.Border.bottomcolor), BPART(gameinfo.Border.bottomcolor)),
-				ColorMatcher.Pick(RPART(gameinfo.Border.highlightcolor), GPART(gameinfo.Border.highlightcolor), BPART(gameinfo.Border.highlightcolor))
-			};
+			ColorMatcher.Pick(RPART(gameinfo.Border.topcolor), GPART(gameinfo.Border.topcolor), BPART(gameinfo.Border.topcolor)),
+			ColorMatcher.Pick(RPART(gameinfo.Border.bottomcolor), GPART(gameinfo.Border.bottomcolor), BPART(gameinfo.Border.bottomcolor)),
+			ColorMatcher.Pick(RPART(gameinfo.Border.highlightcolor), GPART(gameinfo.Border.highlightcolor), BPART(gameinfo.Border.highlightcolor))
+		};
 
-			VWB_Clear(colors[1], 0, topy, screenWidth-scaleFactorX, topy+scaleFactorY);
-			VWB_Clear(colors[1], 0, topy+scaleFactorY, scaleFactorX, boty);
-			VWB_Clear(colors[0], scaleFactorX, boty-scaleFactorY, screenWidth, boty);
-			VWB_Clear(colors[0], screenWidth-scaleFactorX, topy, screenWidth, static_cast<int>(boty-scaleFactorY));
-		}
-
-		// Capture the freshly drawn background bands (full-width only).
-		if(sbarFullWidth)
-		{
-			byte *nc = (byte *)realloc(sbarBgCache,
-				(size_t)(sbarTopBytes + sbarBotBytes));
-			if(nc)
-			{
-				sbarBgCache = nc;
-				byte *fb = screen->GetBuffer();
-				if(sbarTopBytes)
-					memcpy(sbarBgCache, fb, sbarTopBytes);
-				if(sbarBotBytes)
-					memcpy(sbarBgCache + sbarTopBytes,
-						fb + (size_t)boty * sbarPitch, sbarBotBytes);
-				sbarCacheTopy = topy;
-				sbarCacheBoty = boty;
-				sbarCachePitch = sbarPitch;
-				sbarCacheH = sbarH;
-			}
-		}
+		VWB_Clear(colors[1], 0, topy, screenWidth-scaleFactorX, topy+scaleFactorY);
+		VWB_Clear(colors[1], 0, topy+scaleFactorY, scaleFactorX, boty);
+		VWB_Clear(colors[0], scaleFactorX, boty-scaleFactorY, screenWidth, boty);
+		VWB_Clear(colors[0], screenWidth-scaleFactorX, topy, screenWidth, static_cast<int>(boty-scaleFactorY));
 	}
-	OF_WolfPerf_Add(OF_WOLF_PERF_SBAR_BG, sbarBgStart);
 
 	// Draw the top information
 	FString lives, area;
@@ -291,16 +320,12 @@ void BlakeStatusBar::DrawStatusBar()
 	DrawString(IndexFont, lives, 267, 5, true, CR_WHITE);
 
 	// Draw bottom information
-	const uint32_t sbarInfoStart = OF_WolfPerf_NowUS();
 	DrawInfoArea();
-	OF_WolfPerf_Add(OF_WOLF_PERF_SBAR_INFO, sbarInfoStart);
 
 	// AoG and PS lay out the right half of the bar differently (bstone
 	// DrawHealthNum/DrawWeaponPic/DrawAmmoNum/DrawKeyPics coordinates).
-	static const bool isPS = IWad::GetGame().Name.CompareNoCase("Planet Strike") == 0;
 	static const EColorRange statusBlue = V_FindFontColor("BlakeStatusBlue");
 
-	const int curHealth = players[ConsolePlayer].health;
 	if(isPS)
 	{
 		FString health;
@@ -309,23 +334,9 @@ void BlakeStatusBar::DrawStatusBar()
 	}
 	else
 	{
-		// ECG trace, heart sign, and percentage on the health monitor grid.
-		for(int i = 0;i < 6;++i)
-		{
-			FString seg;
-			seg.Format("ECGBET%02d", EcgSegments[i]);
-			VWB_DrawGraphic(TexMan(seg), 120+8*i, 160);
-		}
-
-		const char* heart = "ECGGRID";
-		if(curHealth > 0)
-		{
-			if(curHealth < 40)
-				heart = "ECGBAD";
-			else if(HeartBright)
-				heart = "ECGGOOD";
-		}
-		VWB_DrawGraphic(TexMan(heart), 120, 184);
+		// ECG trace + heart (drawn via drawEcg so the animation also runs on a
+		// cache hit) and the percentage on the health monitor grid.
+		drawEcg();
 
 		FString health;
 		health.Format("%3d%%", curHealth);
@@ -453,6 +464,29 @@ void BlakeStatusBar::DrawStatusBar()
 			sth = 7;
 			screen->VirtualToRealCoords(stx, sty, stw, sth, 320, 200, true, true);
 			VWB_Clear(color, stx, sty, stx+stw, sty+sth);
+		}
+	}
+
+	// Cache the freshly composited bar so unchanged frames restore it with a
+	// memcpy instead of re-rendering (full-width only).
+	if(sbarFullWidth)
+	{
+		byte *nc = (byte *)realloc(sbarCache,
+			(size_t)(sbarTopBytes + sbarBotBytes));
+		if(nc)
+		{
+			sbarCache = nc;
+			byte *fb = screen->GetBuffer();
+			if(sbarTopBytes)
+				memcpy(sbarCache, fb, sbarTopBytes);
+			if(sbarBotBytes)
+				memcpy(sbarCache + sbarTopBytes,
+					fb + (size_t)boty * sbarPitch, sbarBotBytes);
+			sbarCTopy = topy;
+			sbarCBoty = boty;
+			sbarCPitch = sbarPitch;
+			sbarCH = sbarH;
+			memcpy(sbarCKey, sbarKey, sizeof(sbarKey));
 		}
 	}
 }

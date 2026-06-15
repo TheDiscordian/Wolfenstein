@@ -230,7 +230,9 @@ void ReadConfig(void)
 	config.CreateSetting("MouseEnabled", 1);
 	config.CreateSetting("JoystickEnabled", true);
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
-	config.CreateSetting("ViewSize", 21);
+	// Default to the full-screen view WITH the status bar (20); the user can
+	// still change it via the slider and that choice is respected.
+	config.CreateSetting("ViewSize", 20);
 #else
 	config.CreateSetting("ViewSize", 19);
 #endif
@@ -304,12 +306,6 @@ void ReadConfig(void)
 		controlScheme[i].mouse = config.GetSetting(mseSettingName)->GetInteger();
 	}
 	viewsize = config.GetSetting("ViewSize")->GetInteger();
-#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
-	// viewsize 20 = full-screen 3D view WITH the status bar; 21 drops the bar
-	// (no HUD).  Blake is meant to show its status bar, so force 20 on device.
-	viewsize = 20;
-	config.GetSetting("ViewSize")->SetValue(viewsize);
-#endif
 	mousexadjustment = config.GetSetting("MouseXAdjustment")->GetInteger();
 	mouseyadjustment = config.GetSetting("MouseYAdjustment")->GetInteger();
 	panxadjustment = config.GetSetting("PanXAdjustment")->GetInteger();

@@ -492,7 +492,8 @@ void CreateMenus()
 			tmp->setPicture(skill.SkillPicture, skills.getX() + 185, skills.getY() + 7);
 		skills.addItem(tmp);
 	}
-	skills.setCurrentPosition(2);
+	// Blake defaults to "Skilled Agent" (level 2); Wolf keeps its level-3 default.
+	skills.setCurrentPosition(blakeMenus ? 1 : 2);
 
 	optionsMenu.setHeadPicture("M_OPTION");
 	optionsMenu.addItem(new MenuSwitcherMenuItem(language["STR_CL"], controlBase));

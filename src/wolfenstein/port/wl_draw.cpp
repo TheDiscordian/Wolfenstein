@@ -274,6 +274,10 @@ int CalcHeight()
 
 const byte *postsource;
 int postx;
+// Wall shade is a frame-constant (gLevelLight/r_extralight change only at
+// map-load and CalcViewVariables, which runs before WallRefresh).  Computed
+// once per wall pass instead of per post in ScalePost.
+static int gWallShade;
 
 static const byte *WallTextureColumn(FTexture *texture, int texcoord)
 {
@@ -306,7 +310,7 @@ void ScalePost()
 	int ywcount, yoffs, yw, yd, yendoffs;
 	byte col;
 
-	const int shade = LIGHT2SHADE(gLevelLight + r_extralight);
+	const int shade = gWallShade;
 	const int tz = FixedMul(r_depthvisibility<<8, wallheight[postx]);
 	const int shadeIndex = GETPALOOKUP(MAX(tz, MINZ), shade);
 	BYTE *curshades = &NormalLight.Maps[shadeIndex<<8];
@@ -1267,6 +1271,8 @@ void WallRefresh (void)
 
 	min_wallheight = viewheight;
 	lastside = -1;                  // the first pixel is on a new wall
+
+	gWallShade = LIGHT2SHADE(gLevelLight + r_extralight);
 
 	AsmRefresh();
 	ScalePost ();                   // no more optimization on last post

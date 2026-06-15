@@ -1307,6 +1307,69 @@ void OF_WolfGPU_FallbackToCPU(void)
 	OF_WolfGPU_EndFrame();
 }
 
+/* EndFrame for the common "composite the status bar over a full-width 3D view"
+ * case.  Frame-end semantics are identical to OF_WolfGPU_EndFrame (drain, flush
+ * CPU-dirty lines, end the frame) so the present path is unchanged -- the only
+ * difference is the cache invalidate is scoped to the bar/border rows above
+ * [0,viewY0) and below [viewY1,height) the GPU-rendered view instead of the
+ * whole framebuffer.  The CPU only writes the opaque status bar into those
+ * bands; the view rows stay GPU-resident and are scanned out from SDRAM, so
+ * they never need CPU-cache invalidation.  The per-frame whole-frame invalidate
+ * was the single largest frame cost (~35%).  Falls back to a full end when the
+ * geometry can't be scoped. */
+void OF_WolfGPU_EndFrameStatusBar(int viewY0, int viewY1)
+{
+	if(!gpu_available || !gpu_frame_active)
+		return;
+	if(gpu_track_base == NULL || gpu_pitch <= 0 || gpu_height <= 0)
+	{
+		OF_WolfGPU_EndFrame();
+		return;
+	}
+	if(viewY0 < 0)
+		viewY0 = 0;
+	if(viewY1 > gpu_height)
+		viewY1 = gpu_height;
+	if(viewY0 >= viewY1)
+	{
+		OF_WolfGPU_EndFrame();
+		return;
+	}
+
+	gpu_flush_batch();
+	const bool had_gpu_work = gpu_frame_dirty;
+	if(had_gpu_work)
+	{
+		const uint32_t perfStart = OF_WolfPerf_NowUS();
+		of_gpu_finish();
+		OF_WolfPerf_Add(OF_WOLF_PERF_GPU_FINISH, perfStart);
+		gpu_frame_dirty = false;
+	}
+	gpu_flush_cpu_dirty_lines();
+	if(had_gpu_work)
+	{
+		if(viewY0 > 0)
+		{
+			of_cache_inval_range(gpu_track_base,
+				(uint32_t)((uintptr_t)viewY0 * (uintptr_t)gpu_pitch));
+		}
+		const uintptr_t botOff = (uintptr_t)viewY1 * (uintptr_t)gpu_pitch;
+		if(botOff < gpu_track_bytes)
+		{
+			of_cache_inval_range(gpu_track_base + botOff,
+				(uint32_t)(gpu_track_bytes - botOff));
+		}
+	}
+	gpu_reset_cpu_cache_tracking();
+
+	gpu_frame_active = false;
+	gpu_frame_dirty = false;
+	gpu_framebuffer = NULL;
+	gpu_pitch = 0;
+	gpu_height = 0;
+	gpu_reset_batch();
+}
+
 void OF_WolfGPU_PrepareForCPUAccessRect(uint8_t *dest, int width, int height,
 	int pitch)
 {

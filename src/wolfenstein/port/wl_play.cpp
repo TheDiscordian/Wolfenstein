@@ -1239,7 +1239,23 @@ void PlayFrame()
 	if((automap && !gamestate.victoryflag) || (Paused & 1) ||
 		Net::IsBlocked() || (!loadedgame && viewsize != 21) || screenfaded)
 	{
-		OF_WolfGPU_FallbackToCPU();
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+		// The common reason for the CPU sync is just compositing the status bar
+		// over a full-width 3D view -- invalidate only the bar rows above/below
+		// the view, not the whole framebuffer.  Anything that needs the whole
+		// frame on the CPU (automap, pause, net wait, palette fade) still does
+		// the full end.
+		if((unsigned)viewwidth == (unsigned)SCREENWIDTH &&
+			!((automap && !gamestate.victoryflag) || (Paused & 1) ||
+			Net::IsBlocked() || screenfaded))
+		{
+			OF_WolfGPU_EndFrameStatusBar(viewscreeny, viewscreeny + viewheight);
+		}
+		else
+#endif
+		{
+			OF_WolfGPU_FallbackToCPU();
+		}
 	}
 
 	if(automap && !gamestate.victoryflag)

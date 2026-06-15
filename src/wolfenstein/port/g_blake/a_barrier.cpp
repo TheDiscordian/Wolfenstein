@@ -68,17 +68,7 @@ ACTION_FUNCTION(A_BarrierDamage)
 	}
 
 	if(pr_barrier() < 0x7f)
-	{
-		AActor::Iterator iter = AActor::GetIterator();
-		while(iter.Next())
-		{
-			AActor * const other = iter;
-			if(other->player || !(other->flags & FL_SHOOTABLE))
-				continue;
-			if(other->tilex == self->tilex && other->tiley == self->tiley)
-				DamageActor(other, self, 500);
-		}
-	}
+		DamageActorsOnTile(self, self->tilex, self->tiley, 500);
 
 	return true;
 }

@@ -1390,48 +1390,17 @@ bool OF_WolfGPU_DrawMaskedColumn(uint8_t *dest, int count,
 			OF_GPU_SPAN_COLORMAP);
 	}
 
-	int run_start = -1;
-	int run_count = 0;
-	int run_texfrac = 0;
-	int cur_texfrac = texfrac;
-
-	for(int i = 0; i < count; ++i, cur_texfrac += texstep)
-	{
-		const int sample = (cur_texfrac >> FRACBITS) & texmask;
-		if(source[sample] != 0)
-		{
-			if(run_count == 0)
-			{
-				run_start = i;
-				run_texfrac = cur_texfrac;
-			}
-			run_count++;
-			continue;
-		}
-
-		if(run_count != 0)
-		{
-			if(!gpu_add_affine(dest + run_start * gpu_pitch, run_count,
-				source, source_len, 1, 0, texmask, 0, run_texfrac,
-				0, texstep, light, gpu_pitch, OF_GPU_SPAN_COLORMAP))
-			{
-				return false;
-			}
-			run_count = 0;
-			run_start = -1;
-		}
-	}
-
-	if(run_count != 0)
-	{
-		if(!gpu_add_affine(dest + run_start * gpu_pitch, run_count,
-			source, source_len, 1, 0, texmask, 0, run_texfrac,
-			0, texstep, light, gpu_pitch, OF_GPU_SPAN_COLORMAP))
-		{
-			return false;
-		}
-	}
-	return true;
+	// state 3 (mixed transparent/opaque): emit the whole column as one affine
+	// span and let the hardware skip src==0 texels (OF_GPU_SPAN_SKIP_ZERO).  The
+	// old path walked every pixel on the soft core to classify opaque runs and
+	// split the column into several COLORMAP spans (1-3 lanes each, fragmenting
+	// the batch); this writes the identical opaque-pixel set -- a pixel i is
+	// written iff source[(texfrac+i*texstep)>>FRACBITS & texmask] != 0 either way
+	// -- as one span.  The SDK sprite-post path (gpudemo emit_sprite_post) draws
+	// full masked columns the same way.
+	return gpu_add_affine(dest, count, source, source_len,
+		1, 0, texmask, 0, texfrac, 0, texstep, light, gpu_pitch,
+		OF_GPU_SPAN_COLORMAP | OF_GPU_SPAN_SKIP_ZERO);
 }
 
 bool OF_WolfGPU_DrawRawColumn(uint8_t *dest, int count,

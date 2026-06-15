@@ -75,6 +75,7 @@ void OF_WolfGPU_ResetVideoFrames(void);
 void OF_WolfGPU_BeginFrame(uint8_t *framebuffer, int pitch, int height);
 void OF_WolfGPU_EndFrame(void);
 void OF_WolfGPU_FallbackToCPU(void);
+void OF_WolfGPU_EndFrameStatusBar(int viewY0, int viewY1);
 void OF_WolfGPU_PrepareForCPUAccessRect(uint8_t *dest, int width, int height,
 	int pitch);
 void OF_WolfGPU_PrepareForCPUAccessColumn(uint8_t *dest, int count, int pitch);
@@ -109,6 +110,7 @@ static inline void OF_WolfGPU_ResetVideoFrames(void) {}
 static inline void OF_WolfGPU_BeginFrame(uint8_t *, int, int) {}
 static inline void OF_WolfGPU_EndFrame(void) {}
 static inline void OF_WolfGPU_FallbackToCPU(void) {}
+static inline void OF_WolfGPU_EndFrameStatusBar(int, int) {}
 static inline void OF_WolfGPU_PrepareForCPUAccessRect(uint8_t *, int, int, int) {}
 static inline void OF_WolfGPU_PrepareForCPUAccessColumn(uint8_t *, int, int) {}
 static inline bool OF_WolfGPU_IsActive(void) { return false; }

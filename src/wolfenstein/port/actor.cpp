@@ -492,7 +492,14 @@ void AActor::SnapshotRenderState()
 void AActor::SnapshotRenderStates()
 {
 	for(AActor::Iterator iter = AActor::GetIterator();iter.Next();)
-		iter->SnapshotRenderState();
+	{
+		// Dormant actors hold a frozen pose (old == current), so snapshotting
+		// them is a no-op; skipping avoids the per-tic walk over the static bulk
+		// of the map.  The thinker loop already trusts the same flag to skip
+		// Tick(); on PC ofThinkDormant is never set, so this matches the full walk.
+		if(iter->NeedsRenderSnapshot())
+			iter->SnapshotRenderState();
+	}
 }
 
 void AActor::SyncRenderState()

@@ -119,6 +119,11 @@ class AActor : public Thinker,
 		virtual void	RemoveInventory(AInventory *item);
 		void			SnapshotRenderState();
 		static void		SnapshotRenderStates();
+		// A dormant actor (idle decoration/pickup/patrol point) rests on an
+		// infinite frame with frozen x/y/z/angle/pitch, so re-snapshotting it is
+		// a no-op.  On PC ofThinkDormant is never set, so this is always true and
+		// the snapshot set is identical to the full walk.
+		bool			NeedsRenderSnapshot() const { return !ofThinkDormant; }
 		void			SyncRenderState();
 		static void		SyncRenderStates();
 		void			Serialize(FArchive &arc);

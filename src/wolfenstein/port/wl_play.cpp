@@ -1271,9 +1271,11 @@ void PlayFrame()
 
 	if (!loadedgame)
 	{
+		const uint32_t sbStart = OF_WolfPerf_NowUS();
 		StatusBar->Tick();
 		if ((gamestate.TimeCount & 1) || !(tics & 1))
 			StatusBar->DrawStatusBar();
+		OF_WolfPerf_Add(OF_WOLF_PERF_STATUSBAR, sbStart);
 	}
 
 	if (screenfaded)

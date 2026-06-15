@@ -1058,7 +1058,7 @@ bool CheckLine (const AActor *ob, fixed x2f, fixed y2f, int tilex2, int tiley2)
 
 #define MINSIGHT (0x18000l*64)
 
-static bool CheckSightTo (AActor *ob, AActor *target, double minseedist, double maxseedist, double maxheardist, double fov)
+static bool CheckSightTo (AActor *ob, AActor *target, float minseedist, float maxseedist, float maxheardist, float fov)
 {
 	if (!(target->flags & FL_SHOOTABLE))
 		return false;
@@ -1077,24 +1077,24 @@ static bool CheckSightTo (AActor *ob, AActor *target, double minseedist, double 
 	uint32_t distance = MAX(abs(deltax), abs(deltay))*64;
 
 	if (!(ob->flags & FL_AMBUSH) && heardnoise &&
-		(maxheardist < 0.00001 ||
+		(maxheardist < 0.00001f ||
 		distance < maxheardist))
 		return true;
 
-	if (minseedist > 0.00001 &&
+	if (minseedist > 0.00001f &&
 		distance < minseedist)
 		return false;
-	if (maxseedist > 0.00001 &&
+	if (maxseedist > 0.00001f &&
 		distance > maxseedist)
 		return false;
 
 	if (distance < MINSIGHT)
 		return true;
 
-	if(fov < 359.75)
+	if(fov < 359.75f)
 	{
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
-		if(fov > 179.5 && fov < 180.5)
+		if(fov > 179.5f && fov < 180.5f)
 		{
 			// Only cull the rear hemisphere for actors that are actually
 			// moving.  A standing actor has a fixed facing and dir==nodir;
@@ -1136,7 +1136,7 @@ static bool CheckSightTo (AActor *ob, AActor *target, double minseedist, double 
 	return CheckLine (ob, target);
 }
 
-static int CheckSight (AActor *ob, double minseedist, double maxseedist, double maxheardist, double fov)
+static int CheckSight (AActor *ob, float minseedist, float maxseedist, float maxheardist, float fov)
 {
 	for(unsigned int i = 0;i < Net::InitVars.numPlayers;++i)
 	{
@@ -1190,7 +1190,7 @@ static void FirstSighting (AActor *ob, const Frame *state)
 */
 
 static FRandom pr_sight("SightPlayer");
-bool SightPlayer (AActor *ob, double minseedist, double maxseedist, double maxheardist, double fov, const Frame *state)
+bool SightPlayer (AActor *ob, float minseedist, float maxseedist, float maxheardist, float fov, const Frame *state)
 {
 	if (notargetmode)
 		return false;

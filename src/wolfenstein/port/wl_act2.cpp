@@ -436,7 +436,7 @@ ACTION_FUNCTION(A_Look)
 	ACTION_PARAM_STATE(state, 5, self->SeeState);
 
 	// FOV of 0 indicates default
-	if(fov < 0.00001)
+	if(fov < 0.00001f)
 		fov = 180;
 
 	SightPlayer(self, minseedist, maxseedist, maxheardist, fov, state);

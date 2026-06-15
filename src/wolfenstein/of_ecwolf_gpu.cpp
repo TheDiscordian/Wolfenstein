@@ -274,7 +274,7 @@ void OF_WolfPerf_FrameEnd(void)
 
 	char pbuf[512];
 	snprintf(pbuf, sizeof(pbuf),
-		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u t=%u.%u",
+		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u t=%u.%u",
 		fps_x10 / 10, fps_x10 % 10, frame_avg,
 		wolf_perf_avg(OF_WOLF_PERF_EVENTS),
 		wolf_perf_avg(OF_WOLF_PERF_SIM),
@@ -298,6 +298,8 @@ void OF_WolfPerf_FrameEnd(void)
 		wolf_perf_avg(OF_WOLF_PERF_RENDER_UNLOCK),
 		wolf_perf_avg(OF_WOLF_PERF_OVERLAY),
 		wolf_perf_avg(OF_WOLF_PERF_STATUSBAR),
+		wolf_perf_avg(OF_WOLF_PERF_SBAR_BG),
+		wolf_perf_avg(OF_WOLF_PERF_SBAR_INFO),
 		wolf_perf_avg(OF_WOLF_PERF_PRESENT),
 		wolf_perf_avg(OF_WOLF_PERF_ACQUIRE),
 		wolf_perf_avg(OF_WOLF_PERF_SOUND),

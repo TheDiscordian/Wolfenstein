@@ -48,6 +48,7 @@
 #include "wl_play.h"
 #include "xs_Float.h"
 #include "thingdef/thingdef.h"
+#include "of_ecwolf_gpu.h"
 
 enum
 {
@@ -216,6 +217,7 @@ void BlakeStatusBar::DrawStatusBar()
 		sbarCacheTopy == topy && sbarCacheBoty == boty &&
 		sbarCachePitch == sbarPitch && sbarCacheH == sbarH;
 
+	const uint32_t sbarBgStart = OF_WolfPerf_NowUS();
 	if(sbarCacheHit)
 	{
 		byte *fb = screen->GetBuffer();
@@ -274,6 +276,7 @@ void BlakeStatusBar::DrawStatusBar()
 			}
 		}
 	}
+	OF_WolfPerf_Add(OF_WOLF_PERF_SBAR_BG, sbarBgStart);
 
 	// Draw the top information
 	FString lives, area;
@@ -288,7 +291,9 @@ void BlakeStatusBar::DrawStatusBar()
 	DrawString(IndexFont, lives, 267, 5, true, CR_WHITE);
 
 	// Draw bottom information
+	const uint32_t sbarInfoStart = OF_WolfPerf_NowUS();
 	DrawInfoArea();
+	OF_WolfPerf_Add(OF_WOLF_PERF_SBAR_INFO, sbarInfoStart);
 
 	// AoG and PS lay out the right half of the bar differently (bstone
 	// DrawHealthNum/DrawWeaponPic/DrawAmmoNum/DrawKeyPics coordinates).

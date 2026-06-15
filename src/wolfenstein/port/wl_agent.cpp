@@ -551,6 +551,63 @@ bool ActorBlocksSpot (AActor *ob, unsigned int x, unsigned int y)
 	return false;
 }
 
+// Blake's barrier thinker (A_BarrierDamage) fried every shootable actor sitting
+// on its own tile, and used to scan the whole actor list per lit barrier every
+// other tic to find them.  An actor on tile (tx, ty) is within one cell of it in
+// the collision grid (tilex differs from the physical cell by at most one), so
+// the 3x3 cell block plus the oversized side list is the complete candidate set;
+// the original exact-tile predicate then runs on live fields -- identical
+// results without a world scan.
+void DamageActorsOnTile (AActor *source, int tx, int ty, int dmg)
+{
+	if(collisionGridMap == map && collisionGridW > 0)
+	{
+		int cxl = tx - 1, cyl = ty - 1;
+		int cxh = tx + 1, cyh = ty + 1;
+		if(cxl < 0) cxl = 0;
+		if(cyl < 0) cyl = 0;
+		if(cxh >= collisionGridW) cxh = collisionGridW - 1;
+		if(cyh >= collisionGridH) cyh = collisionGridH - 1;
+
+		for (int cy = cyl;cy <= cyh;cy++)
+		{
+			for (int cx = cxl;cx <= cxh;cx++)
+			{
+				AActor *next;
+				for(AActor *o = collisionGrid[cy * collisionGridW + cx];o != NULL;o = next)
+				{
+					// DamageActor may Destroy() o, which unlinks it from this
+					// cell -- read the link before damaging.
+					next = o->collisionNext;
+					if(!o->player && (o->flags & FL_SHOOTABLE) &&
+						o->tilex == tx && o->tiley == ty)
+						DamageActor(o, source, dmg);
+				}
+			}
+		}
+
+		// Oversized actors live off-grid in a short side list.  Walk it
+		// backwards so a Destroy()-driven Delete() can't skip an entry.
+		for(int i = (int)collisionGridOversized.Size() - 1;i >= 0;--i)
+		{
+			AActor *o = collisionGridOversized[i];
+			if(!o->player && (o->flags & FL_SHOOTABLE) &&
+				o->tilex == tx && o->tiley == ty)
+				DamageActor(o, source, dmg);
+		}
+		return;
+	}
+
+	// No grid yet: full scan (identical to the original).
+	for(AActor::Iterator iter = AActor::GetIterator();iter.Next();)
+	{
+		AActor *o = iter;
+		if(!o->player && (o->flags & FL_SHOOTABLE) &&
+			o->tilex == tx && o->tiley == ty)
+			DamageActor(o, source, dmg);
+	}
+}
+
 // The solidity bytes are built ONCE per level and patched in place when a
 // tile mutates (SetTile, door/slider slideAmount writes).  A full rebuild
 // walks ~400 KB of MapSpot structs through a 32 KB D-cache -- ~12 ms -- so

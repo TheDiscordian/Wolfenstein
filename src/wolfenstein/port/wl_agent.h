@@ -21,6 +21,7 @@ void    CheckSpawnPlayer (bool setup=false);
 void    RebuildActorCollisionGrid ();
 void    UnlinkActorCollision (class AActor *ob);
 bool    ActorBlocksSpot (class AActor *ob, unsigned int x, unsigned int y);
+void    DamageActorsOnTile (class AActor *source, int tx, int ty, int dmg);
 void    TouchActorsNear (class AActor *ob);
 // Flat per-tile solidity classification rebuilt each tic alongside the
 // collision grid: 0 = empty, 1 = blocked from every direction, 2 = consult

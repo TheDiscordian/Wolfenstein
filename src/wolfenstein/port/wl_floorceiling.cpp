@@ -16,6 +16,16 @@
 extern int viewshift;
 extern fixed viewz;
 
+// Pure: map a depth value tz and a frame-constant shade to the final palette
+// byte.  tz must equal planeVis*rowDistance (int32); shade =
+// LIGHT2SHADE(gLevelLight + r_extralight).  Shared so the value is provably
+// identical on both targets; only the device backdrop path calls it.
+static inline byte R_SolidPlaneColorForTz(int tz, int shade, byte baseColor)
+{
+	const int shadeIndex = GETPALOOKUP(tz, shade);
+	return NormalLight.Maps[(shadeIndex << 8) + baseColor];
+}
+
 struct SolidTextureCacheEntry
 {
 	FTexture *texture;
@@ -192,44 +202,39 @@ static bool R_TextureFirstColor(FTexture *texture, byte &color)
 	return true;
 }
 
-/* planeVis is FixedDiv(r_depthvisibility, abs(planeheight)) hoisted by the
- * caller -- FixedDiv is a soft 64-bit division on this target and the old
- * per-row form burned hundreds of them per frame. */
-static byte R_ShadeSolidPlaneRow(fixed planeVis, int rowDistance,
-	byte baseColor)
-{
-	if(rowDistance <= 0)
-		rowDistance = 1;
-
-	const int shade = LIGHT2SHADE(gLevelLight + r_extralight);
-	const int tz = FixedMul(planeVis, rowDistance << FRACBITS);
-	const int shadeIndex = GETPALOOKUP(tz, shade);
-	return NormalLight.Maps[(shadeIndex << 8) + baseColor];
-}
-
 static bool R_ClearSolidBackdropHalfGPU(byte *vbuf, unsigned vbufPitch,
 	int yStart, int yEnd, int horizon, fixed planeheight, byte baseColor)
 {
 	if(planeheight == 0 || yStart >= yEnd)
 		return true;
 
+	/* planeVis stays hoisted -- FixedDiv is a soft 64-bit divide here.  The
+	 * shade is frame-constant and tz = planeVis*rowDistance changes by +-planeVis
+	 * per row, so both come out of the per-row loop (was a LIGHT2SHADE plus a
+	 * 64-bit FixedMul every row, twice per run).  Each call covers one pure half
+	 * -- ceiling [0,horizon) with rowDistance horizon-y (decreasing), floor
+	 * [horizon,viewheight) with rowDistance y-horizon+1 (increasing) -- so the
+	 * step sign is uniform.  FixedMul(planeVis, rd<<FRACBITS) == int32
+	 * planeVis*rd because rd<<16 has no low bits to round; the per-row clamp
+	 * (rowDistance<=0) is dead at both call sites (rd0 is always >= 1). */
 	const fixed planeVis = FixedDiv(r_depthvisibility, abs(planeheight));
+	const int shade = LIGHT2SHADE(gLevelLight + r_extralight);
+	const bool ceiling = yStart < horizon;
+	const int rd0 = ceiling ? horizon - yStart : yStart - horizon + 1;
+	const int step = ceiling ? -(int)planeVis : (int)planeVis;
+	int tz = (int)((int32_t)planeVis * (int32_t)rd0);
+
 	for(int y = yStart; y < yEnd;)
 	{
-		const int rowDistance = y < horizon ? horizon - y : y - horizon + 1;
-		const byte rowColor =
-			R_ShadeSolidPlaneRow(planeVis, rowDistance, baseColor);
+		const byte rowColor = R_SolidPlaneColorForTz(tz, shade, baseColor);
 
 		int runEnd = y + 1;
+		int tzr = tz;
 		while(runEnd < yEnd)
 		{
-			const int nextDistance =
-				runEnd < horizon ? horizon - runEnd : runEnd - horizon + 1;
-			if(R_ShadeSolidPlaneRow(planeVis, nextDistance, baseColor) !=
-				rowColor)
-			{
+			tzr += step;
+			if(R_SolidPlaneColorForTz(tzr, shade, baseColor) != rowColor)
 				break;
-			}
 			++runEnd;
 		}
 
@@ -238,6 +243,8 @@ static bool R_ClearSolidBackdropHalfGPU(byte *vbuf, unsigned vbufPitch,
 		{
 			return false;
 		}
+
+		tz += step * (runEnd - y);
 		y = runEnd;
 	}
 	return true;

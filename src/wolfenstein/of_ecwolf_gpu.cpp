@@ -272,9 +272,24 @@ void OF_WolfPerf_FrameEnd(void)
 	const unsigned int frame_avg =
 		(unsigned int)(wolf_perf_frame_total / wolf_perf_frames);
 
+	// GPU-stall counters (whole-frame, per-window delta).  fl (floor/ceiling) is
+	// the dominant GPU consumer, so a large spin-iteration delta localizes its
+	// ~17ms to CPU-waits-for-GPU-drain (rs/ds) rather than CPU submit/probe.
+	// rw/dw = ring/dma wait COUNTS; rs/ds = total spin-loop ITERATIONS (stall
+	// time proxy).
+	static uint32_t prev_rw = 0, prev_dw = 0, prev_rs = 0, prev_ds = 0;
+	const uint32_t rw = _gpu_dbg_ring_waits - prev_rw;
+	const uint32_t dw = _gpu_dbg_dma_waits - prev_dw;
+	const uint32_t rs = _gpu_dbg_ring_spin_iters - prev_rs;
+	const uint32_t ds = _gpu_dbg_dma_spin_iters - prev_ds;
+	prev_rw = _gpu_dbg_ring_waits;
+	prev_dw = _gpu_dbg_dma_waits;
+	prev_rs = _gpu_dbg_ring_spin_iters;
+	prev_ds = _gpu_dbg_dma_spin_iters;
+
 	char pbuf[512];
 	snprintf(pbuf, sizeof(pbuf),
-		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u t=%u.%u",
+		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u t=%u.%u",
 		fps_x10 / 10, fps_x10 % 10, frame_avg,
 		wolf_perf_avg(OF_WOLF_PERF_EVENTS),
 		wolf_perf_avg(OF_WOLF_PERF_SIM),
@@ -308,6 +323,7 @@ void OF_WolfPerf_FrameEnd(void)
 		(unsigned int)gpu_dbg_rejects,
 		(unsigned int)gpu_dbg_fence_late,
 		(unsigned int)gpu_dbg_forced_swaps,
+		rw, dw, rs, ds,
 		tics_x10 / 10, tics_x10 % 10);
 	printf("%s\n", pbuf);
 	// Mirror the report into the bootlog save file (slot 19, ofbootlog.sav) so

@@ -383,7 +383,10 @@ static bool R_DrawTexturedBackdropHalfGPU(byte *vbuf, unsigned vbufPitch,
 		gu -= (viewwidth >> 1) * du;
 		gv -= (viewwidth >> 1) * dv;
 
-		const int tz = FixedMul(planeVis, rowDistance << FRACBITS);
+		// Depth-fog band: match R_DrawPlane's tz = planeVis * y, where its loop
+		// var y equals rowDistance-1 here (its dist divisor y+1 == rowDistance).
+		// Using rowDistance would shift every fog band one row toward the horizon.
+		const int tz = FixedMul(planeVis, (rowDistance - 1) << FRACBITS);
 		const int shadeIndex = GETPALOOKUP(tz, shade);
 		if(!OF_WolfGPU_DrawSpan(vbuf + y * (int)vbufPitch, viewwidth,
 			tex, 64, 64, -gv >> 2, gu >> 2, -dv >> 2, du >> 2,

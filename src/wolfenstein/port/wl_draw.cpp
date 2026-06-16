@@ -705,6 +705,8 @@ static inline bool IsActorSpotVisible(MapSpot spot)
 
 extern uint32_t of_spr_dbg_count;
 extern uint32_t of_spr_dbg_cols;
+extern uint32_t of_spr_dbg_actors;
+extern uint32_t of_spr_dbg_xforms;
 
 void DrawScaleds (void)
 {
@@ -713,6 +715,8 @@ void DrawScaleds (void)
 	visptr = &vislist[0];
 
 	of_spr_dbg_cols = 0;
+	of_spr_dbg_actors = 0;
+	of_spr_dbg_xforms = 0;
 
 //
 // place active objects
@@ -721,6 +725,7 @@ void DrawScaleds (void)
 	for(AActor::Iterator iter = AActor::GetIterator();iter.Next();)
 	{
 		AActor *obj = iter;
+		++of_spr_dbg_actors;
 
 		if (obj->sprite == SPR_NONE)
 			continue;
@@ -732,6 +737,7 @@ void DrawScaleds (void)
 		//
 		if (IsActorSpotVisible(spot))
 		{
+			++of_spr_dbg_xforms;
 			TransformActor (obj);
 			if (!obj->viewheight || (gamestate.victoryflag && obj == players[ConsolePlayer].mo))
 				continue;                                               // too close or far away

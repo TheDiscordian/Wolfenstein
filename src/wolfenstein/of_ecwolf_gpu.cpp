@@ -85,6 +85,8 @@ uint32_t of_fl_dbg_texdims;   // last frame resolved floor-backdrop texture (w<<
 // total drawn sprite columns, to localize the spr phase (place/transform vs draw).
 uint32_t of_spr_dbg_count;
 uint32_t of_spr_dbg_cols;
+uint32_t of_spr_dbg_actors;   // last frame: actors walked by the place loop
+uint32_t of_spr_dbg_xforms;   // last frame: TransformActor calls (passed visibility)
 
 /* Timestamp (of_time_us) of the last acquire that actually blocked on the
  * display flip fence.  The flip fence retires when the display consumes the
@@ -324,7 +326,7 @@ void OF_WolfPerf_FrameEnd(void)
 
 	char pbuf[512];
 	snprintf(pbuf, sizeof(pbuf),
-		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u t=%u.%u",
+		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u spa=%u spt=%u t=%u.%u",
 		fps_x10 / 10, fps_x10 % 10, frame_avg,
 		wolf_perf_avg(OF_WOLF_PERF_EVENTS),
 		wolf_perf_avg(OF_WOLF_PERF_SIM),
@@ -365,6 +367,7 @@ void OF_WolfPerf_FrameEnd(void)
 		(unsigned int)of_fl_dbg_texdims,
 		wolf_perf_avg(OF_WOLF_PERF_SPR_PLACE),
 		(unsigned int)of_spr_dbg_count, (unsigned int)of_spr_dbg_cols,
+		(unsigned int)of_spr_dbg_actors, (unsigned int)of_spr_dbg_xforms,
 		tics_x10 / 10, tics_x10 % 10);
 	printf("%s\n", pbuf);
 	// Mirror the report into the bootlog save file (slot 19, ofbootlog.sav) so
@@ -383,6 +386,8 @@ void OF_WolfPerf_FrameEnd(void)
 	of_fl_dbg_active = 0;
 	of_spr_dbg_count = 0;
 	of_spr_dbg_cols = 0;
+	of_spr_dbg_actors = 0;
+	of_spr_dbg_xforms = 0;
 }
 #endif
 

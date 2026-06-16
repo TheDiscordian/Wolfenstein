@@ -307,6 +307,9 @@ void ScalePost()
 	if(postsource == NULL)
 		return;
 
+	extern uint32_t of_wl_dbg_posts;
+	++of_wl_dbg_posts;
+
 	int ywcount, yoffs, yw, yd, yendoffs;
 	byte col;
 
@@ -665,8 +668,10 @@ visobj_t *visptr,*visstep,*farthest;
 // scattered per-actor visibility probe, so the place loop only touches the map
 // for actors that could plausibly be on or beside a visible tile.
 static int spr_vis_minx, spr_vis_maxx, spr_vis_miny, spr_vis_maxy;
+extern uint32_t of_wl_dbg_steps;
 static inline void SprVisExtend(int tx, int ty)
 {
+	++of_wl_dbg_steps;   // one raycast tile-step (passvert/passhoriz mark site)
 	if(tx < spr_vis_minx) spr_vis_minx = tx;
 	if(tx > spr_vis_maxx) spr_vis_maxx = tx;
 	if(ty < spr_vis_miny) spr_vis_miny = ty;
@@ -1313,6 +1318,10 @@ void WallRefresh (void)
 	lastside = -1;                  // the first pixel is on a new wall
 
 	gWallShade = LIGHT2SHADE(gLevelLight + r_extralight);
+
+	extern uint32_t of_wl_dbg_steps, of_wl_dbg_posts;
+	of_wl_dbg_steps = 0;
+	of_wl_dbg_posts = 0;
 
 	AsmRefresh();
 	ScalePost ();                   // no more optimization on last post

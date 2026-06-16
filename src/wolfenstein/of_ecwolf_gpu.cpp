@@ -94,6 +94,11 @@ uint32_t of_spr_dbg_xforms;   // last frame: TransformActor calls (passed visibi
 uint32_t of_sb_dbg_hits;
 uint32_t of_sb_dbg_misses;
 
+// Wall load split (last frame): raycast tile-steps (scattered map reads) vs
+// drawn wall posts (ScalePost / GPU column dispatches).
+uint32_t of_wl_dbg_steps;
+uint32_t of_wl_dbg_posts;
+
 /* Timestamp (of_time_us) of the last acquire that actually blocked on the
  * display flip fence.  The flip fence retires when the display consumes the
  * previous swap, so this is in effect the last vsync as seen by the app --
@@ -332,7 +337,7 @@ void OF_WolfPerf_FrameEnd(void)
 
 	char pbuf[512];
 	snprintf(pbuf, sizeof(pbuf),
-		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u spa=%u spt=%u sbh=%u sbm=%u t=%u.%u",
+		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u spa=%u spt=%u sbh=%u sbm=%u wls=%u wlp=%u t=%u.%u",
 		fps_x10 / 10, fps_x10 % 10, frame_avg,
 		wolf_perf_avg(OF_WOLF_PERF_EVENTS),
 		wolf_perf_avg(OF_WOLF_PERF_SIM),
@@ -375,6 +380,7 @@ void OF_WolfPerf_FrameEnd(void)
 		(unsigned int)of_spr_dbg_count, (unsigned int)of_spr_dbg_cols,
 		(unsigned int)of_spr_dbg_actors, (unsigned int)of_spr_dbg_xforms,
 		(unsigned int)of_sb_dbg_hits, (unsigned int)of_sb_dbg_misses,
+		(unsigned int)of_wl_dbg_steps, (unsigned int)of_wl_dbg_posts,
 		tics_x10 / 10, tics_x10 % 10);
 	printf("%s\n", pbuf);
 	// Mirror the report into the bootlog save file (slot 19, ofbootlog.sav) so

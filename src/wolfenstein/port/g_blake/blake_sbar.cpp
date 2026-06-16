@@ -235,13 +235,26 @@ void BlakeStatusBar::DrawStatusBar()
 		VWB_DrawGraphic(TexMan(heart), 120, 184);
 	};
 
+	// The score rolls toward the real value a little every frame (Tick), so like
+	// the ECG it is redrawn every frame -- even on a cache hit -- and kept out of
+	// the key.  Drawn after the band snapshot so the cached band stays score-free
+	// (transparent glyphs over a baked-in old score would ghost).
+	auto drawScore = [&]() {
+		FString score;
+		score.Format("%7d", CurrentScore);
+		DrawString(ScoreFont, score, 256, 155, false);
+	};
+
 	// Key = everything the bar draws except the ECG animation.  A change forces a
 	// full redraw + re-cache; otherwise the cached bar is restored.
 	uint32_t sbarKey[8] = {0};
 	sbarKey[0] = (uint32_t)curHealth;
 	sbarKey[1] = (uint32_t)players[ConsolePlayer].lives;
 	sbarKey[2] = (uint32_t)levelInfo->LevelNumber;
-	sbarKey[3] = (uint32_t)CurrentScore;
+	// NOT CurrentScore: it rolls up a little every frame (Tick) after any score
+	// change, so keying on it churned the cache every frame in combat (a full
+	// ~25ms redraw each frame).  The score is redrawn per-frame via drawScore().
+	sbarKey[3] = 0;
 	// Key on the info-area message CONTENT, not InfoMessageTics: the timer ticks
 	// down every frame while a message shows, but the drawn text is unchanged,
 	// so keying on the timer churned the cache the whole time a message was up.
@@ -299,6 +312,7 @@ void BlakeStatusBar::DrawStatusBar()
 			memcpy(fb + (size_t)boty * sbarPitch, sbarCache + sbarTopBytes,
 				sbarBotBytes);
 		drawEcg();
+		drawScore();
 		return;
 	}
 
@@ -365,9 +379,8 @@ void BlakeStatusBar::DrawStatusBar()
 		DrawString(IndexFont, health, 149, 186, false, statusBlue);
 	}
 
-	FString score;
-	score.Format("%7d", CurrentScore);
-	DrawString(ScoreFont, score, 256, 155, false);
+	// Score is drawn last (after the cache snapshot below) via drawScore(), so the
+	// cached band stays score-free.
 
 	if(players[ConsolePlayer].ReadyWeapon)
 	{
@@ -511,6 +524,11 @@ void BlakeStatusBar::DrawStatusBar()
 			memcpy(sbarCKey, sbarKey, sizeof(sbarKey));
 		}
 	}
+
+	// Draw the score last -- after the snapshot above captured a score-free band
+	// -- so a cache hit composites the live score onto clean background (no
+	// transparent-glyph ghosting), matching the snapshot the next hit restores.
+	drawScore();
 }
 
 // Draws the message strip in the bottom status bar: the current timed

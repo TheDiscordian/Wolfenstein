@@ -660,6 +660,19 @@ typedef struct
 visobj_t vislist[MAXVISABLE];
 visobj_t *visptr,*visstep,*farthest;
 
+// Tile bounding box of the region the wall raycast marked visible this frame.
+// DrawScaleds rejects actors outside this box (plus a margin) before the
+// scattered per-actor visibility probe, so the place loop only touches the map
+// for actors that could plausibly be on or beside a visible tile.
+static int spr_vis_minx, spr_vis_maxx, spr_vis_miny, spr_vis_maxy;
+static inline void SprVisExtend(int tx, int ty)
+{
+	if(tx < spr_vis_minx) spr_vis_minx = tx;
+	if(tx > spr_vis_maxx) spr_vis_maxx = tx;
+	if(ty < spr_vis_miny) spr_vis_miny = ty;
+	if(ty > spr_vis_maxy) spr_vis_maxy = ty;
+}
+
 static inline bool IsOpenVisibleSpot(MapSpot spot)
 {
 	return spot->IsVisible() && !spot->tile;
@@ -728,6 +741,15 @@ void DrawScaleds (void)
 		++of_spr_dbg_actors;
 
 		if (obj->sprite == SPR_NONE)
+			continue;
+
+		// Cheap reject before the scattered map probe: an actor more than one
+		// tile outside the visible bbox can't have a visible tile in its 9-tile
+		// neighbourhood, so it can't be visible.  Uses the actor's own
+		// (cache-warm) tile coords; +2 margin absorbs the neighbour span and any
+		// raycast bbox slack, so no visible actor is ever culled.
+		if ((int)obj->tilex < spr_vis_minx - 2 || (int)obj->tilex > spr_vis_maxx + 2 ||
+			(int)obj->tiley < spr_vis_miny - 2 || (int)obj->tiley > spr_vis_maxy + 2)
 			continue;
 
 		MapSpot spot = map->GetSpot(obj->tilex, obj->tiley, 0);
@@ -1074,6 +1096,7 @@ vertentry:
 passvert:
 			tilehit->MarkVisible();
 			tilehit->amFlags |= AM_Visible;
+			SprVisExtend(xtile, yintercept>>16);
 			xtile+=xtilestep;
 			yintercept+=ystep;
 			xspot[0]=xtile;
@@ -1241,6 +1264,7 @@ horizentry:
 passhoriz:
 			tilehit->MarkVisible();
 			tilehit->amFlags |= AM_Visible;
+			SprVisExtend(xintercept>>16, ytile);
 			ytile+=ytilestep;
 			xintercept+=xstep;
 			yspot[0]=xintercept>>16;
@@ -1474,6 +1498,14 @@ void    ThreeDRefresh (void)
 	uint32_t perfStart = OF_WolfPerf_NowUS();
 	map->ClearVisibility();
 	OF_WolfPerf_Add(OF_WOLF_PERF_RENDER_MISC, perfStart);
+
+	// Seed the visible-tile bbox with the camera tile (ClearVisibility marks it,
+	// and the raycast originates there); the raycast extends it as it marks tiles.
+	{
+		AActor *cam = players[ConsolePlayer].camera;
+		spr_vis_minx = spr_vis_maxx = cam->tilex;
+		spr_vis_miny = spr_vis_maxy = cam->tiley;
+	}
 
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 	const unsigned screenWidth = (unsigned)SCREENWIDTH;

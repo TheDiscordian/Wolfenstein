@@ -381,6 +381,11 @@ void player_t::TakeDamage (int points, AActor *attacker)
  * immediately (AActor::Destroy), so the grid never points at freed memory.
  */
 static TArray<AActor *> collisionGrid;
+// Cells occupied by the last rebuild, so the next rebuild clears only those
+// (~one per actor) instead of memset-ing the whole w*h grid every tic -- the
+// full clear is 32KB on a 64x64 map, larger than the Pocket D-cache, so it
+// thrashed the cache right before the thinker tick.
+static TArray<unsigned int> collisionUsedCells;
 // See SimTileFlags() in wl_agent.h.  CheckLine's sight DDA used to chase a
 // fat MapSpot per stepped tile -- the dominant per-tic cost of every awake
 // enemy on this CPU.  This dense byte map keeps the common steps (empty
@@ -437,10 +442,23 @@ void RebuildActorCollisionGrid ()
 	const int w = (int)map->GetHeader().width;
 	const int h = (int)map->GetHeader().height;
 	const unsigned int cells = (unsigned int)w * (unsigned int)h;
+	// Full clear only when the grid was (re)sized or the map changed; otherwise
+	// clear just the cells the previous rebuild occupied -- avoids the whole-grid
+	// memset (and its cache thrash) every tic.
+	const bool needFullClear = collisionGrid.Size() < cells || collisionGridMap != map;
 	if(collisionGrid.Size() < cells)
 		collisionGrid.Resize(cells);
-	if(cells > 0)
-		memset(&collisionGrid[0], 0, collisionGrid.Size() * sizeof(AActor *));
+	if(needFullClear)
+	{
+		if(cells > 0)
+			memset(&collisionGrid[0], 0, collisionGrid.Size() * sizeof(AActor *));
+	}
+	else
+	{
+		for(unsigned int i = 0;i < collisionUsedCells.Size();++i)
+			collisionGrid[collisionUsedCells[i]] = NULL;
+	}
+	collisionUsedCells.Clear();
 
 	collisionGridW = w;
 	collisionGridH = h;
@@ -467,6 +485,8 @@ void RebuildActorCollisionGrid ()
 
 		const int cell = ty * w + tx;
 		actor->collisionCell = cell;
+		if(collisionGrid[cell] == NULL)
+			collisionUsedCells.Push((unsigned int)cell);
 		actor->collisionNext = collisionGrid[cell];
 		collisionGrid[cell] = actor;
 

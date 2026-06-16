@@ -516,9 +516,9 @@ void Scale3DSpriter(AActor *actor, int x1, int x2, FTexture *tex, bool flip, con
 	if(scale == 0 || -(viewheight/2 - viewshift - topoffset) >= scale)
 		return;
 
-	double dyScale = (height/256.0)*(actor->scaleY/65536.);
-	int upperedge = static_cast<int>((viewheight/2 - viewshift - topoffset)+scale - tex->GetScaledTopOffsetDouble()*dyScale);
-	
+	float dyScale = (height/256.0f)*(actor->scaleY/65536.0f);
+	int upperedge = static_cast<int>((viewheight/2 - viewshift - topoffset)+scale - (float)tex->GetScaledTopOffsetDouble()*dyScale);
+
 	fixed yStep = static_cast<fixed>(tex->yScale/dyScale);
 	unsigned int startY = -MIN(upperedge, 0);
 	fixed endY = MIN<fixed>(tex->GetHeight()<<FRACBITS, yStep*(viewheight-upperedge));
@@ -544,12 +544,13 @@ void Scale3DSpriter(AActor *actor, int x1, int x2, FTexture *tex, bool flip, con
 	OF_WolfGPU_PreloadSource(tex->GetPixels(), tex->GetWidth() * tex->GetHeight());
 #endif
 
-	// Loop-invariant factors hoisted out of the per-column scaler below.  On the
-	// FPU-less softcore each per-column soft-float op + the GetScaledTopOffset
-	// call is pure waste; these never change across the sprite's columns, so the
-	// hoist is bit-identical (same expressions, computed once).
-	const double sprScaleYNorm = actor->scaleY/65536.;
-	const double sprTopOffDbl  = tex->GetScaledTopOffsetDouble();
+	// Loop-invariant factors hoisted out of the per-column scaler below, and kept
+	// in single-float: this CPU has hardware single-float but no double, so the
+	// per-column dyScale/upperedge/yStep recompute was a soft-double call each.
+	// Single-float steps the same scale to within a sub-pixel of the double path
+	// (sprite position can differ by at most 1px -- the original was fixed-point).
+	const float sprScaleYNorm = actor->scaleY/65536.0f;
+	const float sprTopOffDbl  = (float)tex->GetScaledTopOffsetDouble();
 	const fixed  sprTopoffNum  = viewz+(actorz<<6)+(32<<FRACBITS);
 
 	//printf("%f, %f, %f, %f\n", FIXED2FLOAT(ny1), FIXED2FLOAT(ny2), FIXED2FLOAT(nx1), FIXED2FLOAT(nx1));
@@ -578,7 +579,7 @@ void Scale3DSpriter(AActor *actor, int x1, int x2, FTexture *tex, bool flip, con
 		}
 
 		// linear interpolation oh no
-		height = (unsigned)(height1 + ((int)height2 - (int)height1) * ((double)(i+1 - x1) / (x2 - x1)));
+		height = (unsigned)(height1 + ((int)height2 - (int)height1) * ((float)(i+1 - x1) / (x2 - x1)));
 
 		// recalculation double oh no
 		scale = height>>3;
@@ -595,7 +596,7 @@ void Scale3DSpriter(AActor *actor, int x1, int x2, FTexture *tex, bool flip, con
 			if(count > 0 && OF_WolfGPU_DrawMaskedColumn(dest, count, src, tex->GetHeight(),
 				yStart, yStep, shadeIndex))
 			{
-				dyScale = (height/256.0)*sprScaleYNorm;
+				dyScale = (height/256.0f)*sprScaleYNorm;
 				upperedge = static_cast<int>((viewheight/2 - viewshift - topoffset)+scale - sprTopOffDbl*dyScale);
 				yStep = static_cast<fixed>(tex->yScale/dyScale);
 				startY = -MIN(upperedge, 0);
@@ -615,7 +616,7 @@ void Scale3DSpriter(AActor *actor, int x1, int x2, FTexture *tex, bool flip, con
 			dest += vbufPitch;
 		}
 
-		dyScale = (height/256.0)*sprScaleYNorm;
+		dyScale = (height/256.0f)*sprScaleYNorm;
 		upperedge = static_cast<int>((viewheight/2 - viewshift - topoffset)+scale - sprTopOffDbl*dyScale);
 
 		yStep = static_cast<fixed>(tex->yScale/dyScale);

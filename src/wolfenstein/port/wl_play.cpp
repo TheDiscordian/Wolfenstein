@@ -197,6 +197,16 @@ void PlayLoop (void);
 
 static int32_t lasttimecount;
 
+//
+// 35 Hz fixed-step accumulator (sim/render decouple)
+//
+#define SIMHZ        35
+#define STEP_TICS    (TICRATE/SIMHZ)        // game-tics per fixed sim step (2)
+#define SIMPERIOD_US (1000000ull/SIMHZ)     // wall-clock us per fixed sim step
+#define MAXSIMSTEPS  3                       // spiral clamp: max steps drained/frame
+static uint64_t simAccumUS = 0;
+static uint64_t simPrevUS = 0;
+
 static uint64_t GetTimeUS()
 {
 	const uint64_t counter = SDL_GetPerformanceCounter();
@@ -298,6 +308,16 @@ static bool AnyPlayerNeedsSpawn()
 	return false;
 }
 
+// The fixed-step sim path is only safe where the engine is deterministic and
+// solo: not during demo record/playback (constant-rate, byte-exact), only in
+// single-player (mode, not IsBlocked() which is only the return-to-game block),
+// and not while single-stepping. Off => the stock catch-up path runs verbatim.
+static bool UseFixedStep()
+{
+	return fixedstep && !demoplayback && !demorecord
+		&& Net::InitVars.mode == Net::MODE_SinglePlayer && !singlestep;
+}
+
 /*
 =====================
 =
@@ -308,6 +328,22 @@ static bool AnyPlayerNeedsSpawn()
 
 void CalcTics()
 {
+	if(UseFixedStep())
+	{
+		// Bank real elapsed wall-clock into the 35 Hz accumulator; the drain
+		// loop in PlayLoop pulls fixed STEP_TICS chunks out and sets the real
+		// tic total. tics is left 0 here so nothing downstream catches up off
+		// a raw wall-clock delta.
+		uint64_t now = GetTimeUS();
+		if(simPrevUS == 0) simPrevUS = now;
+		uint64_t dt = now - simPrevUS;
+		if(dt > 250000ull) dt = 250000ull;   // pause/alt-tab/load hitch clamp
+		simAccumUS += dt;
+		simPrevUS = now;
+		tics = 0;
+		return;
+	}
+
 	int32_t curtimecount = GetTimeCount();
 
 //
@@ -364,6 +400,8 @@ void CalcTics()
 void ResetTimeCount()
 {
 	lasttimecount = GetTimeCount();
+	simAccumUS = 0;
+	simPrevUS = 0;
 	UseCurrentRenderTime();
 }
 
@@ -1407,6 +1445,8 @@ void PlayLoop (void)
 	AActor::SyncRenderStates();
 	SyncPlayerRenderStates();
 	UseCurrentRenderTime();
+	simAccumUS = 0;
+	simPrevUS = 0;
 
 	do
 	{
@@ -1423,17 +1463,51 @@ void PlayLoop (void)
 
 		// Run tics
 		perfStart = OF_WolfPerf_NowUS();
-		for (unsigned int i = 0;i < tics;++i)
+		if(!UseFixedStep())
 		{
-			const uint32_t ctlStart = OF_WolfPerf_NowUS();
-			PollControls(!i);
-			OF_WolfPerf_Add(OF_WOLF_PERF_SIM_CONTROLS, ctlStart);
+			// Stock catch-up: one heavy sim tic per elapsed game-tic.
+			for (unsigned int i = 0;i < tics;++i)
+			{
+				const uint32_t ctlStart = OF_WolfPerf_NowUS();
+				PollControls(!i);
+				OF_WolfPerf_Add(OF_WOLF_PERF_SIM_CONTROLS, ctlStart);
 
-			// Net code may require this loop to abort early
-			if(playstate != ex_stillplaying)
-				break;
+				// Net code may require this loop to abort early
+				if(playstate != ex_stillplaying)
+					break;
 
-			RunSimStep(1);
+				RunSimStep(1);
+			}
+		}
+		else
+		{
+			// Fixed-step drain: pull whole 35 Hz steps (STEP_TICS game-tics
+			// each) out of the accumulator, capped at MAXSIMSTEPS so a slow
+			// frame can't spiral. CalcTics already banked dt into simAccumUS
+			// and left tics 0; the drain owns tics and lasttimecount.
+			unsigned steps = 0;
+			while((sim_forcesteps ? steps < (unsigned)sim_forcesteps
+			                      : simAccumUS >= SIMPERIOD_US)
+				&& steps < MAXSIMSTEPS)
+			{
+				const uint32_t ctlStart = OF_WolfPerf_NowUS();
+				PollControls(steps == 0);
+				OF_WolfPerf_Add(OF_WOLF_PERF_SIM_CONTROLS, ctlStart);
+
+				if(playstate != ex_stillplaying)
+					break;
+
+				RunSimStep(STEP_TICS);     // advances STEP_TICS game-tics
+				lasttimecount += STEP_TICS;
+				if(!sim_forcesteps)
+					simAccumUS -= SIMPERIOD_US;
+				++steps;
+			}
+			// Spiral clamp: if still backed up after the cap, drop the backlog
+			// so the world momentarily slows instead of fast-forwarding later.
+			if(steps == MAXSIMSTEPS && simAccumUS >= SIMPERIOD_US)
+				simAccumUS %= SIMPERIOD_US;
+			tics = steps * STEP_TICS;      // real game-tic total for this frame
 		}
 		OF_WolfPerf_Add(OF_WOLF_PERF_SIM, perfStart);
 
@@ -1448,8 +1522,9 @@ void PlayLoop (void)
 				csum += (uint32_t)it->angle * 3266489917u;
 				++nact;
 			}
-			printf("SIMLOG tc=%d ltc=%d tics=%u x=%d y=%d nact=%d csum=%llu\n",
+			printf("SIMLOG tc=%d ltc=%d tics=%u accum=%llu x=%d y=%d nact=%d csum=%llu\n",
 				gamestate.TimeCount, lasttimecount, tics,
+				(unsigned long long)simAccumUS,
 				players[0].mo ? players[0].mo->x : 0,
 				players[0].mo ? players[0].mo->y : 0,
 				nact, (unsigned long long)csum);

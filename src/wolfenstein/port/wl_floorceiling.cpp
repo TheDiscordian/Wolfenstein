@@ -224,6 +224,19 @@ static bool R_ClearSolidBackdropHalfGPU(byte *vbuf, unsigned vbufPitch,
 	const int step = ceiling ? -(int)planeVis : (int)planeVis;
 	int tz = (int)((int32_t)planeVis * (int32_t)rd0);
 
+#if OF_BLAKE_FL_FLAT_EXPERIMENT
+	// MEASUREMENT EXPERIMENT (not a shipping change): clear the whole half in ONE
+	// flat ClearRect (no depth-fog bands) -> 2 clear commands/frame instead of
+	// ~60.  If fl collapses, the floor cost is confirmed as GPU command-pipeline
+	// backpressure from the per-band command count.  Floor looks flat-shaded
+	// while enabled.  Toggle with -DOF_BLAKE_FL_FLAT_EXPERIMENT=1.
+	{
+		const byte flatColor = R_SolidPlaneColorForTz(tz, shade, baseColor);
+		return OF_WolfGPU_ClearRect(vbuf + yStart * (int)vbufPitch, viewwidth,
+			yEnd - yStart, flatColor);
+	}
+#endif
+
 	for(int y = yStart; y < yEnd;)
 	{
 		const byte rowColor = R_SolidPlaneColorForTz(tz, shade, baseColor);

@@ -92,6 +92,13 @@ CFLAGS   += -DOF_BOOT_LOG
 CXXFLAGS += -DOF_BOOT_LOG
 endif
 
+# `make FL_FLAT=1` enables the floor-command measurement experiment: the solid
+# floor/ceiling backdrop clears each half in one flat rect (no depth-fog bands).
+# Used to confirm the floor cost is GPU command-pipeline backpressure.
+ifdef FL_FLAT
+CXXFLAGS += -DOF_BLAKE_FL_FLAT_EXPERIMENT=1
+endif
+
 # Preserve ECWolf's SDL-facing platform layer.  The openfpgaOS-specific
 # implementation lives in the SDK SDL shim, not in the engine sources.
 # port/ and wadsrc/ are symlinks into ../wolfenstein; find -L descends them

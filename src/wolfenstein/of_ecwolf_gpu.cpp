@@ -1498,14 +1498,48 @@ bool OF_WolfGPU_DrawMaskedColumn(uint8_t *dest, int count,
 			OF_GPU_SPAN_COLORMAP);
 	}
 
-	// Mixed column: a single span with hardware zero-skip lets the GPU drop
-	// transparent (source == 0) texels itself, instead of the CPU scanning every
-	// pixel to pre-segment opaque runs and issuing a span per run.  Same texels
-	// as the old scan -- both skip source == 0 before the colormap -- at O(1) CPU
-	// cost per column rather than O(column height).
-	return gpu_add_affine(dest, count, source, source_len,
-		1, 0, texmask, 0, texfrac, 0, texstep, light, gpu_pitch,
-		OF_GPU_SPAN_COLORMAP | OF_GPU_SPAN_SKIP_ZERO);
+	int run_start = -1;
+	int run_count = 0;
+	int run_texfrac = 0;
+	int cur_texfrac = texfrac;
+
+	for(int i = 0; i < count; ++i, cur_texfrac += texstep)
+	{
+		const int sample = (cur_texfrac >> FRACBITS) & texmask;
+		if(source[sample] != 0)
+		{
+			if(run_count == 0)
+			{
+				run_start = i;
+				run_texfrac = cur_texfrac;
+			}
+			run_count++;
+			continue;
+		}
+
+		if(run_count != 0)
+		{
+			if(!gpu_add_affine(dest + run_start * gpu_pitch, run_count,
+				source, source_len, 1, 0, texmask, 0, run_texfrac,
+				0, texstep, light, gpu_pitch, OF_GPU_SPAN_COLORMAP))
+			{
+				return false;
+			}
+			run_count = 0;
+			run_start = -1;
+		}
+	}
+
+	if(run_count != 0)
+	{
+		if(!gpu_add_affine(dest + run_start * gpu_pitch, run_count,
+			source, source_len, 1, 0, texmask, 0, run_texfrac,
+			0, texstep, light, gpu_pitch, OF_GPU_SPAN_COLORMAP))
+		{
+			return false;
+		}
+	}
+	return true;
 }
 
 bool OF_WolfGPU_DrawRawColumn(uint8_t *dest, int count,

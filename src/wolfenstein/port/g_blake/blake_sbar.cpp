@@ -48,7 +48,6 @@
 #include "wl_play.h"
 #include "xs_Float.h"
 #include "thingdef/thingdef.h"
-#include "of_ecwolf_bootlog.h"
 
 enum
 {
@@ -243,7 +242,20 @@ void BlakeStatusBar::DrawStatusBar()
 	sbarKey[1] = (uint32_t)players[ConsolePlayer].lives;
 	sbarKey[2] = (uint32_t)levelInfo->LevelNumber;
 	sbarKey[3] = (uint32_t)CurrentScore;
-	sbarKey[4] = (uint32_t)InfoMessageTics;
+	// Key on the info-area message CONTENT, not InfoMessageTics: the timer ticks
+	// down every frame while a message shows, but the drawn text is unchanged,
+	// so keying on the timer churned the cache the whole time a message was up.
+	// Idle (no message) keys to 0; the token count is in sbarKey[5].
+	uint32_t infoKey = 0;
+	if(InfoMessageTics > 0)
+	{
+		infoKey = 0x811c9dc5u;
+		for(const char *c = InfoMessage.GetChars();c != NULL && *c;++c)
+			infoKey = (infoKey ^ (unsigned char)*c) * 16777619u;
+		if(infoKey == 0)
+			infoKey = 1;
+	}
+	sbarKey[4] = infoKey;
 	if(AActor *pmo = players[ConsolePlayer].mo)
 	{
 		static const ClassDef * const coinCls = ClassDef::FindClass("ConcessionCoin");
@@ -277,23 +289,6 @@ void BlakeStatusBar::DrawStatusBar()
 	const bool sbarHit = sbarFullWidth && sbarCache != NULL &&
 		sbarCTopy == topy && sbarCBoty == boty && sbarCPitch == sbarPitch &&
 		sbarCH == sbarH && memcmp(sbarKey, sbarCKey, sizeof(sbarKey)) == 0;
-
-#if defined(OF_BOOT_LOG) && !defined(OF_PC)
-	// Temporary: report the cache hit rate to the bootlog so a capture shows
-	// whether the readout key is stabilising.
-	{
-		static unsigned sbHits = 0, sbTotal = 0;
-		++sbTotal;
-		if(sbarHit)
-			++sbHits;
-		if(sbTotal >= 120)
-		{
-			OF_BootLog("sbarhit %u/%u", sbHits, sbTotal);
-			sbHits = 0;
-			sbTotal = 0;
-		}
-	}
-#endif
 
 	if(sbarHit)
 	{

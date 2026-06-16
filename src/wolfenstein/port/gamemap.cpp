@@ -245,27 +245,17 @@ bool GameMap::ActivateTrigger(Trigger &trig, Trigger::Side direction, AActor *ac
 
 void GameMap::ClearVisibility()
 {
-#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+	// Per-frame visibility is a compact stamp array (both targets): a stamp bump
+	// clears it in O(1), with a full zero only on the rare wrap.
+	EnsureVisStamp();
 	if(++visibilityStamp == 0)
 	{
-		for(unsigned int i = 0;i < header.width*header.height;++i)
-		{
-			for(unsigned int p = 0;p < planes.Size();++p)
-				planes[p].map[i].visibleStamp = 0;
-		}
+		for(unsigned int i = 0;i < visStampArr.Size();++i)
+			visStampArr[i] = 0;
 		visibilityStamp = 1;
 	}
 	if(players[ConsolePlayer].camera)
-		GetSpot(players[ConsolePlayer].camera->tilex, players[ConsolePlayer].camera->tiley, 0)->MarkVisible();
-#else
-	for(unsigned int i = 0;i < header.width*header.height;++i)
-	{
-		for(unsigned int p = 0;p < planes.Size();++p)
-			planes[p].map[i].visible = false;
-	}
-	if(players[ConsolePlayer].camera)
-		GetSpot(players[ConsolePlayer].camera->tilex, players[ConsolePlayer].camera->tiley, 0)->visible = true;
-#endif
+		MarkTileVisible(players[ConsolePlayer].camera->tilex, players[ConsolePlayer].camera->tiley);
 }
 
 bool GameMap::CheckMapExists(const FString &map)

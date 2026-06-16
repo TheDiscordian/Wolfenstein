@@ -328,6 +328,15 @@ void ScalePost()
 		PostTimer() : t0(of_now_ns()) {}
 		~PostTimer() { g_wl_scalepost_ns += of_now_ns() - t0; }
 	} _postTimer;
+#else
+	// Device: accumulate ScalePost (column draw dispatch+setup) us so the perf
+	// line can split wl into raycast vs draw (wld) -- the device equivalent of
+	// the PC WALLPROF.
+	struct PostTimer {
+		uint32_t t0;
+		PostTimer() : t0(OF_WolfPerf_NowUS()) {}
+		~PostTimer() { extern uint32_t of_wl_dbg_draw_us; of_wl_dbg_draw_us += OF_WolfPerf_NowUS() - t0; }
+	} _postTimer;
 #endif
 
 	int ywcount, yoffs, yw, yd, yendoffs;
@@ -697,6 +706,7 @@ uint32_t of_fl_dbg_texdims;
 uint32_t of_spr_dbg_count, of_spr_dbg_cols, of_spr_dbg_actors, of_spr_dbg_xforms;
 uint32_t of_sb_dbg_hits, of_sb_dbg_misses;
 uint32_t of_wl_dbg_steps, of_wl_dbg_posts;
+uint32_t of_wl_dbg_draw_us;   // device: ScalePost (column draw) us/frame; wl-this = raycast
 
 static inline void SprVisExtend(int tx, int ty)
 {
@@ -1348,9 +1358,10 @@ void WallRefresh (void)
 
 	gWallShade = LIGHT2SHADE(gLevelLight + r_extralight);
 
-	extern uint32_t of_wl_dbg_steps, of_wl_dbg_posts;
+	extern uint32_t of_wl_dbg_steps, of_wl_dbg_posts, of_wl_dbg_draw_us;
 	of_wl_dbg_steps = 0;
 	of_wl_dbg_posts = 0;
+	of_wl_dbg_draw_us = 0;   // device: accumulated by ScalePost PostTimer this frame
 
 #if defined(OF_PC)
 	g_wl_scalepost_ns = 0;

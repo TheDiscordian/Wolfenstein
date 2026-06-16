@@ -235,11 +235,27 @@ static void UseCurrentRenderTime()
 	renderbasetimecount = gamestate.TimeCount;
 }
 
+static bool UseFixedStep();
+
 static void UpdateRenderInterpolation()
 {
 	if((Paused & 1) || Net::IsBlocked() || gamestate.TimeCount <= 0)
 	{
 		UseCurrentRenderTime();
+		return;
+	}
+
+	if(UseFixedStep())
+	{
+		// Drive the render fraction from the accumulator phase: the snapshot
+		// (old pose) is taken at the start of each RunSimStep, so simAccumUS/
+		// SIMPERIOD_US is the linear alpha from the last committed step toward
+		// the next. Bound it to the stock 1+1/3-step extrapolation window.
+		uint64_t frac = simAccumUS * FRACUNIT / SIMPERIOD_US;
+		const uint64_t fracmax = FRACUNIT + FRACUNIT/3;
+		if(frac > fracmax) frac = fracmax;
+		renderfraction = (fixed)frac;
+		renderbasetimecount = gamestate.TimeCount - 1;
 		return;
 	}
 
@@ -1522,9 +1538,9 @@ void PlayLoop (void)
 				csum += (uint32_t)it->angle * 3266489917u;
 				++nact;
 			}
-			printf("SIMLOG tc=%d ltc=%d tics=%u accum=%llu x=%d y=%d nact=%d csum=%llu\n",
+			printf("SIMLOG tc=%d ltc=%d tics=%u accum=%llu rf=%d x=%d y=%d nact=%d csum=%llu\n",
 				gamestate.TimeCount, lasttimecount, tics,
-				(unsigned long long)simAccumUS,
+				(unsigned long long)simAccumUS, (int)renderfraction,
 				players[0].mo ? players[0].mo->x : 0,
 				players[0].mo ? players[0].mo->y : 0,
 				nact, (unsigned long long)csum);

@@ -99,6 +99,15 @@ ifdef FL_FLAT
 CXXFLAGS += -DOF_BLAKE_FL_FLAT_EXPERIMENT=1
 endif
 
+# `make FL_PREFENCE=1` enables the pre-floor GPU-fence measurement: just before
+# the floor/ceiling backdrop (the frame's first GPU op), force a full GPU drain
+# and charge it to the pff= perf phase, so fl= then reflects the floor with an
+# already-idle GPU.  Large pff = the 17ms was cross-frame GPU-drain backlog the
+# floor was absorbing; small pff = the cost is genuinely in the floor itself.
+ifdef FL_PREFENCE
+CXXFLAGS += -DOF_BLAKE_FL_PREFENCE=1
+endif
+
 # Preserve ECWolf's SDL-facing platform layer.  The openfpgaOS-specific
 # implementation lives in the SDK SDL shim, not in the engine sources.
 # port/ and wadsrc/ are symlinks into ../wolfenstein; find -L descends them

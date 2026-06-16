@@ -41,6 +41,7 @@ typedef enum OFWolfPerfPhase
 	OF_WOLF_PERF_STATUSBAR,
 	OF_WOLF_PERF_SBAR_BG,
 	OF_WOLF_PERF_SBAR_INFO,
+	OF_WOLF_PERF_FL_PREFENCE,
 	OF_WOLF_PERF_COUNT
 } OFWolfPerfPhase;
 
@@ -97,6 +98,7 @@ bool OF_WolfGPU_DrawSpan(uint8_t *dest, int count, const uint8_t *source,
 	int sstep, int tstep, int light);
 bool OF_WolfGPU_ClearSpan(uint8_t *dest, int count, uint8_t color);
 bool OF_WolfGPU_ClearRect(uint8_t *dest, int width, int height, uint8_t color);
+void OF_WolfGPU_Finish(void);
 #else
 static inline void OF_WolfGPU_Init(void) {}
 static inline void OF_WolfGPU_Shutdown(void) {}
@@ -129,6 +131,7 @@ static inline bool OF_WolfGPU_DrawSpan(uint8_t *, int, const uint8_t *,
 	int, int, int, int, int, int, int) { return false; }
 static inline bool OF_WolfGPU_ClearSpan(uint8_t *, int, uint8_t) { return false; }
 static inline bool OF_WolfGPU_ClearRect(uint8_t *, int, int, uint8_t) { return false; }
+static inline void OF_WolfGPU_Finish(void) {}
 #endif
 
 #endif

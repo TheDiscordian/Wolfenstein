@@ -289,7 +289,7 @@ void OF_WolfPerf_FrameEnd(void)
 
 	char pbuf[512];
 	snprintf(pbuf, sizeof(pbuf),
-		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u t=%u.%u",
+		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u t=%u.%u",
 		fps_x10 / 10, fps_x10 % 10, frame_avg,
 		wolf_perf_avg(OF_WOLF_PERF_EVENTS),
 		wolf_perf_avg(OF_WOLF_PERF_SIM),
@@ -307,6 +307,7 @@ void OF_WolfPerf_FrameEnd(void)
 		wolf_perf_avg(OF_WOLF_PERF_VIEW_SETUP),
 		wolf_perf_avg(OF_WOLF_PERF_WALLS),
 		wolf_perf_avg(OF_WOLF_PERF_FLOORCEIL),
+		wolf_perf_avg(OF_WOLF_PERF_FL_PREFENCE),
 		wolf_perf_avg(OF_WOLF_PERF_SKY),
 		wolf_perf_avg(OF_WOLF_PERF_SPRITES),
 		wolf_perf_avg(OF_WOLF_PERF_WEAPON),
@@ -1609,6 +1610,14 @@ bool OF_WolfGPU_ClearRect(uint8_t *dest, int width, int height, uint8_t color)
 		(uint16_t)height, (uint16_t)gpu_pitch, color);
 	gpu_frame_dirty = true;
 	return true;
+}
+
+/* Block until the GPU has drained all pending (prior-frame) work.  Used by the
+ * FL_PREFENCE measurement toggle to charge the cross-frame GPU backlog to its
+ * own perf phase before the floor (the frame's first GPU op) absorbs it. */
+void OF_WolfGPU_Finish(void)
+{
+	of_gpu_finish();
 }
 
 #endif

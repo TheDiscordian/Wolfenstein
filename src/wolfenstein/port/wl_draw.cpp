@@ -1349,6 +1349,13 @@ void R_RenderView()
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 	if(!hasParallax)
 	{
+#if defined(OF_BLAKE_FL_PREFENCE)
+		// Drain all pending (prior-frame) GPU work and charge it to its own
+		// perf phase, so fl reflects the floor with an already-idle GPU.
+		perfStart = OF_WolfPerf_NowUS();
+		OF_WolfGPU_Finish();
+		OF_WolfPerf_Add(OF_WOLF_PERF_FL_PREFENCE, perfStart);
+#endif
 		perfStart = OF_WolfPerf_NowUS();
 		gpuBackdrop = DrawFloorAndCeilingBackdropGPU(vbuf, vbufPitch);
 		OF_WolfPerf_Add(OF_WOLF_PERF_FLOORCEIL, perfStart);

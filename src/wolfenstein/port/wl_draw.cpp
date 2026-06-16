@@ -668,7 +668,16 @@ visobj_t *visptr,*visstep,*farthest;
 // scattered per-actor visibility probe, so the place loop only touches the map
 // for actors that could plausibly be on or beside a visible tile.
 static int spr_vis_minx, spr_vis_maxx, spr_vis_miny, spr_vis_maxy;
-extern uint32_t of_wl_dbg_steps;
+
+// Perf-diagnostic counters (measurement scaffolding).  DEFINED here, in a TU
+// built on BOTH targets, so the PC build (app_pc excludes of_ecwolf_gpu.cpp)
+// links; the device perf line in of_ecwolf_gpu.cpp externs and reads them.
+uint32_t of_fl_dbg_gpu_true, of_fl_dbg_active, of_fl_dbg_bail, of_fl_dbg_solid;
+uint32_t of_fl_dbg_texdims;
+uint32_t of_spr_dbg_count, of_spr_dbg_cols, of_spr_dbg_actors, of_spr_dbg_xforms;
+uint32_t of_sb_dbg_hits, of_sb_dbg_misses;
+uint32_t of_wl_dbg_steps, of_wl_dbg_posts;
+
 static inline void SprVisExtend(int tx, int ty)
 {
 	++of_wl_dbg_steps;   // one raycast tile-step (passvert/passhoriz mark site)

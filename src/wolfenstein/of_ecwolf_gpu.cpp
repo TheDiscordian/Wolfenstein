@@ -75,29 +75,29 @@ static uint32_t gpu_dbg_forced_swaps;
  *  - of_fl_dbg_bail:     last false-return code 1=inactive 2=mapnull 3=noplanes
  *                        4=ceil-half-fail 5=floor-half-fail (0=took GPU path)
  *  - of_fl_dbg_solid:    last frame (solidCeiling<<1)|solidFloor */
-uint32_t of_fl_dbg_gpu_true;
-uint32_t of_fl_dbg_active;
-uint32_t of_fl_dbg_bail;
-uint32_t of_fl_dbg_solid;
-uint32_t of_fl_dbg_texdims;   // last frame resolved floor-backdrop texture (w<<8)|h, 0 if none
+extern uint32_t of_fl_dbg_gpu_true;
+extern uint32_t of_fl_dbg_active;
+extern uint32_t of_fl_dbg_bail;
+extern uint32_t of_fl_dbg_solid;
+extern uint32_t of_fl_dbg_texdims;   // last frame resolved floor-backdrop texture (w<<8)|h, 0 if none
 
 // Sprite diagnostic (measurement only): per-window peak visible-sprite count and
 // total drawn sprite columns, to localize the spr phase (place/transform vs draw).
-uint32_t of_spr_dbg_count;
-uint32_t of_spr_dbg_cols;
-uint32_t of_spr_dbg_actors;   // last frame: actors walked by the place loop
-uint32_t of_spr_dbg_xforms;   // last frame: TransformActor calls (passed visibility)
+extern uint32_t of_spr_dbg_count;
+extern uint32_t of_spr_dbg_cols;
+extern uint32_t of_spr_dbg_actors;   // last frame: actors walked by the place loop
+extern uint32_t of_spr_dbg_xforms;   // last frame: TransformActor calls (passed visibility)
 
 // Status-bar cache hit/miss counts per window: a hit redraws only the per-frame
 // ECG+score overlay (cheap if the 2D blit path is cheap), a miss is a full bar
 // redraw.  Splits where the sb phase cost lives.
-uint32_t of_sb_dbg_hits;
-uint32_t of_sb_dbg_misses;
+extern uint32_t of_sb_dbg_hits;
+extern uint32_t of_sb_dbg_misses;
 
 // Wall load split (last frame): raycast tile-steps (scattered map reads) vs
 // drawn wall posts (ScalePost / GPU column dispatches).
-uint32_t of_wl_dbg_steps;
-uint32_t of_wl_dbg_posts;
+extern uint32_t of_wl_dbg_steps;
+extern uint32_t of_wl_dbg_posts;
 
 /* Timestamp (of_time_us) of the last acquire that actually blocked on the
  * display flip fence.  The flip fence retires when the display consumes the

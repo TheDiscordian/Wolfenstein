@@ -1464,6 +1464,14 @@ void PlayLoop (void)
 	simAccumUS = 0;
 	simPrevUS = 0;
 
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+	// Device default: run the 35 Hz fixed-step sim loop. The Pocket presents
+	// at a fixed display cadence and the stock catch-up loop spirals under
+	// sim load; the decouple caps sim work per frame. On PC this stays off
+	// (stock) unless --fixedstep is passed for testing.
+	fixedstep = true;
+#endif
+
 	do
 	{
 		OF_WolfPerf_FrameStart();

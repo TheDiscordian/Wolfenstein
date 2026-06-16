@@ -1304,6 +1304,66 @@ void PlayFrame()
 /*
 ===================
 =
+= RunSimStep
+=
+= Runs `mult` game-tics of simulation.  Heavy per-step work (the render-state
+= snapshot and the GC pass) runs once per call; the per-tic primitives
+= (TimeCount, thinkers, collision grid, spawning, barrier, Goldstern) run
+= `mult` times -- so RunSimStep(1) is byte-for-byte the stock one-tic body and
+= RunSimStep(STEP_TICS) advances STEP_TICS stock tics with the snapshot/GC
+= multiplier removed.  The caller owns PollControls and the abort check.
+=
+===================
+*/
+static void RunSimStep(int mult)
+{
+	if(Paused)
+		return;
+
+	const uint32_t snapshotStart = OF_WolfPerf_NowUS();
+	AActor::SnapshotRenderStates();
+	SnapshotPlayerRenderStates();
+	OF_WolfPerf_Add(OF_WOLF_PERF_SIM_SNAPSHOT, snapshotStart);
+
+	for(int t = 0;t < mult;++t)
+	{
+		++gamestate.TimeCount;
+
+		uint32_t ticPartStart;
+		if(AnyPlayerNeedsSpawn())
+		{
+			ticPartStart = OF_WolfPerf_NowUS();
+			CheckSpawnPlayer();
+			OF_WolfPerf_Add(OF_WOLF_PERF_SIM_SPAWN, ticPartStart);
+		}
+
+		// In single player if the player dies only tick the pawn
+		ticPartStart = OF_WolfPerf_NowUS();
+		RebuildActorCollisionGrid();
+		if(Net::InitVars.mode != Net::MODE_SinglePlayer || players[0].state != player_t::PST_DEAD)
+			thinkerList.Tick();
+		else
+			thinkerList.Tick(ThinkerList::PLAYER);
+		OF_WolfPerf_Add(OF_WOLF_PERF_SIM_THINKERS, ticPartStart);
+
+		ticPartStart = OF_WolfPerf_NowUS();
+		AActor::FinishSpawningActors();
+		OF_WolfPerf_Add(OF_WOLF_PERF_SIM_FINISH, ticPartStart);
+
+		// One-shot per level load (self-gated).
+		Blake_BarrierApply();
+
+		Goldstern_Tick();
+	}
+
+	const uint32_t gcStart = OF_WolfPerf_NowUS();
+	GC::CheckGC();
+	OF_WolfPerf_Add(OF_WOLF_PERF_SIM_GC, gcStart);
+}
+
+/*
+===================
+=
 = PlayLoop
 =
 ===================
@@ -1365,56 +1425,36 @@ void PlayLoop (void)
 		perfStart = OF_WolfPerf_NowUS();
 		for (unsigned int i = 0;i < tics;++i)
 		{
-			if(!Paused)
-			{
-				const uint32_t snapshotStart = OF_WolfPerf_NowUS();
-				AActor::SnapshotRenderStates();
-				SnapshotPlayerRenderStates();
-				OF_WolfPerf_Add(OF_WOLF_PERF_SIM_SNAPSHOT, snapshotStart);
-			}
-			uint32_t ticPartStart = OF_WolfPerf_NowUS();
+			const uint32_t ctlStart = OF_WolfPerf_NowUS();
 			PollControls(!i);
-			OF_WolfPerf_Add(OF_WOLF_PERF_SIM_CONTROLS, ticPartStart);
+			OF_WolfPerf_Add(OF_WOLF_PERF_SIM_CONTROLS, ctlStart);
 
 			// Net code may require this loop to abort early
 			if(playstate != ex_stillplaying)
 				break;
 
-			if(!Paused)
-			{
-				++gamestate.TimeCount;
-
-				if(AnyPlayerNeedsSpawn())
-				{
-					ticPartStart = OF_WolfPerf_NowUS();
-					CheckSpawnPlayer();
-					OF_WolfPerf_Add(OF_WOLF_PERF_SIM_SPAWN, ticPartStart);
-				}
-
-				// In single player if the player dies only tick the pawn
-				ticPartStart = OF_WolfPerf_NowUS();
-				RebuildActorCollisionGrid();
-				if(Net::InitVars.mode != Net::MODE_SinglePlayer || players[0].state != player_t::PST_DEAD)
-					thinkerList.Tick();
-				else
-					thinkerList.Tick(ThinkerList::PLAYER);
-				OF_WolfPerf_Add(OF_WOLF_PERF_SIM_THINKERS, ticPartStart);
-
-				ticPartStart = OF_WolfPerf_NowUS();
-				AActor::FinishSpawningActors();
-				OF_WolfPerf_Add(OF_WOLF_PERF_SIM_FINISH, ticPartStart);
-
-				// One-shot per level load (self-gated).
-				Blake_BarrierApply();
-
-				Goldstern_Tick();
-
-				ticPartStart = OF_WolfPerf_NowUS();
-				GC::CheckGC();
-				OF_WolfPerf_Add(OF_WOLF_PERF_SIM_GC, ticPartStart);
-			}
+			RunSimStep(1);
 		}
 		OF_WolfPerf_Add(OF_WOLF_PERF_SIM, perfStart);
+
+		if(dbg_simlog)
+		{
+			uint64_t csum = 0; int nact = 0;
+			for(AActor::Iterator it = AActor::GetIterator(); it.Next(); )
+			{
+				csum += (uint32_t)it->x * 2654435761u;
+				csum += (uint32_t)it->y * 40503u;
+				csum += (uint32_t)it->ticcount * 2246822519u;
+				csum += (uint32_t)it->angle * 3266489917u;
+				++nact;
+			}
+			printf("SIMLOG tc=%d ltc=%d tics=%u x=%d y=%d nact=%d csum=%llu\n",
+				gamestate.TimeCount, lasttimecount, tics,
+				players[0].mo ? players[0].mo->x : 0,
+				players[0].mo ? players[0].mo->y : 0,
+				nact, (unsigned long long)csum);
+			fflush(stdout);
+		}
 
 		PlayFrame();
 

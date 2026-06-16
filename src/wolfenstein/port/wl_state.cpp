@@ -1113,7 +1113,40 @@ static bool CheckSightTo (AActor *ob, AActor *target, float minseedist, float ma
 			}
 		}
 		else
-#endif
+			{
+				// Integer FOV cone for the non-180 case too.  atan2f is a
+				// soft-float library call (no hardware atan on this CPU) run per
+				// sight check; reuse CheckVisibility's cos-deviation test:
+				// facing = (cos a, -sin a), dot = dx*cos a - dy*sin a =
+				// |delta|*cos(deviation); in cone iff cos(deviation) >= cos(fov/2).
+				const angle_t fovHalf = (angle_t)(fov * 0.5f * (float)ANGLE_1);
+				if(fovHalf < ANGLE_180)
+				{
+					int32_t rdx = deltax, rdy = deltay;
+					const int32_t adx = rdx < 0 ? -rdx : rdx;
+					const int32_t ady = rdy < 0 ? -rdy : rdy;
+					int sh = 0;
+					while((adx >> sh) > 0x3FFF || (ady >> sh) > 0x3FFF)
+						++sh;
+					rdx >>= sh;
+					rdy >>= sh;
+					const unsigned int fineangle = ob->angle >> ANGLETOFINESHIFT;
+					const int64_t dot = (int64_t)rdx * finecosine[fineangle]
+					                  - (int64_t)rdy * finesine[fineangle];
+					const int64_t cfov = finecosine[fovHalf >> ANGLETOFINESHIFT];
+					const int64_t len2 = (int64_t)rdx * rdx + (int64_t)rdy * rdy;
+					const int64_t lhs = dot * dot;
+					const int64_t rhs = cfov * cfov * len2;
+					bool inFov;
+					if(cfov >= 0)
+						inFov = (dot > 0) && (lhs >= rhs);
+					else
+						inFov = (dot > 0) || (lhs <= rhs);
+					if(!inFov)
+						return false;
+				}
+			}
+#else
 		{
 		//
 		// see if they are looking in the right direction
@@ -1128,6 +1161,7 @@ static bool CheckSightTo (AActor *ob, AActor *target, float minseedist, float ma
 		if(MIN(upperAngle - lowerAngle, lowerAngle - upperAngle) > angle_t(fov*ANGLE_1))
 			return false;
 		}
+#endif
 	}
 
 	//

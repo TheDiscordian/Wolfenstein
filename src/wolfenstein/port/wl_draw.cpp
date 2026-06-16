@@ -703,15 +703,21 @@ static inline bool IsActorSpotVisible(MapSpot spot)
 	return false;
 }
 
+extern uint32_t of_spr_dbg_count;
+extern uint32_t of_spr_dbg_cols;
+
 void DrawScaleds (void)
 {
 	int      i,least,numvisable,height;
 
 	visptr = &vislist[0];
 
+	of_spr_dbg_cols = 0;
+
 //
 // place active objects
 //
+	uint32_t sprPlaceStart = OF_WolfPerf_NowUS();
 	for(AActor::Iterator iter = AActor::GetIterator();iter.Next();)
 	{
 		AActor *obj = iter;
@@ -738,10 +744,14 @@ void DrawScaleds (void)
 		}
 	}
 
+	OF_WolfPerf_Add(OF_WOLF_PERF_SPR_PLACE, sprPlaceStart);
+
 //
 // draw from back to front
 //
 	numvisable = (int) (visptr-&vislist[0]);
+	if((uint32_t)numvisable > of_spr_dbg_count)
+		of_spr_dbg_count = (uint32_t)numvisable;
 
 	if (!numvisable)
 		return;                                                                 // no visable objects

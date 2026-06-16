@@ -461,10 +461,12 @@ void ScaleSprite(AActor *actor, int xcenter, const Frame *frame, unsigned height
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 	OF_WolfGPU_PreloadSource(tex->GetPixels(), tex->GetWidth() * tex->GetHeight());
 #endif
+	extern uint32_t of_spr_dbg_cols;
 	unsigned int i;
 	fixed x, y;
 	for(i = actx+startX, x = startX*xStep;x < xRun;x += xStep, ++i, dest = ++destBase)
 	{
+		++of_spr_dbg_cols;
 		if(wallheight[i] > (signed)height)
 			continue;
 

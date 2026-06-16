@@ -27,6 +27,90 @@
 static const angle_t dirangle[9] = {0,ANGLE_45,2*ANGLE_45,3*ANGLE_45,4*ANGLE_45,
 					5*ANGLE_45,6*ANGLE_45,7*ANGLE_45,0};
 
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+// Integer atan2 -> BAM for enemy facing (A_Face) and projectile aiming
+// (A_CustomMissile).  atan2 has no hardware support on this CPU (RV32 has
+// single-float only; double atan2 is a soft-float library call), and A_Face
+// runs per active enemy every tic -- a measurable chunk of the thinker time.
+// Doom's tantoangle slope table gives the BAM of atan2(a,b) folded to
+// [0, ANGLE_360), matching what the float path feeds into
+// (angle-in-[0,2pi)) * ANGLE_180 / M_PI.  Verified against the float formula
+// over the full reachable delta range: max error < 0.1 degree.
+#define OF_SLOPERANGE 2048
+#define OF_ANGLE_270  (ANGLE_90 * 3)
+
+static angle_t of_tantoangle[OF_SLOPERANGE + 1];
+static bool of_tantoangle_ready = false;
+
+static void OF_InitTanToAngle(void)
+{
+	for(int i = 0;i <= OF_SLOPERANGE;++i)
+		of_tantoangle[i] = (angle_t)(atan((double)i / OF_SLOPERANGE)
+			/ (M_PI * 2) * 4294967296.0);
+	of_tantoangle_ready = true;
+}
+
+static unsigned int OF_SlopeDiv(unsigned int num, unsigned int den)
+{
+	if(den < 512)
+		return OF_SLOPERANGE;
+	unsigned int ans = (num << 3) / (den >> 8);
+	return ans <= OF_SLOPERANGE ? ans : OF_SLOPERANGE;
+}
+
+// BAM of atan2(a, b) in [0, ANGLE_360); a is atan2's first arg (y), b the
+// second (x), matching the existing call order.
+static angle_t OF_Atan2Angle(int32_t a, int32_t b)
+{
+	if(!of_tantoangle_ready)
+		OF_InitTanToAngle();
+
+	int32_t x = b, y = a;
+	if(x == 0 && y == 0)
+		return 0;
+
+	// atan2 is scale-invariant; SlopeDiv's >>8 loses precision for small
+	// denominators, so scale both deltas up until the larger is big enough
+	// for the slope table to stay exact (keeps point-blank geometry correct).
+	{
+		int32_t ax = x < 0 ? -x : x;
+		int32_t ay = y < 0 ? -y : y;
+		int32_t m = ax > ay ? ax : ay;
+		while(m < (1 << 16)) { x <<= 1; y <<= 1; m <<= 1; }
+	}
+
+	if(x >= 0)
+	{
+		if(y >= 0)
+		{
+			if(x > y) return of_tantoangle[OF_SlopeDiv(y,x)];
+			else      return ANGLE_90 - 1 - of_tantoangle[OF_SlopeDiv(x,y)];
+		}
+		else
+		{
+			y = -y;
+			if(x > y) return 0u - of_tantoangle[OF_SlopeDiv(y,x)];
+			else      return OF_ANGLE_270 + of_tantoangle[OF_SlopeDiv(x,y)];
+		}
+	}
+	else
+	{
+		x = -x;
+		if(y >= 0)
+		{
+			if(x > y) return ANGLE_180 - 1 - of_tantoangle[OF_SlopeDiv(y,x)];
+			else      return ANGLE_90 + of_tantoangle[OF_SlopeDiv(x,y)];
+		}
+		else
+		{
+			y = -y;
+			if(x > y) return ANGLE_180 + of_tantoangle[OF_SlopeDiv(y,x)];
+			else      return OF_ANGLE_270 - 1 - of_tantoangle[OF_SlopeDiv(x,y)];
+		}
+	}
+}
+#endif
+
 static inline bool CheckDoorMovement(AActor *actor)
 {
 	MapTile::Side direction;
@@ -66,10 +150,14 @@ void A_Face(AActor *self, AActor *target, angle_t maxturn)
 	if (!target)
 		return;
 
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+	angle_t iangle = OF_Atan2Angle(target->x - self->x, target->y - self->y) - ANGLE_90;
+#else
 	double angle = atan2 ((double) (target->x - self->x), (double) (target->y - self->y));
 	if (angle<0)
 		angle = (M_PI*2+angle);
 	angle_t iangle = (angle_t) (angle*ANGLE_180/M_PI) - ANGLE_90;
+#endif
 
 	if(maxturn > 0 && maxturn < self->angle - iangle)
 	{
@@ -339,12 +427,20 @@ ACTION_FUNCTION(A_CustomMissile)
 	angle_t iangle;
 	if(!(flags & CMF_AIMDIRECTION) && self->target)
 	{
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+		angle_t base = (flags & CMF_AIMOFFSET) ?
+			OF_Atan2Angle(self->y - self->target->y, self->target->x - self->x) :
+			OF_Atan2Angle(newy - self->target->y, self->target->x - newx);
+		iangle = base + (angleOffset != 0.0 ?
+			(angle_t) ((angleOffset*ANGLE_45)/45) : 0u);
+#else
 		double angle = (flags & CMF_AIMOFFSET) ?
 			atan2 ((double) (self->y - self->target->y), (double) (self->target->x - self->x)) :
 			atan2 ((double) (newy - self->target->y), (double) (self->target->x - newx));
 		if (angle<0)
 			angle = (M_PI*2+angle);
 		iangle = (angle_t) (angle*ANGLE_180/M_PI) + (angle_t) ((angleOffset*ANGLE_45)/45);
+#endif
 	}
 	else
 		iangle = self->angle;

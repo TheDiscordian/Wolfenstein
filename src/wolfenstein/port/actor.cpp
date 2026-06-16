@@ -50,6 +50,7 @@
 #include "wl_net.h"
 #include "wl_state.h"
 #include "wl_draw.h"
+#include "wl_play.h"
 #include "id_us.h"
 #include "m_random.h"
 
@@ -711,14 +712,26 @@ void AActor::Tick()
 		return;
 	}
 
-	if(ticcount > 0)
-		--ticcount;
-
-	if(ticcount == 0)
+	// Advance the frame-duration countdown one game-tic at a time.  Under the
+	// fixed step (simStepMult>1) the thinker runs once per step but game-time
+	// advances simStepMult tics, so the countdown ticks that many times --
+	// crossing frame boundaries (and running their on-enter actions) exactly as
+	// stock would.  We must NOT subtract simStepMult in one shot: a frame with
+	// duration <= simStepMult would skip the ==0 trigger.  simStepMult==1 is the
+	// stock single decrement.
+	for(int st = 0;st < simStepMult;++st)
 	{
-		SetState(state->next);
-		if(ObjectFlags & OF_EuthanizeMe)
-			return;
+		if(ticcount > 0)
+			--ticcount;
+
+		if(ticcount == 0)
+		{
+			SetState(state->next);
+			if(ObjectFlags & OF_EuthanizeMe)
+				return;
+			if(state == NULL)
+				return;
+		}
 	}
 
 	state->thinker(this, this, state);

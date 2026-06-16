@@ -248,9 +248,15 @@ void Goldstern_Tick()
 		return;
 
 	// CheckSpawnGoldstern
+	// simStepMult tics of wait elapse per call under the fixed step.  waitTime
+	// only gates the spawn check (no per-value action), so subtracting
+	// simStepMult is exact; clamp at 0 so it can't run negative.  simStepMult==1
+	// is the stock single decrement.
 	if(gold.waitTime > 0)
 	{
-		gold.waitTime--;
+		gold.waitTime -= simStepMult;
+		if(gold.waitTime < 0)
+			gold.waitTime = 0;
 		return;
 	}
 

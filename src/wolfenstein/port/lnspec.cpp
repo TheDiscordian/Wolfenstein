@@ -175,8 +175,9 @@ class EVDoor : public Thinker
 							sndseq = new SndSeqPlayer(SoundSeq(seqname, SEQ_OpenNormal), spot);
 					}
 
+					// simStepMult tics of door slide this step (1 = stock).
 					if(amount < 0xffff)
-						amount += speed;
+						amount += speed * simStepMult;
 					if(amount >= 0xffff)
 					{
 						amount = 0xffff;
@@ -200,11 +201,18 @@ class EVDoor : public Thinker
 						ChangeState(Closing);
 					}
 					else
-						--wait;
+					{
+						// Discrete open-delay countdown: step it simStepMult tics
+						// (1 = stock), not one big subtract, so it can't undershoot
+						// past 0.
+						for(int st = 0;st < simStepMult && wait > 0;++st)
+							--wait;
+					}
 					break;
 				case Closing:
+					// simStepMult tics of door slide this step (1 = stock).
 					if(amount > 0)
-						amount -= speed;
+						amount -= speed * simStepMult;
 					if(amount <= 0)
 					{
 						amount = 0;
@@ -629,6 +637,21 @@ public:
 
 	void Tick()
 	{
+		// Fixed step: the elevator sequence is driven by --callSpeed gates that
+		// fire one-shot teleport/state work at exactly 0, so step the whole
+		// one-tic body simStepMult times rather than scaling callSpeed (which
+		// could skip the ==0 trigger).  Bail once it destroys itself.
+		// simStepMult==1 is the stock single tic.
+		for(int st = 0;st < simStepMult;++st)
+		{
+			if(ObjectFlags & OF_EuthanizeMe)
+				return;
+			TickStep();
+		}
+	}
+
+	void TickStep()
+	{
 		if(sndseq)
 			sndseq->Tick();
 
@@ -974,6 +997,27 @@ class EVPushwall : public Thinker
 
 		void Tick()
 		{
+			// Run one game-tic of pushwall advance.  Under the fixed step the
+			// thinker fires once but advances simStepMult tics, so we loop the
+			// whole one-tic body that many times: each pass re-establishes
+			// moveTo and crosses at most one tile boundary, so a position step
+			// that spans more than one tile (speed*simStepMult > 1024) is
+			// committed one tile at a time -- no single `-=1024` overshoot.  We
+			// bail the moment the body destroys the thinker.  simStepMult==1 is
+			// the stock single tic.
+			for(int st = 0;st < simStepMult;++st)
+			{
+				if(ObjectFlags & OF_EuthanizeMe)
+					return;
+				if(!TickStep())
+					return;
+			}
+		}
+
+		// One game-tic of advance.  Returns false if the pushwall destroyed
+		// itself (caller must stop touching it).
+		bool TickStep()
+		{
 			if(position == 0)
 				sndseq = new SndSeqPlayer(SoundSeq(seqname, SEQ_OpenNormal), spot);
 
@@ -988,7 +1032,7 @@ class EVPushwall : public Thinker
 				if(moveTo == NULL)
 				{
 					Destroy();
-					return;
+					return false;
 					// Maybe in the future this can be a flag or something
 					#if 0
 					FString error;
@@ -1000,7 +1044,7 @@ class EVPushwall : public Thinker
 				if(!nostop && !CheckSpotFree(moveTo))
 				{
 					Destroy();
-					return;
+					return false;
 				}
 
 				moveTo->SetTile(spot->tile);
@@ -1034,8 +1078,12 @@ class EVPushwall : public Thinker
 			if(!moveTo)
 			{
 				if(--distance == 0)
+				{
 					Destroy();
+					return false;
+				}
 			}
+			return true;
 		}
 
 		void Serialize(FArchive &arc)
@@ -1213,6 +1261,21 @@ class EVVictorySpin : public Thinker
 		}
 
 		void Tick()
+		{
+			// Fixed step: this victory cutscene turns the player and walks BJ in,
+			// finishing with a one-shot collision at dist==0.  Step the whole
+			// one-tic body simStepMult times (1 = stock) so the turn and the
+			// dist countdown stay frame-accurate and the dist==0 hit isn't
+			// skipped.  Bail once it destroys itself.
+			for(int st = 0;st < simStepMult;++st)
+			{
+				if(ObjectFlags & OF_EuthanizeMe)
+					return;
+				TickStep();
+			}
+		}
+
+		void TickStep()
 		{
 			if(doturn)
 			{

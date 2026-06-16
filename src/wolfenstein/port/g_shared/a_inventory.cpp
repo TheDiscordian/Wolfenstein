@@ -208,15 +208,21 @@ void AInventory::Tick()
 {
 	Super::Tick();
 
+	// Discrete respawn countdown: tick simStepMult times (1 = stock) so a timer
+	// of 1 still fires on its ==0 boundary rather than being skipped by a single
+	// subtract.
 	if(respawnTimer > 0)
 	{
-		if(--respawnTimer == 0)
+		for(int st = 0;st < simStepMult && respawnTimer > 0;++st)
 		{
-			flags |= FL_PICKUP;
-			itemFlags &= ~IF_INACTIVE;
-			PlaySoundLocActor("misc/spawn", this);
-			ItemFog();
-			SetState(SpawnState);
+			if(--respawnTimer == 0)
+			{
+				flags |= FL_PICKUP;
+				itemFlags &= ~IF_INACTIVE;
+				PlaySoundLocActor("misc/spawn", this);
+				ItemFog();
+				SetState(SpawnState);
+			}
 		}
 	}
 }

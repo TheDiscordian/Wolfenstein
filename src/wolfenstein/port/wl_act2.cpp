@@ -304,8 +304,11 @@ void T_ExplodeProjectile(AActor *self, AActor *target)
 void T_Projectile (AActor *self)
 {
 	int steps = 1;
-	fixed movex = self->velx;
-	fixed movey = self->vely;
+	// Fixed step: advance simStepMult tics of travel in one Tick.  The substep
+	// loop below already splits a large displacement into radius-bounded steps,
+	// so scaling the per-tic velocity keeps collision detection correct.
+	fixed movex = self->velx * simStepMult;
+	fixed movey = self->vely * simStepMult;
 
 	// Projectiles can't move faster than their radius in a tic or collision
 	// detection can be off.
@@ -642,12 +645,23 @@ ACTION_FUNCTION(A_Chase)
 	// monster moving in some direction for a random amount of time (contrarily
 	// to wolfensteins block based movement). This is simulated since it also
 	// determines when a monster attempts to attack
-	else if(--self->movecount < 0)
-		self->movecount = pr_chase.RandomOld(false) & 15;
+	//
+	// Discrete countdown gate: under the fixed step tick it simStepMult times
+	// (re-rolling on each <0 crossing) rather than subtracting simStepMult, so
+	// a movecount of 0 or 1 still triggers the re-roll.  simStepMult==1 is the
+	// stock single decrement.
+	else
+	{
+		for(int st = 0;st < simStepMult;++st)
+			if(--self->movecount < 0)
+				self->movecount = pr_chase.RandomOld(false) & 15;
+	}
 
 	if(!pathing)
 	{
-		bool inMeleeRange = melee ? CheckMeleeRange(self, self->target, self->speed) : false;
+		// Reach tracks the doubled step: the actor covers speed*simStepMult this
+		// tick, so the melee window widens to match (simStepMult==1 is stock).
+		bool inMeleeRange = melee ? CheckMeleeRange(self, self->target, self->speed * simStepMult) : false;
 
 		if(!inMeleeRange && missile)
 		{
@@ -721,7 +735,10 @@ ACTION_FUNCTION(A_Chase)
 		return false; // object is blocked in
 
 	self->angle = dirangle[self->dir];
-	move = self->speed;
+	// Cover simStepMult tics of travel in this single thinker run.  The do/while
+	// carry loop below already spreads `move` across tile boundaries, so a
+	// doubled move is consumed correctly (simStepMult==1 is stock).
+	move = self->speed * simStepMult;
 
 	do
 	{
@@ -733,7 +750,7 @@ ACTION_FUNCTION(A_Chase)
 			//
 			// check for melee range
 			//
-			if(melee && CheckMeleeRange(self, self->target, self->speed))
+			if(melee && CheckMeleeRange(self, self->target, self->speed * simStepMult))
 			{
 				PlaySoundLocActor(self->attacksound, self);
 				self->SetState(melee);
@@ -803,7 +820,7 @@ ACTION_FUNCTION(A_Wander)
 	}
 
 	self->angle = dirangle[self->dir];
-	int32_t move = self->speed;
+	int32_t move = self->speed * simStepMult;   // simStepMult tics of travel (1 = stock)
 
 	do
 	{

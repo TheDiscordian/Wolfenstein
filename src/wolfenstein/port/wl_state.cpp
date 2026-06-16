@@ -1235,40 +1235,50 @@ bool SightPlayer (AActor *ob, float minseedist, float maxseedist, float maxheard
 		ob->flags &= ~FL_ATTACKMODE;
 	}
 
-	if (ob->sighttime != ob->GetDefault()->sighttime)
+	// Fixed step: advance simStepMult tics of reaction-time per call.  Each tic
+	// does exactly one of {count down sightrandom, count down sighttime, attempt
+	// first sight, fire FirstSighting} -- so we step that one-tic logic up to
+	// simStepMult times rather than subtracting simStepMult (which would skip a
+	// counter's 0 boundary).  simStepMult==1 collapses to the stock single tic.
+	for(int st = 0;st < simStepMult;++st)
 	{
-		//
-		// count down reaction time
-		//
-		if (ob->sightrandom)
+		if (ob->sighttime != ob->GetDefault()->sighttime)
 		{
-			--ob->sightrandom;
-			return false;
+			//
+			// count down reaction time
+			//
+			if (ob->sightrandom)
+			{
+				--ob->sightrandom;
+				continue;
+			}
+
+			if (ob->sighttime > 0)
+			{
+				--ob->sighttime;
+				continue;
+			}
+		}
+		else
+		{
+			int player = CheckSight (ob, minseedist, maxseedist, maxheardist, fov);
+			if (player >= 0)
+			{
+				ob->target = players[player].mo;
+				ob->flags &= ~(FL_AMBUSH|FL_FRIENDLY);
+
+				--ob->sighttime; // We need to somehow mark we started.
+				ob->sightrandom = 1; // Account for tic.
+				if(ob->GetDefault()->sightrandom)
+					ob->sightrandom += pr_sight()/ob->GetDefault()->sightrandom;
+			}
+			continue;
 		}
 
-		if (ob->sighttime > 0)
-		{
-			--ob->sighttime;
-			return false;
-		}
+		FirstSighting (ob, state);
+
+		return true;
 	}
-	else
-	{
-		int player = CheckSight (ob, minseedist, maxseedist, maxheardist, fov);
-		if (player >= 0)
-		{
-			ob->target = players[player].mo;
-			ob->flags &= ~(FL_AMBUSH|FL_FRIENDLY);
 
-			--ob->sighttime; // We need to somehow mark we started.
-			ob->sightrandom = 1; // Account for tic.
-			if(ob->GetDefault()->sightrandom)
-				ob->sightrandom += pr_sight()/ob->GetDefault()->sightrandom;
-		}
-		return false;
-	}
-
-	FirstSighting (ob, state);
-
-	return true;
+	return false;
 }

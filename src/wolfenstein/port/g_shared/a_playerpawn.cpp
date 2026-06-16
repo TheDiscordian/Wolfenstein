@@ -408,7 +408,15 @@ void APlayerPawn::Tick()
 	}
 
 	if(sighttime) // Player is frozen
-		--sighttime;
+	{
+		// Discrete freeze countdown: tick simStepMult times so the freeze
+		// expires on the right game-tic, then move on the remaining tics.  At
+		// simStepMult==1 this is the stock single decrement + move.
+		for(int st = 0;st < simStepMult && sighttime;++st)
+			--sighttime;
+		if(!sighttime)
+			ControlMovement(this);
+	}
 	else
 		ControlMovement(this);
 }
@@ -420,11 +428,23 @@ void APlayerPawn::TickPSprites()
 		if(!player->psprite[layer].frame)
 			return;
 
-		if(player->psprite[layer].ticcount > 0)
-			--player->psprite[layer].ticcount;
+		// Advance the psprite frame-duration countdown one game-tic at a time
+		// (tick-twice under the fixed step) so a frame shorter than simStepMult
+		// still hits its ==0 boundary; subtracting simStepMult would skip it.
+		// The frame thinker (weapon action) still runs ONCE per step -- input
+		// edge actions like firing must not repeat -- while the raise/lower
+		// slide it drives scales itself by simStepMult.
+		for(int st = 0;st < simStepMult;++st)
+		{
+			if(player->psprite[layer].ticcount > 0)
+				--player->psprite[layer].ticcount;
 
-		if(player->psprite[layer].frame && player->psprite[layer].ticcount == 0)
-			player->SetPSprite(player->psprite[layer].frame->next, static_cast<player_t::PSprite>(layer));
+			if(player->psprite[layer].frame && player->psprite[layer].ticcount == 0)
+				player->SetPSprite(player->psprite[layer].frame->next, static_cast<player_t::PSprite>(layer));
+
+			if(!player->psprite[layer].frame)
+				break;
+		}
 
 		if(player->psprite[layer].frame)
 			player->psprite[layer].frame->thinker(this, player->ReadyWeapon, player->psprite[layer].frame);

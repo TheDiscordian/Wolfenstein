@@ -20,6 +20,7 @@ extern  bool noadaptive;
 extern  bool fixedstep;       // sim/render decouple engaged?
 extern  int  sim_forcesteps;  // PC test: force N logic steps/frame (0 = real cadence)
 extern  bool dbg_simlog;      // PC test: per-frame drain trace
+extern  int  simStepMult;     // game-tics advanced by the current sim step (1 = stock)
 extern  unsigned        tics;
 extern  fixed           renderfraction;
 extern  int32_t         renderbasetimecount;

@@ -190,7 +190,8 @@ void ControlMovement (APlayerPawn *ob)
 		//
 		// not strafing
 		//
-		ob->angle -= controlx*(ANGLE_1/ANGLESCALE);
+		// simStepMult tics of turning this step (1 = stock).
+		ob->angle -= controlx*(ANGLE_1/ANGLESCALE)*simStepMult;
 	}
 
 	if(strafe)
@@ -203,15 +204,18 @@ void ControlMovement (APlayerPawn *ob)
 
 		strafe = FixedMul(ob->speed<<7, FixedMul(strafe, ob->sidemove[abs(strafe) >= RUNMOVE]));
 
+		// simStepMult tics of thrust this step (1 = stock).  Scaling the speed
+		// argument (post-cap) keeps the input caps intact while advancing the
+		// doubled distance; ClipMove still clamps against walls.
 		if (strafe > 0)
 		{
 			angle = ob->angle - ANGLE_90;
-			Thrust (ob,angle,strafe*MOVESCALE);      // move to left
+			Thrust (ob,angle,strafe*MOVESCALE*simStepMult);      // move to left
 		}
 		else if (strafe < 0)
 		{
 			angle = ob->angle + ANGLE_90;
-			Thrust (ob,angle,-strafe*MOVESCALE);     // move to right
+			Thrust (ob,angle,-strafe*MOVESCALE*simStepMult);     // move to right
 		}
 	}
 
@@ -225,7 +229,7 @@ void ControlMovement (APlayerPawn *ob)
 
 		controly = FixedMul(ob->speed<<7, FixedMul(controly, ob->forwardmove[controly <= -RUNMOVE]));
 
-		Thrust (ob,ob->angle,-controly*MOVESCALE); // move forwards
+		Thrust (ob,ob->angle,-controly*MOVESCALE*simStepMult); // move forwards
 	}
 	else if (controly > 0)
 	{
@@ -235,7 +239,7 @@ void ControlMovement (APlayerPawn *ob)
 		controly = FixedMul(ob->speed<<7, FixedMul(controly, ob->forwardmove[controly >= RUNMOVE]));
 
 		angle = ob->angle + ANGLE_180;
-		Thrust (ob,angle,controly*MOVESCALE*2/3);          // move backwards
+		Thrust (ob,angle,controly*MOVESCALE*2/3*simStepMult);          // move backwards
 	}
 
 	// Running animation
@@ -1253,7 +1257,8 @@ ACTION_FUNCTION(A_Lower)
 {
 	player_t *player = self->player;
 
-	player->psprite[player_t::ps_weapon].sy += RAISESPEED;
+	// simStepMult tics of lowering this step; the clamp below bounds overshoot.
+	player->psprite[player_t::ps_weapon].sy += RAISESPEED * simStepMult;
 	if(player->psprite[player_t::ps_weapon].sy < RAISERANGE)
 		return false;
 	player->psprite[player_t::ps_weapon].sy = RAISERANGE;
@@ -1281,7 +1286,8 @@ ACTION_FUNCTION(A_Raise)
 		return false;
 	}
 
-	player->psprite[player_t::ps_weapon].sy -= RAISESPEED;
+	// simStepMult tics of raising this step; the clamp below bounds overshoot.
+	player->psprite[player_t::ps_weapon].sy -= RAISESPEED * simStepMult;
 	if(player->psprite[player_t::ps_weapon].sy > 0)
 		return false;
 	player->psprite[player_t::ps_weapon].sy = 0;

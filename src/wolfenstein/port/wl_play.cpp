@@ -79,6 +79,14 @@ bool fixedstep = false;            // default off; device flips it on in PlayLoo
 int  sim_forcesteps = 0;           // PC test: force exactly N logic steps/frame
 bool dbg_simlog = false;           // PC test: print per-frame drain trace
 
+// Game-tics advanced by the current sim step.  RunSimStep sets this to its
+// `mult` for the single heavy-sim pass and restores 1 afterward, so the rescale
+// sites (movement, thrust, projectile/door/pushwall/weapon advance, the actor/
+// movecount/sight/weapon countdown gates and Goldstern) advance `simStepMult`
+// game-tics while the thinker runs once.  It is 1 on the stock RunSimStep(1)
+// path, making that path byte-for-byte identical.
+int  simStepMult = 1;
+
 //
 // control info
 //
@@ -1379,36 +1387,42 @@ static void RunSimStep(int mult)
 	SnapshotPlayerRenderStates();
 	OF_WolfPerf_Add(OF_WOLF_PERF_SIM_SNAPSHOT, snapshotStart);
 
-	for(int t = 0;t < mult;++t)
+	// Step B: the heavy sim body runs ONCE per step but advances `mult`
+	// game-tics of game-time.  simStepMult tells the rescale sites how many
+	// tics to advance: continuous quantities scale by it, discrete countdown
+	// gates tick that many times.  With mult==1 (the stock RunSimStep(1) path)
+	// simStepMult is 1 and every site is byte-for-byte stock.
+	simStepMult = mult;
+
+	gamestate.TimeCount += mult;
+
+	uint32_t ticPartStart;
+	if(AnyPlayerNeedsSpawn())
 	{
-		++gamestate.TimeCount;
-
-		uint32_t ticPartStart;
-		if(AnyPlayerNeedsSpawn())
-		{
-			ticPartStart = OF_WolfPerf_NowUS();
-			CheckSpawnPlayer();
-			OF_WolfPerf_Add(OF_WOLF_PERF_SIM_SPAWN, ticPartStart);
-		}
-
-		// In single player if the player dies only tick the pawn
 		ticPartStart = OF_WolfPerf_NowUS();
-		RebuildActorCollisionGrid();
-		if(Net::InitVars.mode != Net::MODE_SinglePlayer || players[0].state != player_t::PST_DEAD)
-			thinkerList.Tick();
-		else
-			thinkerList.Tick(ThinkerList::PLAYER);
-		OF_WolfPerf_Add(OF_WOLF_PERF_SIM_THINKERS, ticPartStart);
-
-		ticPartStart = OF_WolfPerf_NowUS();
-		AActor::FinishSpawningActors();
-		OF_WolfPerf_Add(OF_WOLF_PERF_SIM_FINISH, ticPartStart);
-
-		// One-shot per level load (self-gated).
-		Blake_BarrierApply();
-
-		Goldstern_Tick();
+		CheckSpawnPlayer();
+		OF_WolfPerf_Add(OF_WOLF_PERF_SIM_SPAWN, ticPartStart);
 	}
+
+	// In single player if the player dies only tick the pawn
+	ticPartStart = OF_WolfPerf_NowUS();
+	RebuildActorCollisionGrid();
+	if(Net::InitVars.mode != Net::MODE_SinglePlayer || players[0].state != player_t::PST_DEAD)
+		thinkerList.Tick();
+	else
+		thinkerList.Tick(ThinkerList::PLAYER);
+	OF_WolfPerf_Add(OF_WOLF_PERF_SIM_THINKERS, ticPartStart);
+
+	ticPartStart = OF_WolfPerf_NowUS();
+	AActor::FinishSpawningActors();
+	OF_WolfPerf_Add(OF_WOLF_PERF_SIM_FINISH, ticPartStart);
+
+	// One-shot per level load (self-gated).
+	Blake_BarrierApply();
+
+	Goldstern_Tick();
+
+	simStepMult = 1;
 
 	const uint32_t gcStart = OF_WolfPerf_NowUS();
 	GC::CheckGC();

@@ -52,6 +52,13 @@
 
 static FRandom pr_interrogate("BlakeInterrogate");
 
+// Earliest TimeCount at which the next interrogation may land.  Original Blake
+// (3d_agent.cpp) paces interrogation with a tic cooldown so mashing use can't
+// instantly drain an informant's gifts; transient, no need to serialize.
+static int32_t interrogateReadyTime = 0;
+static const int32_t INTERROGATE_DELAY_INFORMANT = 20;  // ~1/3 s
+static const int32_t INTERROGATE_DELAY_SCIENTIST = 120; // ~2 s
+
 // Scientist hint words from map plane 1, one list per type. The zone under
 // a word's tile decides which room an informant hint belongs to; words on
 // tiles without a zone form the general pool.
@@ -218,6 +225,15 @@ bool Blake_TryInterrogate(AActor *playerMo)
 	if(control[playerMo->player->GetPlayerNum()].buttonheld[bt_use])
 		return false;
 
+	// Pace interrogation like the original (3d_agent.cpp) so mashing use can't
+	// instantly milk an informant.  TimeCount runs backward on a new level or
+	// load, so a ready time more than the longest delay ahead means the clock
+	// reset -- don't block in that case.
+	const int32_t now = gamestate.TimeCount;
+	if(now < interrogateReadyTime &&
+		interrogateReadyTime - now <= INTERROGATE_DELAY_SCIENTIST)
+		return false;
+
 	static const ClassDef * const genCls = ClassDef::FindClass("GeneralScientist");
 	static const ClassDef * const infCls = ClassDef::FindClass("InformantScientist");
 	if(!genCls)
@@ -317,6 +333,11 @@ bool Blake_TryInterrogate(AActor *playerMo)
 
 	StatusBar->DisplayInfoMessage(msg, 0x200, 600);
 	PlaySoundLocActor("misc/interrogate", playerMo);
+
+	// Informants recharge quickly; a provoked/normal scientist takes longer,
+	// matching the original's per-type delay.
+	interrogateReadyTime = now +
+		(informant ? INTERROGATE_DELAY_INFORMANT : INTERROGATE_DELAY_SCIENTIST);
 	return true;
 }
 

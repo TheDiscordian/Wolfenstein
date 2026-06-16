@@ -1342,8 +1342,21 @@ void PlayFrame()
 	{
 		const uint32_t sbStart = OF_WolfPerf_NowUS();
 		StatusBar->Tick();
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+		// Redraw the bar every other frame.  The acquire-time preserve
+		// (SetNextVideoFramePreserveExcludeRows in ThreeDRefresh) carries the
+		// bar/border rows on the skipped frame, so the bar stays on screen and
+		// just updates its ECG trace / score at ~30Hz -- the per-frame band
+		// memcpy + ECG/score overlay was ~5ms (sb), a cache hit every frame.
+		// (The stock (TimeCount&1)||!(tics&1) throttle draws EVERY frame under
+		// the fixed-step decouple, where tics is even.)
+		static unsigned sbarDrawTick = 0;
+		if (++sbarDrawTick & 1)
+			StatusBar->DrawStatusBar();
+#else
 		if ((gamestate.TimeCount & 1) || !(tics & 1))
 			StatusBar->DrawStatusBar();
+#endif
 		OF_WolfPerf_Add(OF_WOLF_PERF_STATUSBAR, sbStart);
 	}
 

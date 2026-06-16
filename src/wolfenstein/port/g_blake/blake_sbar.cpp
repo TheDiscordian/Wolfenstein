@@ -242,7 +242,20 @@ void BlakeStatusBar::DrawStatusBar()
 	sbarKey[1] = (uint32_t)players[ConsolePlayer].lives;
 	sbarKey[2] = (uint32_t)levelInfo->LevelNumber;
 	sbarKey[3] = (uint32_t)CurrentScore;
-	sbarKey[4] = (uint32_t)InfoMessageTics;
+	// Key on the info-area message CONTENT, not InfoMessageTics: the timer ticks
+	// down every frame while a message shows, but the drawn text is unchanged,
+	// so keying on the timer churned the cache the whole time a message was up.
+	// Idle (no message) keys to 0; the token count is in sbarKey[5].
+	uint32_t infoKey = 0;
+	if(InfoMessageTics > 0)
+	{
+		infoKey = 0x811c9dc5u;
+		for(const char *c = InfoMessage.GetChars();c != NULL && *c;++c)
+			infoKey = (infoKey ^ (unsigned char)*c) * 16777619u;
+		if(infoKey == 0)
+			infoKey = 1;
+	}
+	sbarKey[4] = infoKey;
 	if(AActor *pmo = players[ConsolePlayer].mo)
 	{
 		static const ClassDef * const coinCls = ClassDef::FindClass("ConcessionCoin");
@@ -252,7 +265,16 @@ void BlakeStatusBar::DrawStatusBar()
 		{
 			sbarKey[6] = (uint32_t)(uintptr_t)rw;
 			if(rw->ammo[AWeapon::PrimaryFire])
-				sbarKey[6] ^= (uint32_t)rw->ammo[AWeapon::PrimaryFire]->amount << 1;
+			{
+				const uint32_t amt = (uint32_t)rw->ammo[AWeapon::PrimaryFire]->amount;
+				// The AoG auto charge pistol recharges every frame but only shows
+				// READY/WAIT, so its raw ammo must not key the cache (it would
+				// churn it constantly and never hit).  Other weapons / PS show
+				// the actual amount, so it does.
+				static const ClassDef * const autochargeCls = ClassDef::FindClass("AutoChargePistol");
+				const bool autocharge = autochargeCls && rw->IsKindOf(autochargeCls);
+				sbarKey[6] ^= (autocharge && !isPS) ? (amt > 0 ? 1u : 0u) : (amt << 1);
+			}
 		}
 		unsigned int keymask = 0;
 		for(AInventory *item = pmo->inventory;item != NULL;item = item->inventory)

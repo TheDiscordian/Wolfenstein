@@ -878,14 +878,6 @@ void AsmRefresh()
 	MapSpot focalspot = map->GetSpot(focaltx, focalty, 0);
 	bool playerInPushwallBackTile = focalspot->pushAmount != 0;
 
-	// Cache-resident solid-tile flags: sw[idx]==0 means the tile is empty
-	// (Map::tile == NULL), so the ray passes through it -- skip the scattered
-	// per-step GetSpot + MapSpot field reads entirely and just mark visibility
-	// in the compact array.  sw[idx]!=0 (wall/door/pushwall) falls to the full
-	// scattered read.  NULL (cache not built yet) => always do the full read.
-	int swW = 0, swH = 0;
-	const unsigned char *sw = SimTileFlags(&swW, &swH);
-
 	for(pixx=0;pixx<viewwidth;pixx++)
 	{
 		short angl=midangle+pixelangle[pixx];
@@ -998,13 +990,6 @@ vertentry:
 				break;
 			}
 			if(xspot[0]>=mapwidth || xspot[1]>=mapheight) break;
-			if(sw && sw[xspot[1]*swW + xspot[0]] == 0)
-			{
-				// Empty tile (tile==NULL): pass through without the scattered
-				// MapSpot read.  passvert marks visibility from live coords.
-				tilehit = 0;
-				goto passvert;
-			}
 			tilehit=map->GetSpot(xspot[0], xspot[1], 0);
 			if(tilehit && tilehit->tile)
 			{
@@ -1143,19 +1128,8 @@ vertentry:
 				break;
 			}
 passvert:
-			if(tilehit)
-			{
-				// Pass-through wall/door (or pushwall receptor): tilehit may be
-				// a tile other than the live coords (pushwall reassigns it), so
-				// mark via the spot to preserve the original target + automap.
-				tilehit->MarkVisible();
-				tilehit->amFlags |= AM_Visible;
-			}
-			else
-			{
-				// Empty fast-path tile: compact visibility mark from live coords.
-				map->MarkTileVisible(xtile, yintercept>>16);
-			}
+			tilehit->MarkVisible();
+			tilehit->amFlags |= AM_Visible;
 			SprVisExtend(xtile, yintercept>>16);
 			xtile+=xtilestep;
 			yintercept+=ystep;
@@ -1184,11 +1158,6 @@ horizentry:
 				break;
 			}
 			if(yspot[0]>=mapwidth || yspot[1]>=mapheight) break;
-			if(sw && sw[yspot[1]*swW + yspot[0]] == 0)
-			{
-				tilehit = 0;
-				goto passhoriz;
-			}
 			tilehit=map->GetSpot(yspot[0], yspot[1], 0);
 			if(tilehit && tilehit->tile)
 			{
@@ -1327,15 +1296,8 @@ horizentry:
 				break;
 			}
 passhoriz:
-			if(tilehit)
-			{
-				tilehit->MarkVisible();
-				tilehit->amFlags |= AM_Visible;
-			}
-			else
-			{
-				map->MarkTileVisible(xintercept>>16, ytile);
-			}
+			tilehit->MarkVisible();
+			tilehit->amFlags |= AM_Visible;
 			SprVisExtend(xintercept>>16, ytile);
 			ytile+=ytilestep;
 			xintercept+=xstep;

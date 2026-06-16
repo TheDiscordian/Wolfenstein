@@ -252,18 +252,19 @@ class GameMap
 				void			SetNextTag(Map *next);
 				bool			IsVisible() const
 				{
-					// Per-frame visibility lives in a compact cache-resident
-					// array (GameMap::visStampArr) keyed by tile index, not in
-					// this scattered Map struct -- so the raycast's per-step mark
-					// no longer cache-misses on the ~50-byte Map. Index = this
-					// minus the plane's tile array base = y*width+x.
-					return plane->gm->IsTileVisibleIdx(
-						(unsigned int)(this - plane->map));
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+					return visibleStamp == plane->gm->visibilityStamp;
+#else
+					return visible != 0;
+#endif
 				}
 				void			MarkVisible()
 				{
-					plane->gm->MarkTileVisibleIdx(
-						(unsigned int)(this - plane->map));
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+					visibleStamp = plane->gm->visibilityStamp;
+#else
+					visible = true;
+#endif
 				}
 				bool			IsSideSolid(unsigned int side) const;
 				void			SetSideSolid(unsigned int side, bool solid);
@@ -313,15 +314,6 @@ class GameMap
 		int				GetMarketLumpNum() const { return markerLump; }
 		const PlayerSpawn *GetPlayerSpawn(int player) const;
 		Plane::Map		*GetSpot(unsigned int x, unsigned int y, unsigned int z) const { return &GetPlane(z).map[y*header.width+x]; }
-		// Compact per-frame visibility (see Map::IsVisible).  Indexed by tile,
-		// kept off the scattered Map struct so the raycast's per-step mark stays
-		// cache-resident.  mutable: a per-frame cache (declared before the inline
-		// accessors so both compilers resolve it).
-		mutable TArray<unsigned int>	visStampArr;
-		void			EnsureVisStamp() const { const unsigned int cells = header.width*header.height; if(visStampArr.Size() != cells) { visStampArr.Resize(cells); for(unsigned int i = 0;i < cells;++i) visStampArr[i] = 0; } }
-		bool			IsTileVisibleIdx(unsigned int idx) const { return idx < visStampArr.Size() && visStampArr[idx] == visibilityStamp; }
-		void			MarkTileVisibleIdx(unsigned int idx) const { if(idx < visStampArr.Size()) visStampArr[idx] = visibilityStamp; }
-		void			MarkTileVisible(unsigned int x, unsigned int y) const { MarkTileVisibleIdx(y*header.width + x); }
 		Plane::Map		*GetSpotByTag(unsigned int tag, Plane::Map *start) const;
 		const Zone		&GetZone(unsigned int index) { return zonePalette[index]; }
 		bool			IsValid() const { return valid; }
@@ -384,7 +376,9 @@ class GameMap
 		TArray<Thing>	things;
 		TArray<Plane>	planes;
 		TMap<unsigned int, Plane::Map *> tagMap;
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 		unsigned int		visibilityStamp;
+#endif
 
 		// Sound travel links.  zoneTraversed is temporary array for recursive
 		// traversals.  zoneLinks is the table of links (counts the number of

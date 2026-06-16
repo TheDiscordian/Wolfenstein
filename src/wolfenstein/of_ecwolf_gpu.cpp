@@ -144,11 +144,28 @@ struct GpuMaskCacheEntry
 	uint8_t state;
 };
 
+// Opaque-run cache for masked (sprite) columns: a source column's transparency
+// pattern is fixed, so its opaque runs in source texel space are computed once
+// and reused.  run_count == -1 marks a too-fragmented column (caller falls back
+// to the per-pixel scan).
+static const int gpu_run_cache_size = 256;
+static const int gpu_run_cache_max = 8;
+struct GpuRunCacheEntry
+{
+	const uint8_t *source;
+	int source_len;
+	int run_count;
+	uint16_t run_start[gpu_run_cache_max];
+	uint16_t run_end[gpu_run_cache_max];
+};
+
 static GpuSourceCacheRange gpu_source_cache[gpu_source_cache_size];
 static unsigned int gpu_source_cache_next;
 static GpuSourceCacheRange gpu_source_cache_last;
 static GpuMaskCacheEntry gpu_mask_cache[gpu_mask_cache_size];
 static GpuMaskCacheEntry gpu_mask_cache_last;
+static GpuRunCacheEntry gpu_run_cache[gpu_run_cache_size];
+static GpuRunCacheEntry gpu_run_cache_last;
 /* Set when texture pixel buffers were freed/recomposited; the GPU's internal
  * texture cache is flushed at the next frame start (when the GPU is idle). */
 static bool gpu_tex_flush_pending;
@@ -449,6 +466,58 @@ static uint8_t gpu_classify_mask_source(const uint8_t *source, int source_len)
 	slot.state = state;
 	gpu_mask_cache_last = slot;
 	return state;
+}
+
+// Opaque runs of a masked source column in source texel space, computed once and
+// cached by (source, source_len).  run_count == -1 means the column has more than
+// gpu_run_cache_max runs (too fragmented to map cheaply); the caller falls back
+// to the per-pixel scan.
+static const GpuRunCacheEntry *gpu_get_sprite_runs(const uint8_t *source,
+	int source_len)
+{
+	if(gpu_run_cache_last.source == source &&
+		gpu_run_cache_last.source_len == source_len)
+	{
+		return &gpu_run_cache_last;
+	}
+
+	const uintptr_t key =
+		((uintptr_t)source >> 2) ^ ((uintptr_t)source >> 11) ^
+		(uintptr_t)source_len;
+	GpuRunCacheEntry &slot =
+		gpu_run_cache[key & (uintptr_t)(gpu_run_cache_size - 1)];
+	if(slot.source == source && slot.source_len == source_len)
+	{
+		gpu_run_cache_last = slot;
+		return &gpu_run_cache_last;
+	}
+
+	slot.source = source;
+	slot.source_len = source_len;
+	int rc = 0;
+	bool overflow = false;
+	for(int s = 0; s < source_len;)
+	{
+		if(source[s] == 0)
+		{
+			++s;
+			continue;
+		}
+		const int s0 = s;
+		while(s < source_len && source[s] != 0)
+			++s;
+		if(rc >= gpu_run_cache_max)
+		{
+			overflow = true;
+			break;
+		}
+		slot.run_start[rc] = (uint16_t)s0;
+		slot.run_end[rc] = (uint16_t)s;
+		++rc;
+	}
+	slot.run_count = overflow ? -1 : rc;
+	gpu_run_cache_last = slot;
+	return &gpu_run_cache_last;
 }
 
 static void gpu_make_source_visible(const uint8_t *source, uint32_t bytes)
@@ -1498,6 +1567,42 @@ bool OF_WolfGPU_DrawMaskedColumn(uint8_t *dest, int count,
 			OF_GPU_SPAN_COLORMAP);
 	}
 
+	// Mixed column.  Map the source column's cached opaque runs (source texel
+	// space) to destination rows -- O(runs) instead of an O(column height)
+	// per-pixel scan.  For texstep > 0 the sampled source texel is monotonic in
+	// the row index, so an opaque source run [s0,s1) covers exactly dest rows
+	// [rowOf(s0), rowOf(s1)), rowOf(s) = ceil((s<<FRACBITS - texfrac)/texstep) --
+	// the same texels the scan below would draw.  Fall back to the scan for
+	// texstep <= 0 or a too-fragmented column (run_count < 0).
+	if(texstep > 0)
+	{
+		const GpuRunCacheEntry *runs = gpu_get_sprite_runs(source, source_len);
+		if(runs->run_count >= 0)
+		{
+			for(int r = 0; r < runs->run_count; ++r)
+			{
+				int i_lo = (((int)runs->run_start[r] << FRACBITS) - texfrac +
+					texstep - 1) / texstep;
+				int i_hi = (((int)runs->run_end[r] << FRACBITS) - texfrac +
+					texstep - 1) / texstep;
+				if(i_lo < 0)
+					i_lo = 0;
+				if(i_hi > count)
+					i_hi = count;
+				if(i_hi <= i_lo)
+					continue;
+				if(!gpu_add_affine(dest + i_lo * gpu_pitch, i_hi - i_lo,
+					source, source_len, 1, 0, texmask, 0,
+					texfrac + i_lo * texstep, 0, texstep, light, gpu_pitch,
+					OF_GPU_SPAN_COLORMAP))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+	}
+
 	int run_start = -1;
 	int run_count = 0;
 	int run_texfrac = 0;
@@ -1578,6 +1683,10 @@ void OF_WolfGPU_SourceBuffersChanged(void)
 	gpu_mask_cache_last.source = NULL;
 	gpu_mask_cache_last.source_len = 0;
 	gpu_mask_cache_last.state = 0;
+	memset(gpu_run_cache, 0, sizeof(gpu_run_cache));
+	gpu_run_cache_last.source = NULL;
+	gpu_run_cache_last.source_len = 0;
+	gpu_run_cache_last.run_count = 0;
 	gpu_tex_flush_pending = true;
 }
 

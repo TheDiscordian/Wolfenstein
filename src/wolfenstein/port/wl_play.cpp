@@ -73,6 +73,13 @@ fixed renderfraction = FRACUNIT;
 int32_t renderbasetimecount = 0;
 
 //
+// sim/render decouple (35 Hz fixed-step accumulator)
+//
+bool fixedstep = false;            // default off; device flips it on in PlayLoop (Step 4)
+int  sim_forcesteps = 0;           // PC test: force exactly N logic steps/frame
+bool dbg_simlog = false;           // PC test: print per-frame drain trace
+
+//
 // control info
 //
 #define JoyAx(x) (32+(x<<1))

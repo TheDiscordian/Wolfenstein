@@ -1543,6 +1543,27 @@ static const char* CheckParameters(int argc, char *argv[], TArray<FString> &file
 		}
 		else IFARG("--noadaptive")
 			noadaptive = true;
+		else IFARG("--fixedstep")
+			fixedstep = true;
+		else IFARG("--simforce")
+		{
+			if(++i >= argc)
+			{
+				printf("The simforce option is missing the step-count argument!\n");
+				hasError = true;
+			}
+			else
+			{
+				sim_forcesteps = atoi(argv[i]);
+				if(sim_forcesteps < 0)
+				{
+					printf("simforce must be >= 0!\n");
+					hasError = true;
+				}
+			}
+		}
+		else IFARG("--simlog")
+			dbg_simlog = true;
 		else IFARG("--extravbls")
 		{
 			if(++i >= argc)
@@ -1700,6 +1721,9 @@ static const char* CheckParameters(int argc, char *argv[], TArray<FString> &file
 			" --res <width> <height> Sets the screen resolution\n"
 			" --aspect <aspect>      Sets the aspect ratio.\n"
 			" --noadaptive           Disables adaptive tics.\n"
+			" --fixedstep            Enables the 35 Hz fixed-step sim loop.\n"
+			" --simforce <n>         Forces n logic steps/frame (fixed-step test).\n"
+			" --simlog               Prints a per-frame fixed-step drain trace.\n"
 			" --bits <b>             Sets the screen color depth\n"
 			"                        (use this when you have palette/fading problems\n"
 			"                        allowed: 8, 16, 24, 32, default: \"best\" depth)\n"

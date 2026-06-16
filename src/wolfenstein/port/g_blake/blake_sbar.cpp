@@ -48,6 +48,7 @@
 #include "wl_play.h"
 #include "xs_Float.h"
 #include "thingdef/thingdef.h"
+#include "of_ecwolf_bootlog.h"
 
 enum
 {
@@ -252,7 +253,16 @@ void BlakeStatusBar::DrawStatusBar()
 		{
 			sbarKey[6] = (uint32_t)(uintptr_t)rw;
 			if(rw->ammo[AWeapon::PrimaryFire])
-				sbarKey[6] ^= (uint32_t)rw->ammo[AWeapon::PrimaryFire]->amount << 1;
+			{
+				const uint32_t amt = (uint32_t)rw->ammo[AWeapon::PrimaryFire]->amount;
+				// The AoG auto charge pistol recharges every frame but only shows
+				// READY/WAIT, so its raw ammo must not key the cache (it would
+				// churn it constantly and never hit).  Other weapons / PS show
+				// the actual amount, so it does.
+				static const ClassDef * const autochargeCls = ClassDef::FindClass("AutoChargePistol");
+				const bool autocharge = autochargeCls && rw->IsKindOf(autochargeCls);
+				sbarKey[6] ^= (autocharge && !isPS) ? (amt > 0 ? 1u : 0u) : (amt << 1);
+			}
 		}
 		unsigned int keymask = 0;
 		for(AInventory *item = pmo->inventory;item != NULL;item = item->inventory)
@@ -267,6 +277,23 @@ void BlakeStatusBar::DrawStatusBar()
 	const bool sbarHit = sbarFullWidth && sbarCache != NULL &&
 		sbarCTopy == topy && sbarCBoty == boty && sbarCPitch == sbarPitch &&
 		sbarCH == sbarH && memcmp(sbarKey, sbarCKey, sizeof(sbarKey)) == 0;
+
+#if defined(OF_BOOT_LOG) && !defined(OF_PC)
+	// Temporary: report the cache hit rate to the bootlog so a capture shows
+	// whether the readout key is stabilising.
+	{
+		static unsigned sbHits = 0, sbTotal = 0;
+		++sbTotal;
+		if(sbarHit)
+			++sbHits;
+		if(sbTotal >= 120)
+		{
+			OF_BootLog("sbarhit %u/%u", sbHits, sbTotal);
+			sbHits = 0;
+			sbTotal = 0;
+		}
+	}
+#endif
 
 	if(sbarHit)
 	{

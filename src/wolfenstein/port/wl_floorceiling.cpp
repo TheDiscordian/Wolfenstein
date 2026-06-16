@@ -202,6 +202,85 @@ static bool R_TextureFirstColor(FTexture *texture, byte &color)
 	return true;
 }
 
+struct UniformPlaneTextureCacheEntry
+{
+	const GameMap *map;
+	bool checked;
+	FTexture *texture;
+};
+static UniformPlaneTextureCacheEntry uniformPlaneTextureCache[2];
+
+// Blake floors/ceilings come from per-tile flats (gamemap third plane), but a
+// level uses one flat throughout.  When every sectored tile's plane shares one
+// valid 64x64 unit-scale flat, return it so DrawFloorAndCeilingBackdropGPU can
+// hand the whole half to R_DrawTexturedBackdropHalfGPU (one GPU span per row)
+// instead of R_DrawPlane's per-pixel CPU walk.  NULL (any differing/odd flat)
+// falls back to R_DrawPlane unchanged -- no visual or behaviour regression.
+// Cached per map like the solid-colour resolver.
+static FTexture *R_GetUniformPlaneTexture(bool floor)
+{
+	if(map == NULL || map->NumPlanes() == 0)
+		return NULL;
+
+	UniformPlaneTextureCacheEntry &cache = uniformPlaneTextureCache[floor ? 0 : 1];
+	if(cache.checked && cache.map == map)
+		return cache.texture;
+
+	cache.map = map;
+	cache.checked = true;
+	cache.texture = NULL;
+
+	const GameMap::Header &header = map->GetHeader();
+	if(header.width == 0 || header.height == 0)
+		return NULL;
+
+	FTextureID uniformID;
+	uniformID.SetInvalid();
+	bool haveID = false;
+
+	for(unsigned int y = 0;y < header.height;++y)
+	{
+		for(unsigned int x = 0;x < header.width;++x)
+		{
+			const MapSpot spot = map->GetSpot(x, y, 0);
+			if(spot == NULL)
+				return NULL;
+			if(spot->sector == NULL)
+				continue;
+
+			const FTextureID current =
+				spot->sector->texture[floor ? MapSector::Floor : MapSector::Ceiling];
+			if(!current.isValid())
+				continue;
+
+			if(!haveID)
+			{
+				uniformID = current;
+				haveID = true;
+			}
+			else if(current != uniformID)
+			{
+				return NULL;
+			}
+		}
+	}
+
+	if(!haveID)
+		return NULL;
+
+	FTexture *texture = TexMan(uniformID);
+	if(texture == NULL || texture->bMasked)
+		return NULL;
+	// R_DrawTexturedBackdropHalfGPU only accepts a 64x64 unit-scale flat; gate
+	// here so a mismatch falls back to R_DrawPlane rather than approximating.
+	if(texture->GetWidth() != 64 || texture->GetHeight() != 64 ||
+		texture->xScale != FRACUNIT || texture->yScale != FRACUNIT)
+		return NULL;
+
+	cache.texture = texture;
+	return texture;
+}
+
 static bool R_ClearSolidBackdropHalfGPU(byte *vbuf, unsigned vbufPitch,
 	int yStart, int yEnd, int horizon, fixed planeheight, byte baseColor)
 {
@@ -347,6 +426,7 @@ extern uint32_t of_fl_dbg_gpu_true;
 extern uint32_t of_fl_dbg_active;
 extern uint32_t of_fl_dbg_bail;
 extern uint32_t of_fl_dbg_solid;
+extern uint32_t of_fl_dbg_texdims;
 
 bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 {
@@ -368,8 +448,15 @@ bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 	of_fl_dbg_solid = (solidCeiling ? 2u : 0u) | (solidFloor ? 1u : 0u);
 
 	FTexture *floorTexture = solidFloor ? NULL : R_GetDefaultPlaneTexture(true);
+	if(!solidFloor && floorTexture == NULL)
+		floorTexture = R_GetUniformPlaneTexture(true);
 	FTexture *ceilingTexture = solidCeiling ? NULL :
 		R_GetDefaultPlaneTexture(false);
+	if(!solidCeiling && ceilingTexture == NULL)
+		ceilingTexture = R_GetUniformPlaneTexture(false);
+	of_fl_dbg_texdims = floorTexture ?
+		(((unsigned)floorTexture->GetWidth() << 8) |
+			(unsigned)floorTexture->GetHeight()) : 0u;
 
 	int horizon = (viewheight >> 1) - viewshift;
 	if(horizon < 0)

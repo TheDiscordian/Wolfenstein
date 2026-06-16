@@ -340,10 +340,24 @@ static bool R_DrawPlaneBackdropHalfGPU(byte *vbuf, unsigned vbufPitch,
 	return false;
 }
 
+// Measurement-only diagnostic counters (defined in of_ecwolf_gpu.cpp): record
+// per frame why the GPU backdrop path is or is not taken, so the bootlog perf
+// line can localize fl to GPU vs CPU fallback.
+extern uint32_t of_fl_dbg_gpu_true;
+extern uint32_t of_fl_dbg_active;
+extern uint32_t of_fl_dbg_bail;
+extern uint32_t of_fl_dbg_solid;
+
 bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 {
-	if(!OF_WolfGPU_IsActive() || map == NULL || map->NumPlanes() == 0)
+	const bool active = OF_WolfGPU_IsActive();
+	if(active)
+		of_fl_dbg_active++;
+	if(!active || map == NULL || map->NumPlanes() == 0)
+	{
+		of_fl_dbg_bail = !active ? 1u : (map == NULL ? 2u : 3u);
 		return false;
+	}
 
 	byte floorColor;
 	byte ceilingColor;
@@ -351,6 +365,7 @@ bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 		R_GetDefaultPlaneSolidColor(true, floorColor);
 	bool solidCeiling = R_GetUniformPlaneSolidColor(false, ceilingColor) ||
 		R_GetDefaultPlaneSolidColor(false, ceilingColor);
+	of_fl_dbg_solid = (solidCeiling ? 2u : 0u) | (solidFloor ? 1u : 0u);
 
 	FTexture *floorTexture = solidFloor ? NULL : R_GetDefaultPlaneTexture(true);
 	FTexture *ceilingTexture = solidCeiling ? NULL :
@@ -366,10 +381,18 @@ bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 		viewz + (map->GetPlane(0).depth << FRACBITS), false,
 		ceilingColor, solidCeiling, ceilingTexture))
 	{
+		of_fl_dbg_bail = 4u;
 		return false;
 	}
-	return R_DrawPlaneBackdropHalfGPU(vbuf, vbufPitch, horizon, viewheight,
-		horizon, viewz, true, floorColor, solidFloor, floorTexture);
+	if(!R_DrawPlaneBackdropHalfGPU(vbuf, vbufPitch, horizon, viewheight,
+		horizon, viewz, true, floorColor, solidFloor, floorTexture))
+	{
+		of_fl_dbg_bail = 5u;
+		return false;
+	}
+	of_fl_dbg_bail = 0u;
+	of_fl_dbg_gpu_true++;
+	return true;
 }
 #else
 bool DrawFloorAndCeilingBackdropGPU(byte *, unsigned)

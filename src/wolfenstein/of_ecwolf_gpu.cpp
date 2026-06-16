@@ -68,6 +68,18 @@ static uint32_t gpu_dbg_rejects;
 static uint32_t gpu_dbg_fence_late;
 static uint32_t gpu_dbg_forced_swaps;
 
+/* Floor/ceiling backdrop diagnostic (measurement only).  Written by
+ * DrawFloorAndCeilingBackdropGPU in wl_floorceiling.cpp:
+ *  - of_fl_dbg_gpu_true: frames the GPU backdrop path completed (returned true)
+ *  - of_fl_dbg_active:   frames OF_WolfGPU_IsActive() was true at floor entry
+ *  - of_fl_dbg_bail:     last false-return code 1=inactive 2=mapnull 3=noplanes
+ *                        4=ceil-half-fail 5=floor-half-fail (0=took GPU path)
+ *  - of_fl_dbg_solid:    last frame (solidCeiling<<1)|solidFloor */
+uint32_t of_fl_dbg_gpu_true;
+uint32_t of_fl_dbg_active;
+uint32_t of_fl_dbg_bail;
+uint32_t of_fl_dbg_solid;
+
 /* Timestamp (of_time_us) of the last acquire that actually blocked on the
  * display flip fence.  The flip fence retires when the display consumes the
  * previous swap, so this is in effect the last vsync as seen by the app --
@@ -289,7 +301,7 @@ void OF_WolfPerf_FrameEnd(void)
 
 	char pbuf[512];
 	snprintf(pbuf, sizeof(pbuf),
-		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u t=%u.%u",
+		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u t=%u.%u",
 		fps_x10 / 10, fps_x10 % 10, frame_avg,
 		wolf_perf_avg(OF_WOLF_PERF_EVENTS),
 		wolf_perf_avg(OF_WOLF_PERF_SIM),
@@ -325,6 +337,8 @@ void OF_WolfPerf_FrameEnd(void)
 		(unsigned int)gpu_dbg_fence_late,
 		(unsigned int)gpu_dbg_forced_swaps,
 		rw, dw, rs, ds,
+		(unsigned int)of_fl_dbg_gpu_true, (unsigned int)of_fl_dbg_active,
+		(unsigned int)of_fl_dbg_bail, (unsigned int)of_fl_dbg_solid,
 		tics_x10 / 10, tics_x10 % 10);
 	printf("%s\n", pbuf);
 	// Mirror the report into the bootlog save file (slot 19, ofbootlog.sav) so
@@ -339,6 +353,8 @@ void OF_WolfPerf_FrameEnd(void)
 	gpu_dbg_rejects = 0;
 	gpu_dbg_fence_late = 0;
 	gpu_dbg_forced_swaps = 0;
+	of_fl_dbg_gpu_true = 0;
+	of_fl_dbg_active = 0;
 }
 #endif
 

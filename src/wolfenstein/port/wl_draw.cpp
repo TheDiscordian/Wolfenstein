@@ -302,6 +302,18 @@ static const byte *WallTextureColumn(FTexture *texture, int texcoord)
 	return pixels + column * height;
 }
 
+#if defined(OF_PC)
+// PC-only wall profiling: accumulate ScalePost (column draw) time per frame so
+// WallRefresh can split wl into raycast vs draw without a profiler.
+#include <time.h>
+static uint64_t g_wl_scalepost_ns;
+static inline uint64_t of_now_ns()
+{
+	struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+}
+#endif
+
 void ScalePost()
 {
 	if(postsource == NULL)
@@ -309,6 +321,14 @@ void ScalePost()
 
 	extern uint32_t of_wl_dbg_posts;
 	++of_wl_dbg_posts;
+
+#if defined(OF_PC)
+	struct PostTimer {
+		uint64_t t0;
+		PostTimer() : t0(of_now_ns()) {}
+		~PostTimer() { g_wl_scalepost_ns += of_now_ns() - t0; }
+	} _postTimer;
+#endif
 
 	int ywcount, yoffs, yw, yd, yendoffs;
 	byte col;
@@ -1332,17 +1352,38 @@ void WallRefresh (void)
 	of_wl_dbg_steps = 0;
 	of_wl_dbg_posts = 0;
 
+#if defined(OF_PC)
+	g_wl_scalepost_ns = 0;
+	const uint64_t wlStartNs = of_now_ns();
+#endif
+
 	AsmRefresh();
 	ScalePost ();                   // no more optimization on last post
 
-	// TEMPORARY: env-gated wall post stats for remap debugging.
+#if defined(OF_PC)
+	const uint64_t wlTotalNs = of_now_ns() - wlStartNs;
 	if(getenv("OF_LUMPDUMP"))
 	{
-		static unsigned int dbgFrame;
-		if(++dbgFrame % 70 == 0)
-			fprintf(stderr, "WALLS: posts=%u null=%u min_wallheight=%d\n", dbgPosts, dbgNullPosts, min_wallheight);
-		dbgPosts = dbgNullPosts = 0;
+		static unsigned dbgF = 0;
+		static uint64_t accTot = 0, accDraw = 0;
+		static uint64_t accPosts = 0, accSteps = 0;
+		accTot += wlTotalNs;
+		accDraw += g_wl_scalepost_ns;
+		accPosts += of_wl_dbg_posts;
+		accSteps += of_wl_dbg_steps;
+		if(++dbgF % 70 == 0)
+		{
+			fprintf(stderr, "WALLPROF (per-frame avg over 70): total=%lluus draw=%lluus "
+				"raycast=%lluus posts=%llu steps=%llu\n",
+				(unsigned long long)(accTot/70/1000),
+				(unsigned long long)(accDraw/70/1000),
+				(unsigned long long)((accTot-accDraw)/70/1000),
+				(unsigned long long)(accPosts/70),
+				(unsigned long long)(accSteps/70));
+			accTot = accDraw = accPosts = accSteps = 0;
+		}
 	}
+#endif
 }
 
 void CalcViewVariables()

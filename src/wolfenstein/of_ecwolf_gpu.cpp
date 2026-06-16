@@ -88,6 +88,12 @@ uint32_t of_spr_dbg_cols;
 uint32_t of_spr_dbg_actors;   // last frame: actors walked by the place loop
 uint32_t of_spr_dbg_xforms;   // last frame: TransformActor calls (passed visibility)
 
+// Status-bar cache hit/miss counts per window: a hit redraws only the per-frame
+// ECG+score overlay (cheap if the 2D blit path is cheap), a miss is a full bar
+// redraw.  Splits where the sb phase cost lives.
+uint32_t of_sb_dbg_hits;
+uint32_t of_sb_dbg_misses;
+
 /* Timestamp (of_time_us) of the last acquire that actually blocked on the
  * display flip fence.  The flip fence retires when the display consumes the
  * previous swap, so this is in effect the last vsync as seen by the app --
@@ -326,7 +332,7 @@ void OF_WolfPerf_FrameEnd(void)
 
 	char pbuf[512];
 	snprintf(pbuf, sizeof(pbuf),
-		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u spa=%u spt=%u t=%u.%u",
+		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u spa=%u spt=%u sbh=%u sbm=%u t=%u.%u",
 		fps_x10 / 10, fps_x10 % 10, frame_avg,
 		wolf_perf_avg(OF_WOLF_PERF_EVENTS),
 		wolf_perf_avg(OF_WOLF_PERF_SIM),
@@ -368,6 +374,7 @@ void OF_WolfPerf_FrameEnd(void)
 		wolf_perf_avg(OF_WOLF_PERF_SPR_PLACE),
 		(unsigned int)of_spr_dbg_count, (unsigned int)of_spr_dbg_cols,
 		(unsigned int)of_spr_dbg_actors, (unsigned int)of_spr_dbg_xforms,
+		(unsigned int)of_sb_dbg_hits, (unsigned int)of_sb_dbg_misses,
 		tics_x10 / 10, tics_x10 % 10);
 	printf("%s\n", pbuf);
 	// Mirror the report into the bootlog save file (slot 19, ofbootlog.sav) so
@@ -388,6 +395,8 @@ void OF_WolfPerf_FrameEnd(void)
 	of_spr_dbg_cols = 0;
 	of_spr_dbg_actors = 0;
 	of_spr_dbg_xforms = 0;
+	of_sb_dbg_hits = 0;
+	of_sb_dbg_misses = 0;
 }
 #endif
 

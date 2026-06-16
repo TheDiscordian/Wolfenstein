@@ -303,8 +303,10 @@ void BlakeStatusBar::DrawStatusBar()
 		sbarCTopy == topy && sbarCBoty == boty && sbarCPitch == sbarPitch &&
 		sbarCH == sbarH && memcmp(sbarKey, sbarCKey, sizeof(sbarKey)) == 0;
 
+	extern uint32_t of_sb_dbg_hits, of_sb_dbg_misses;
 	if(sbarHit)
 	{
+		++of_sb_dbg_hits;
 		byte *fb = screen->GetBuffer();
 		if(sbarTopBytes)
 			memcpy(fb, sbarCache, sbarTopBytes);
@@ -315,6 +317,7 @@ void BlakeStatusBar::DrawStatusBar()
 		drawScore();
 		return;
 	}
+	++of_sb_dbg_misses;
 
 	// --- Full redraw: a readout changed (or no cache yet). ---
 	screen->DrawTexture(TexMan(STBar), botStx, botSty,

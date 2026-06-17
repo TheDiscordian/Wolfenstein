@@ -831,6 +831,23 @@ void PollControls (bool absolutes)
 	if (joystickenabled && IN_JoyPresent())
 		PollJoystickMove ();
 
+#if defined(OF_PC)
+	// Profiling-only: drive the player forward with a slow turn-sweep and
+	// periodic fire so headless app_pc runs wake nearby actors, letting
+	// SIMPROF capture the real active-AI think cost instead of the dormant
+	// spawn idle.  Gated on OF_AUTOWALK; no effect on device or normal runs.
+	if (getenv("OF_AUTOWALK"))
+	{
+		cmd.buttonstate[bt_moveforward] = true;
+		cmd.buttonstate[bt_run] = true;
+		const int phase = (gamestate.TimeCount / 35) % 8;   // ~1s buckets
+		if (phase == 0)      cmd.buttonstate[bt_turnleft]  = true;
+		else if (phase == 4) cmd.buttonstate[bt_turnright] = true;
+		if ((gamestate.TimeCount / 35) & 1)                 // fire ~1s on/off
+			cmd.buttonstate[bt_attack] = true;
+	}
+#endif
+
 #ifdef __ANDROID__
 	extern void pollAndroidControls();
 	pollAndroidControls();

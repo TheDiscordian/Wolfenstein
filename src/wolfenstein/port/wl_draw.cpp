@@ -1660,7 +1660,9 @@ void    ThreeDRefresh (void)
 	}
 	else if (fpscounter)
 	{
-#if !defined(OF_ECWOLF_OPENFPGA) || defined(OF_PC)
+		// On device this drains the GPU (FallbackToCPU) so the CPU can stamp
+		// the counter over the 3D view; the whole-frame end is the cost of the
+		// opt-in overlay.
 		OF_WolfGPU_FallbackToCPU();
 		FString fpsDisplay;
 		fpsDisplay.Format("%2u fps", fps);
@@ -1676,7 +1678,6 @@ void    ThreeDRefresh (void)
 		pa = MENU_TOP;
 		VWB_DrawPropString(ConFont, fpsDisplay, CR_WHITE);
 		pa = MENU_CENTER;
-#endif
 	}
 
 	if (fpscounter)

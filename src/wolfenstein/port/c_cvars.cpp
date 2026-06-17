@@ -51,6 +51,7 @@ Aspect r_ratio = ASPECT_4_3, vid_aspect = ASPECT_NONE;
 bool forcegrabmouse = false;
 bool vid_fullscreen = false;
 bool vid_vsync = false;
+extern bool fpscounter;        // defined in wl_draw.cpp; persisted as Show_FPS
 bool quitonescape = false;
 fixed movebob = FRACUNIT;
 
@@ -252,6 +253,7 @@ void ReadConfig(void)
 	config.CreateSetting("Vid_FullScreen", false);
 	config.CreateSetting("Vid_Aspect", ASPECT_NONE);
 	config.CreateSetting("Vid_Vsync", false);
+	config.CreateSetting("Show_FPS", false);
 	config.CreateSetting("FullScreenWidth", fullScreenWidth);
 	config.CreateSetting("FullScreenHeight", fullScreenHeight);
 	config.CreateSetting("WindowedScreenWidth", windowedScreenWidth);
@@ -318,6 +320,7 @@ void ReadConfig(void)
 	vid_fullscreen = config.GetSetting("Vid_FullScreen")->GetInteger() != 0;
 	vid_aspect = static_cast<Aspect>(config.GetSetting("Vid_Aspect")->GetInteger());
 	vid_vsync = config.GetSetting("Vid_Vsync")->GetInteger() != 0;
+	fpscounter = config.GetSetting("Show_FPS")->GetInteger() != 0;
 	fullScreenWidth = config.GetSetting("FullScreenWidth")->GetInteger();
 	fullScreenHeight = config.GetSetting("FullScreenHeight")->GetInteger();
 	windowedScreenWidth = config.GetSetting("WindowedScreenWidth")->GetInteger();
@@ -454,6 +457,7 @@ void WriteConfig(void)
 	config.GetSetting("Vid_FullScreen")->SetValue(vid_fullscreen);
 	config.GetSetting("Vid_Aspect")->SetValue(vid_aspect);
 	config.GetSetting("Vid_Vsync")->SetValue(vid_vsync);
+	config.GetSetting("Show_FPS")->SetValue(fpscounter);
 	config.GetSetting("FullScreenWidth")->SetValue(fullScreenWidth);
 	config.GetSetting("FullScreenHeight")->SetValue(fullScreenHeight);
 	config.GetSetting("WindowedScreenWidth")->SetValue(windowedScreenWidth);

@@ -594,6 +594,7 @@ void CreateMenus()
 #if SDL_VERSION_ATLEAST(2,0,0) && (!defined(OF_ECWOLF_OPENFPGA) || defined(OF_PC))
 	displayMenu.addItem(new BooleanMenuItem(language["STR_VSYNC"], vid_vsync, ToggleVsync));
 #endif
+	displayMenu.addItem(new BooleanMenuItem("Show FPS", fpscounter));
 	displayMenu.addItem(new MultipleChoiceMenuItem(SetAspectRatio, aspectOptions, 8, vid_aspect));
 	displayMenu.addItem(new MenuSwitcherMenuItem(language["STR_SELECTRES"], resolutionMenu, EnterResolutionSelection));
 	displayMenu.addItem(new LabelMenuItem(language["STR_SCREENSIZE"]));

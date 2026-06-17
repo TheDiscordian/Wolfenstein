@@ -738,8 +738,8 @@ static int ElevInputFloor()
 		int targetLevel = 0;
 
 #if OF_DEVICE_BEHAVIOR
-		// Pocket: B (sc_Space) backs out; START (sc_Escape) is not a back button.
-		if(scan == sc_Space)
+		// Pocket: B (sc_Space) is the advertised back; START (sc_Escape) also backs.
+		if(scan == sc_Space || scan == sc_Escape)
 			result = -1;
 #else
 		if(scan == sc_Escape || (ci.button1 && !prev.button1))
@@ -1139,8 +1139,8 @@ static int PsInputFloor()
 			(ci.dir == dir_South || ci.dir == dir_East) ? 1 : 0;
 
 #if OF_DEVICE_BEHAVIOR
-		// Pocket: B (sc_Space) backs out; START (sc_Escape) is not a back button.
-		if(scan == sc_Space)
+		// Pocket: B (sc_Space) is the advertised back; START (sc_Escape) also backs.
+		if(scan == sc_Space || scan == sc_Escape)
 			result = -1;
 #else
 		if(scan == sc_Escape || (ci.button1 && !prev.button1))

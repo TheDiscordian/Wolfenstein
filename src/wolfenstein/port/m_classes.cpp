@@ -1027,12 +1027,12 @@ int Menu::handle()
 		}
 
 #if OF_DEVICE_BEHAVIOR
-		// Pocket: A (fire/button0) chooses, B (sc_Space/use) backs out.  START
-		// (sc_Escape) is deliberately NOT a back button.
+		// Pocket: A (fire/button0) chooses; B (sc_Space/use) is the advertised
+		// back and START (sc_Escape) also closes the menu.
 		if (ci.button0)
 			exit = 1;
 
-		if (Keyboard[sc_Space])
+		if (Keyboard[sc_Space] || Keyboard[sc_Escape])
 			exit = 2;
 #else
 		if (ci.button0 || Keyboard[sc_Space] || Keyboard[sc_Enter])

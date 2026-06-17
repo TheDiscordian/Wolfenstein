@@ -258,13 +258,13 @@ static void TP_ReadControl(TPControl* ci)
 	ci->dir = dir_None;
 
 #if OF_DEVICE_BEHAVIOR
-	// Pocket scheme: A (sc_Control / fire) = continue/confirm, B (sc_Space / use)
-	// = back.  START (sc_Escape) is deliberately NOT a back button.
+	// Pocket scheme: A (sc_Control / fire) = continue/confirm; B (sc_Space / use)
+	// is the advertised back, START (sc_Escape) also backs out.
 	if (Keyboard[sc_Control])
 	{
 		ci->button0 = true;
 	}
-	if (Keyboard[sc_Space])
+	if (Keyboard[sc_Space] || Keyboard[sc_Escape])
 	{
 		ci->button1 = true;
 	}

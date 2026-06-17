@@ -51,6 +51,14 @@ PC_EXTRA_CFLAGS += $(shell pkg-config --cflags SDL2_net 2>/dev/null)
 PC_EXTRA_LIBS += $(shell pkg-config --libs SDL2_mixer 2>/dev/null || echo -lSDL2_mixer)
 PC_EXTRA_LIBS += $(shell pkg-config --libs SDL2_net 2>/dev/null)
 
+# `make test CORE=blakestone POCKET_SIM=1` builds the PC test binary with the
+# Pocket device UI + 320x200 geometry active (OF_DEVICE_BEHAVIOR) on the desktop
+# SDL backend, so the on-device menus/look can be tested without hardware.  The
+# FPGA GPU paths stay device-only, so rendering uses the PC software renderer.
+ifdef POCKET_SIM
+PC_EXTRA_CFLAGS += -DOF_POCKET_SIM
+endif
+
 CFLAGS   += -DOF_SDL2_EXTERNAL -DOF_ECWOLF_OPENFPGA \
 	-DBZ_NO_STDIO -DUSE_GPL \
 	$(ECWOLF_INCLUDES) -I$(ZLIB_SRC_DIR) -I$(LZMA_SRC_DIR) -I$(BZIP2_SRC_DIR)

@@ -561,7 +561,7 @@ void CreateMenus()
 
 	controlBase.setHeadPicture("M_CONTRL");
 	controlBase.addItem(new BooleanMenuItem(language["STR_ALWAYSRUN"], alwaysrun, EnterControlBase));
-#if !defined(OF_ECWOLF_OPENFPGA) || defined(OF_PC)
+#if !OF_DEVICE_BEHAVIOR
 	// The Pocket has no mouse, and its controls ARE the joystick (always on),
 	// so the mouse toggles/sensitivity and the joystick-enable switch are
 	// meaningless on device.
@@ -593,7 +593,7 @@ void CreateMenus()
 
 	const char* aspectOptions[] = {"Aspect: Auto", "Aspect: 16:9", "Aspect: 16:10", "Aspect: 17:10", "Aspect: 4:3", "Aspect: 5:4", "Aspect: 21:9", "Aspect: 32:9"};
 	displayMenu.setHeadText(language["STR_DISPLAY"]);
-#if !defined(OF_ECWOLF_OPENFPGA) || defined(OF_PC)
+#if !OF_DEVICE_BEHAVIOR
 	// Fullscreen, vsync, aspect, and resolution are all fixed by the Pocket core
 	// (native 320x200, 4:3, scaler-owned) -- only meaningful on desktop.
 #ifndef __ANDROID__
@@ -604,7 +604,7 @@ void CreateMenus()
 #endif
 #endif
 	displayMenu.addItem(new BooleanMenuItem("Show FPS", fpscounter));
-#if !defined(OF_ECWOLF_OPENFPGA) || defined(OF_PC)
+#if !OF_DEVICE_BEHAVIOR
 	displayMenu.addItem(new MultipleChoiceMenuItem(SetAspectRatio, aspectOptions, 8, vid_aspect));
 	displayMenu.addItem(new MenuSwitcherMenuItem(language["STR_SELECTRES"], resolutionMenu, EnterResolutionSelection));
 #endif

@@ -390,7 +390,7 @@ void ReadConfig(void)
 		screenWidth = windowedScreenWidth;
 	}
 
-#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+#if OF_DEVICE_BEHAVIOR
 	// Keep the renderer on Doom's native openfpgaOS 320x200 8-bit path.
 	// Larger saved desktop modes force the SDL shim into a slow software path.
 	vid_fullscreen = false;

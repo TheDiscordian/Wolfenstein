@@ -1,6 +1,18 @@
 #ifndef WL_DEF_H
 #define WL_DEF_H
 
+// Pocket "device behaviour" gate.  True on real Pocket hardware, and also on a
+// POCKET_SIM=1 desktop build (make test CORE=blakestone POCKET_SIM=1) which
+// mimics the device UI + geometry (cleaned menus, native 320x200) on the PC SDL
+// backend so the on-device look can be tested without hardware.  Gates device
+// BEHAVIOUR only -- the FPGA GPU paths stay (OF_ECWOLF_OPENFPGA && !OF_PC) so
+// the PC keeps its software renderer.
+#if (defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)) || defined(OF_POCKET_SIM)
+#define OF_DEVICE_BEHAVIOR 1
+#else
+#define OF_DEVICE_BEHAVIOR 0
+#endif
+
 #include <assert.h>
 #include <fcntl.h>
 #include <math.h>

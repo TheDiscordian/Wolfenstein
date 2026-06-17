@@ -1746,7 +1746,7 @@ static const char* CheckParameters(int argc, char *argv[], TArray<FString> &file
 		Quit();
 	}
 
-#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+#if OF_DEVICE_BEHAVIOR
 	screenWidth = 320;
 	screenHeight = 200;
 	fullscreen = false;

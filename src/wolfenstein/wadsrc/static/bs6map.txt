@@ -553,7 +553,7 @@ sprites
 
 	// Security Light
 	"SECLA0", // Off
-	"SUCLB0", // On
+	"SECLB0", // On
 
 	// POD Alien
 	"PODAA0", // Egg

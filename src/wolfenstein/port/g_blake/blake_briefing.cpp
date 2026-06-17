@@ -70,7 +70,9 @@ void Blake_ShowBriefing(int cluster)
 	TP_Presenter(&pi);
 	TP_FreeScript(&pi);
 
-	VW_FadeOut();
-
+	// No trailing VW_FadeOut() here: GameLoop (wl_game.cpp) fades to black
+	// before SetupGameLevel, so a fade here was a duplicate, visible 30-step
+	// fade-to-black after the briefing (VW_FadeOut is unguarded) -- the janky
+	// extra out.  Matches the Wolf EnterText path, which also omits it.
 	IN_ClearKeysDown();
 }

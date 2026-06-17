@@ -348,7 +348,13 @@ void TP_Presenter(
 		py = yh + TP_MARGIN + 1;
 		fontnumber = 2;
 		fontcolor = 0x39;
-		VWB_Bar(xl - TP_MARGIN, py, xh - xl + 1 + (TP_MARGIN * 2), 8, static_cast<uint8_t>(bgcolor));
+		// The page counter (below) sits on its own row at y=190.  DOS backed
+		// the whole bottom strip with the H_BOTTOMINFOPIC help-window graphic,
+		// which this port doesn't draw, so when page numbers are shown extend
+		// the info bar down to that row (two text rows) instead of leaving the
+		// counter stranded on bare background.
+		int infobarh = (pi->flags & TPF_SHOW_PAGES) ? 24 : 8;
+		VWB_Bar(xl - TP_MARGIN, py, xh - xl + 1 + (TP_MARGIN * 2), infobarh, static_cast<uint8_t>(bgcolor));
 		ShPrint(pi->infoline, static_cast<int8_t>(shcolor), false);
 
 		if (pi->flags & TPF_SHOW_PAGES)

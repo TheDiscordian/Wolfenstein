@@ -50,6 +50,13 @@ void Blake_ShowBriefing(int cluster)
 
 	VW_FadeOut();
 
+	// TP_Presenter only fills its text region (xl..xh / yl..yh), not the whole
+	// screen, and bstone's HelpPresenter draws a full-screen help-window border
+	// the port lacks -- so without this the previous menu's LINC frame bleeds
+	// through around the briefing.  Clear the framebuffer to the briefing bg
+	// (0x7d, == pi.bgcolor below).  Still faded to black, so no flicker.
+	VWB_Clear(0x7d, 0, 0, screenWidth, screenHeight);
+
 	// Text region + colours, copied from HelpPresenter (3d_menu.cpp:1704).
 	// The script's own ^BC/^LC/^DC/^SC codes override these per page; these are
 	// the defaults used before the first such code fires.

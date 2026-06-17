@@ -1438,7 +1438,18 @@ int Mix_PlayChannelTimed(int channel, Mix_Chunk *chunk, int loops, int ticks) {
 int Mix_PlayChannel(int channel, Mix_Chunk *chunk, int loops) { return Mix_PlayChannelTimed(channel, chunk, loops, -1); }
 void Mix_HaltChannel(int channel) {
 	if (!__mix_initialized) return;
-	if (channel < 0) { of_mixer_stop_all(); return; }
+	if (channel < 0) {
+		// Halt every SFX channel individually -- NOT of_mixer_stop_all(), which
+		// is group-blind and would also silence live MIDI music (GROUP_MUSIC)
+		// voices.  (Symptom: toggling Sound Effects off killed the music until
+		// the next note-on re-toggled it.)  Music is stopped via Mix_HaltMusic.
+		for (int c = 0; c < MIX_CHANNELS; ++c)
+			if (__mix_voice_ids[c] != OF_MIXER_HANDLE_INVALID) {
+				of_mixer_stop_h(__mix_voice_ids[c]);
+				__mix_voice_ids[c] = OF_MIXER_HANDLE_INVALID;
+			}
+		return;
+	}
 	if (channel < MIX_CHANNELS && __mix_voice_ids[channel] != OF_MIXER_HANDLE_INVALID) of_mixer_stop_h(__mix_voice_ids[channel]);
 }
 int Mix_Playing(int channel) {

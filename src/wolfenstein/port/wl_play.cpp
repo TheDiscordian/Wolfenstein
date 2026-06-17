@@ -31,6 +31,7 @@
 #include "g_blake/blake_elevator.h"
 #include "g_blake/blake_goldstern.h"
 #include "of_ecwolf_gpu.h"
+#include "of_ecwolf_opl_music.h"
 
 /*
 =============================================================================
@@ -1320,6 +1321,21 @@ void PlayFrame()
 	uint32_t perfStart = OF_WolfPerf_NowUS();
 	ThreeDRefresh ();
 	OF_WolfPerf_Add(OF_WOLF_PERF_RENDER, perfStart);
+
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+	// Overlap OPL FM synthesis with the GPU drain.  ThreeDRefresh dispatched the
+	// 3D draws asynchronously; EndFrameStatusBar below spins in of_gpu_finish
+	// (the gw phase, ~2ms) waiting for the FPGA GPU to drain them.  Synthesizing
+	// the music ring here runs on the CPU WHILE the GPU drains in parallel, so
+	// the finish wait is mostly hidden.  Audio is ring-buffered (ISR-drained),
+	// so pumping earlier in the frame is sample-identical; the existing pump in
+	// VH_UpdateScreen then just tops up whatever drained since.
+	{
+		perfStart = OF_WolfPerf_NowUS();
+		OPLMusic_Pump();
+		OF_WolfPerf_Add(OF_WOLF_PERF_SOUND, perfStart);
+	}
+#endif
 
 	perfStart = OF_WolfPerf_NowUS();
 	if((automap && !gamestate.victoryflag) || (Paused & 1) ||

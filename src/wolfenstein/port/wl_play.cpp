@@ -1376,6 +1376,18 @@ void PlayFrame()
 	VH_UpdateScreen(true);
 }
 
+#if defined(OF_PC)
+// PC-only think-path profiler (device uses OF_WolfPerf_* phases, dead on PC).
+// Gated on OF_LUMPDUMP; mirrors WallRefresh's WALLPROF split.
+#include <time.h>
+static inline uint64_t of_sim_now_ns()
+{
+	struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (uint64_t)ts.tv_sec * 1000000000ull + (uint64_t)ts.tv_nsec;
+}
+static uint64_t g_sim_collide_ns, g_sim_think_ns;
+#endif
+
 /*
 ===================
 =
@@ -1419,12 +1431,36 @@ static void RunSimStep(int mult)
 
 	// In single player if the player dies only tick the pawn
 	ticPartStart = OF_WolfPerf_NowUS();
+#if defined(OF_PC)
+	const uint64_t collideStart = of_sim_now_ns();
+#endif
 	RebuildActorCollisionGrid();
+#if defined(OF_PC)
+	const uint64_t thinkStart = of_sim_now_ns();
+	g_sim_collide_ns += thinkStart - collideStart;
+#endif
 	if(Net::InitVars.mode != Net::MODE_SinglePlayer || players[0].state != player_t::PST_DEAD)
 		thinkerList.Tick();
 	else
 		thinkerList.Tick(ThinkerList::PLAYER);
 	OF_WolfPerf_Add(OF_WOLF_PERF_SIM_THINKERS, ticPartStart);
+#if defined(OF_PC)
+	g_sim_think_ns += of_sim_now_ns() - thinkStart;
+	if(getenv("OF_LUMPDUMP"))
+	{
+		static unsigned simF = 0;
+		static uint64_t accCollide = 0, accThink = 0;
+		accCollide += g_sim_collide_ns; g_sim_collide_ns = 0;
+		accThink += g_sim_think_ns;     g_sim_think_ns = 0;
+		if(++simF % 70 == 0)
+		{
+			fprintf(stderr, "SIMPROF (per-step avg over 70): collide=%lluus think=%lluus\n",
+				(unsigned long long)(accCollide/70/1000),
+				(unsigned long long)(accThink/70/1000));
+			accCollide = accThink = 0;
+		}
+	}
+#endif
 
 	ticPartStart = OF_WolfPerf_NowUS();
 	AActor::FinishSpawningActors();

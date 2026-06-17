@@ -1247,22 +1247,45 @@ void TP_PrintPageNumber()
 }
 
 // -------------------------------------------------------------------------
-// Shape stubs.  TODO(blake-shapes): port piShapeTable sprite/pic embedding
-// (next faithful stage).  Until then ^SH/^AN/^BX parse-and-skip with zero
-// footprint so text continues to flow.
+// Shapes (^SH): the briefing scripts embed the per-mission location picture as
+// ^SH<index>, where <index> is a piShapeTable entry.  For the shipped AOG (full
+// v3.0) the briefing indices are the six C_EPISODE1..6PIC pics at table indices
+// 144..149 (verified against bstone jm_tp.cpp:1404), which the port's VGAGRAPH
+// map (vsimap.txt) names M_EPIS1..6.  (^AN animations -- used by the intro /
+// enemy-showcase pages, not the mission briefings -- are still a stub below.)
 // -------------------------------------------------------------------------
+static FTexture *TP_ShapeTexture(int shapenum)
+{
+	if (shapenum >= 144 && shapenum <= 149)
+	{
+		char namebuf[16];
+		snprintf(namebuf, sizeof(namebuf), "M_EPIS%d", shapenum - 144 + 1);
+		FTextureID id = TexMan.CheckForTexture(namebuf, FTexture::TEX_Any);
+		if (id.isValid())
+			return TexMan(id);
+	}
+	return NULL;
+}
+
 int16_t TP_DrawShape(
 	int16_t x,
 	int16_t y,
 	int16_t shapenum,
 	pisType shapetype)
 {
-	(void)x;
-	(void)y;
-	(void)shapenum;
-	(void)shapetype;
-	// TODO(blake-shapes): port piShapeTable sprite/pic embedding (next faithful stage).
-	return 0;
+	FTexture *tex = TP_ShapeTexture(shapenum);
+	if (!tex)
+		return 0;	// index not a mapped pic -- skip, don't draw garbage
+
+	// VGAGRAPH pics are byte (8px) aligned, as in bstone's TP_DrawShape.
+	if (shapetype == pis_pic || shapetype == pis_latchpic)
+		x = static_cast<int16_t>((x + 7) & ~7);
+
+	VWB_DrawGraphic(tex, x, y, MENU_NONE);
+
+	int16_t width = static_cast<int16_t>(tex->GetScaledWidth());
+	cur_x = static_cast<int16_t>(cur_x + width);	// advance past the shape (bstone)
+	return x;
 }
 
 void TP_AnimatePage(
@@ -1278,12 +1301,14 @@ int16_t TP_BoxAroundShape(
 	uint16_t shapenum,
 	pisType shapetype)
 {
+	// Measure-only (the fl_boxshape/fl_shadowpic frames aren't used by the
+	// briefings): return the shape width so ^CE centring and cursor advance
+	// account for the picture.
 	(void)x1;
 	(void)y1;
-	(void)shapenum;
 	(void)shapetype;
-	// TODO(blake-shapes): port piShapeTable sprite/pic embedding (next faithful stage).
-	return 0;
+	FTexture *tex = TP_ShapeTexture(shapenum);
+	return tex ? static_cast<int16_t>(tex->GetScaledWidth()) : 0;
 }
 
 void TP_PurgeAllGfx()

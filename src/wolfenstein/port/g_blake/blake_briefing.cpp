@@ -63,7 +63,12 @@ void Blake_ShowBriefing(int cluster)
 	pi.shcolor = 0x00;
 	pi.fontnumber = 4;
 
+#if OF_DEVICE_BEHAVIOR
+	// Pocket has no ESC/ENTER: pages = D-pad, A confirms, START = escape.
+	pi.infoline = (char*)"  UP / DN - PAGES    A - CONTINUE    START - EXIT";
+#else
 	pi.infoline = (char*)"           UP / DN - PAGES            ESC - EXITS";
+#endif
 
 	// Load, present, and free the briefing text.
 	TP_LoadScript(lumpnum, &pi);

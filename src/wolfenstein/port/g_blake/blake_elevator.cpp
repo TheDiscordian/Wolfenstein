@@ -706,8 +706,13 @@ static int ElevInputFloor()
 	if(texBack.isValid())
 		VWB_DrawGraphic(TexMan(texBack), 8, 22);
 
+#if OF_DEVICE_BEHAVIOR
+	// Pocket has no number keys: d-pad cycles the floor, A confirms.
+	ElevDrawBottomBox("Use UP/DOWN to select a floor.\nThen press A.");
+#else
 	ElevDrawBottomBox(LoadPanelText("FLOORMSG",
 		"Press a number to select a floor.\n(0 selects floor 10)"));
+#endif
 	ElevDrawOverhead(14, 71);
 
 	IN_ClearKeysDown();
@@ -983,8 +988,13 @@ static void PsDrawArrows(int dir)
 // bstone if_noImage: placeholder text for floors without a radar snapshot.
 static void PsDrawNoImage()
 {
+#if OF_DEVICE_BEHAVIOR
+	static const char* const lines[6] =
+		{"   AREA", "  UNMAPPED", "", "", "  PRESS A", " TO TELEPORT"};
+#else
 	static const char* const lines[6] =
 		{"   AREA", "  UNMAPPED", "", "", " PRESS ENTER", " TO TELEPORT"};
+#endif
 
 	static const EColorRange color = V_FindFontColor("BlakeElevGreen");
 
@@ -1096,7 +1106,11 @@ static int PsInputFloor()
 	PsDrawUnit(tpNum, true);
 	PsDrawArrows(0);
 	ElevBlitGrid(cur.radar, PS_TOV_X, PS_TOV_Y);
+#if OF_DEVICE_BEHAVIOR
+	ElevShadowText(SmallFont, "UP/DN MOVES SELECTOR - A ACTIVATES", 115, 188, helpColor);
+#else
 	ElevShadowText(SmallFont, "UP/DN MOVES SELECTOR - ENTER ACTIVATES", 115, 188, helpColor);
+#endif
 
 	IN_ClearKeysDown();
 

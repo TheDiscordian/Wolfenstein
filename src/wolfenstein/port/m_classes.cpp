@@ -800,8 +800,14 @@ void BlakeMenu::draw() const
 	WindowX = 0;
 	WindowW = 320;
 	PrintY = 164;
+#if OF_DEVICE_BEHAVIOR
+	// Pocket buttons: D-pad moves, A chooses, START (escape) backs out.
+	US_CPrint(SmallFont, "UP/DN SELECTS - A CHOOSES - START EXITS",
+		gameinfo.FontColors[GameInfo::MENU_LABEL]);
+#else
 	US_CPrint(SmallFont, "UP/DN SELECTS - ENTER CHOOSES - ESC EXITS",
 		gameinfo.FontColors[GameInfo::MENU_LABEL]);
+#endif
 
 	VW_UpdateScreen();
 }

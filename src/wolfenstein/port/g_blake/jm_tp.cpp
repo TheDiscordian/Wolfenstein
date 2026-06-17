@@ -257,7 +257,10 @@ static void TP_ReadControl(TPControl* ci)
 	ci->button1 = false;
 	ci->dir = dir_None;
 
-	if (Keyboard[sc_Space] || Keyboard[sc_Return] || Keyboard[sc_Enter])
+	// sc_Control = the Pocket A button (fire); accept it as continue/confirm so
+	// the on-device "A - CONTINUE" prompt is truthful and confirm is the same A
+	// button used by the menus and elevators.
+	if (Keyboard[sc_Space] || Keyboard[sc_Return] || Keyboard[sc_Enter] || Keyboard[sc_Control])
 	{
 		ci->button0 = true;
 	}
@@ -348,13 +351,7 @@ void TP_Presenter(
 		py = yh + TP_MARGIN + 1;
 		fontnumber = 2;
 		fontcolor = 0x39;
-		// The page counter (below) sits on its own row at y=190.  DOS backed
-		// the whole bottom strip with the H_BOTTOMINFOPIC help-window graphic,
-		// which this port doesn't draw, so when page numbers are shown extend
-		// the info bar down to that row (two text rows) instead of leaving the
-		// counter stranded on bare background.
-		int infobarh = (pi->flags & TPF_SHOW_PAGES) ? 24 : 8;
-		VWB_Bar(xl - TP_MARGIN, py, xh - xl + 1 + (TP_MARGIN * 2), infobarh, static_cast<uint8_t>(bgcolor));
+		VWB_Bar(xl - TP_MARGIN, py, xh - xl + 1 + (TP_MARGIN * 2), 8, static_cast<uint8_t>(bgcolor));
 		ShPrint(pi->infoline, static_cast<int8_t>(shcolor), false);
 
 		if (pi->flags & TPF_SHOW_PAGES)

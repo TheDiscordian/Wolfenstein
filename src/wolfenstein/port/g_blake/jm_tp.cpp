@@ -257,18 +257,27 @@ static void TP_ReadControl(TPControl* ci)
 	ci->button1 = false;
 	ci->dir = dir_None;
 
-	// sc_Control = the Pocket A button (fire); accept it as continue/confirm so
-	// the on-device "A - CONTINUE" prompt is truthful and confirm is the same A
-	// button used by the menus and elevators.
-	if (Keyboard[sc_Space] || Keyboard[sc_Return] || Keyboard[sc_Enter] || Keyboard[sc_Control])
+#if OF_DEVICE_BEHAVIOR
+	// Pocket scheme: A (sc_Control / fire) = continue/confirm, B (sc_Space / use)
+	// = back.  START (sc_Escape) is deliberately NOT a back button.
+	if (Keyboard[sc_Control])
 	{
 		ci->button0 = true;
 	}
-
+	if (Keyboard[sc_Space])
+	{
+		ci->button1 = true;
+	}
+#else
+	if (Keyboard[sc_Space] || Keyboard[sc_Return] || Keyboard[sc_Enter])
+	{
+		ci->button0 = true;
+	}
 	if (Keyboard[sc_Escape])
 	{
 		ci->button1 = true;
 	}
+#endif
 
 	if (Keyboard[sc_UpArrow] || Keyboard[sc_PgUp])
 	{

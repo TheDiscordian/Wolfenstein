@@ -801,8 +801,8 @@ void BlakeMenu::draw() const
 	WindowW = 320;
 	PrintY = 164;
 #if OF_DEVICE_BEHAVIOR
-	// Pocket buttons: D-pad moves, A chooses, START (escape) backs out.
-	US_CPrint(SmallFont, "UP/DN SELECTS - A CHOOSES - START EXITS",
+	// Pocket buttons: D-pad moves, A chooses, B backs out (START is not back).
+	US_CPrint(SmallFont, "UP/DN SELECTS - A CHOOSES - B EXITS",
 		gameinfo.FontColors[GameInfo::MENU_LABEL]);
 #else
 	US_CPrint(SmallFont, "UP/DN SELECTS - ENTER CHOOSES - ESC EXITS",
@@ -1026,11 +1026,21 @@ int Menu::handle()
 				break;
 		}
 
+#if OF_DEVICE_BEHAVIOR
+		// Pocket: A (fire/button0) chooses, B (sc_Space/use) backs out.  START
+		// (sc_Escape) is deliberately NOT a back button.
+		if (ci.button0)
+			exit = 1;
+
+		if (Keyboard[sc_Space])
+			exit = 2;
+#else
 		if (ci.button0 || Keyboard[sc_Space] || Keyboard[sc_Enter])
 			exit = 1;
 
 		if ((ci.button1 && !Keyboard[sc_Alt]) || Keyboard[sc_Escape])
 			exit = 2;
+#endif
 
 	}
 	while (!exit);

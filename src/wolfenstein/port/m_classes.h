@@ -198,9 +198,9 @@ class Menu
 		int					height;
 		int					indent;
 		TArray<MenuItem *>	items;
-		const int			x;
+		int					x;	// non-const: Blake re-centres the menu in the LINC panel on device
 		int					y;	// non-const: Blake moves the list origin per-game
-		const int			w;
+		int					w;	// non-const: see x
 
 		unsigned int			itemOffset; // scrolling menus
 		static unsigned int		lastIndexDrawn;
@@ -242,6 +242,8 @@ class Menu
 		void			setHeadPicture(const char* picture, bool isAlt=false);
 		void			setHeadText(const char text[36], bool drawInStripes=false);
 		void			setIndent(int newIndent) { indent = newIndent; }
+		void			setX(int newX) { x = newX; }
+		void			setWidth(int newW) { w = newW; }
 		void			setY(int newY) { y = newY; }
 		void			show();
 		/**

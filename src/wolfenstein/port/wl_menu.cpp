@@ -642,6 +642,23 @@ void CreateMenus()
 	automapMenu.addItem(new BooleanMenuItem(language["STR_AMTEXTUREDOVERLAY"], am_overlaytextured, ChangeAutomapFlag));
 	automapMenu.addItem(new BooleanMenuItem(language["STR_AMRATIOS"], am_showratios, ChangeAutomapFlag));
 	automapMenu.addItem(new BooleanMenuItem(language["STR_AMPAUSE"], am_pause, ChangeAutomapFlag));
+
+#if OF_DEVICE_BEHAVIOR
+	// The Blake "LINC" terminal skin frames the menu in a panel whose inner
+	// width is ~x[29..290] of the 320px screen.  ECWolf's default option-menu
+	// widths (tuned for a borderless full-screen menu) push the MENUSTYLE_Blake
+	// selection bar and the right-column values past the panel's border on
+	// device.  Re-centre each option menu inside the panel: x=16, w=262,
+	// indent=27 => the highlight bar (getX()+indent-1 .. getX()+width) spans
+	// x 42..278, centred on screen centre 160.
+	Menu *const lincMenus[] = { &optionsMenu, &soundBase, &controlBase, &displayMenu, &automapMenu };
+	for (unsigned i = 0; i < sizeof(lincMenus) / sizeof(lincMenus[0]); ++i)
+	{
+		lincMenus[i]->setX(16);
+		lincMenus[i]->setWidth(262);
+		lincMenus[i]->setIndent(27);
+	}
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////

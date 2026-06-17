@@ -831,7 +831,7 @@ void PollControls (bool absolutes)
 	if (joystickenabled && IN_JoyPresent())
 		PollJoystickMove ();
 
-#if defined(OF_PC)
+#if defined(OF_PC) && defined(OF_ECWOLF_PERF)
 	// Profiling-only: drive the player forward with a slow turn-sweep and
 	// periodic fire so headless app_pc runs wake nearby actors, letting
 	// SIMPROF capture the real active-AI think cost instead of the dormant
@@ -1393,7 +1393,7 @@ void PlayFrame()
 	VH_UpdateScreen(true);
 }
 
-#if defined(OF_PC)
+#if defined(OF_PC) && defined(OF_ECWOLF_PERF)
 // PC-only think-path profiler (device uses OF_WolfPerf_* phases, dead on PC).
 // Gated on OF_LUMPDUMP; mirrors WallRefresh's WALLPROF split.
 #include <time.h>
@@ -1448,11 +1448,11 @@ static void RunSimStep(int mult)
 
 	// In single player if the player dies only tick the pawn
 	ticPartStart = OF_WolfPerf_NowUS();
-#if defined(OF_PC)
+#if defined(OF_PC) && defined(OF_ECWOLF_PERF)
 	const uint64_t collideStart = of_sim_now_ns();
 #endif
 	RebuildActorCollisionGrid();
-#if defined(OF_PC)
+#if defined(OF_PC) && defined(OF_ECWOLF_PERF)
 	const uint64_t thinkStart = of_sim_now_ns();
 	g_sim_collide_ns += thinkStart - collideStart;
 #endif
@@ -1461,7 +1461,7 @@ static void RunSimStep(int mult)
 	else
 		thinkerList.Tick(ThinkerList::PLAYER);
 	OF_WolfPerf_Add(OF_WOLF_PERF_SIM_THINKERS, ticPartStart);
-#if defined(OF_PC)
+#if defined(OF_PC) && defined(OF_ECWOLF_PERF)
 	g_sim_think_ns += of_sim_now_ns() - thinkStart;
 	if(getenv("OF_LUMPDUMP"))
 	{

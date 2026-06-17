@@ -52,13 +52,13 @@ PC_EXTRA_LIBS += $(shell pkg-config --libs SDL2_mixer 2>/dev/null || echo -lSDL2
 PC_EXTRA_LIBS += $(shell pkg-config --libs SDL2_net 2>/dev/null)
 
 CFLAGS   += -DOF_SDL2_EXTERNAL -DOF_ECWOLF_OPENFPGA \
-	-DBZ_NO_STDIO -DUSE_GPL -DOF_ECWOLF_PERF_DISABLED \
+	-DBZ_NO_STDIO -DUSE_GPL \
 	$(ECWOLF_INCLUDES) -I$(ZLIB_SRC_DIR) -I$(LZMA_SRC_DIR) -I$(BZIP2_SRC_DIR)
 CFLAGS   += -Wno-old-style-definition -Wno-implicit-fallthrough \
 	-Wno-unused-parameter -Wno-unused-function -Wno-unused-variable \
 	-Wno-unused-but-set-variable
 CXXFLAGS += -DOF_SDL2_EXTERNAL -DOF_ECWOLF_OPENFPGA \
-	-DNO_GTK=1 -DUSE_GPL -DOF_ECWOLF_PERF_DISABLED
+	-DNO_GTK=1 -DUSE_GPL
 CXXFLAGS += -Dstricmp=strcasecmp -Dstrnicmp=strncasecmp
 CXXFLAGS += -DBZ_NO_STDIO -Icxx_compat $(ECWOLF_INCLUDES) -I$(ZLIB_SRC_DIR) \
 	-I$(LZMA_SRC_DIR) -I$(BZIP2_SRC_DIR) -std=gnu++11 -fexceptions
@@ -66,6 +66,14 @@ CXXFLAGS += -Wno-implicit-fallthrough -Wno-unused-parameter \
 	-Wno-unused-function -Wno-unused-variable -Wno-unused-but-set-variable \
 	-Wno-missing-field-initializers -Wno-maybe-uninitialized \
 	-Wno-class-memaccess -Wno-deprecated-copy
+
+# `make PERF=1` enables the perf instrumentation (perf line to stdout + the PC
+# WALLPROF/SIMPROF probes + diagnostic counters); off by default.  Wolf doesn't
+# compile the bootlog TU, so there's no slot-19 mirror here.
+ifdef PERF
+CFLAGS   += -DOF_ECWOLF_PERF
+CXXFLAGS += -DOF_ECWOLF_PERF
+endif
 CFLAGS += -MMD -MP
 CXXFLAGS += -MMD -MP
 

@@ -48,6 +48,7 @@
 #include "wl_play.h"
 #include "xs_Float.h"
 #include "thingdef/thingdef.h"
+#include "of_ecwolf_gpu.h"
 
 enum
 {
@@ -306,7 +307,7 @@ void BlakeStatusBar::DrawStatusBar()
 	extern uint32_t of_sb_dbg_hits, of_sb_dbg_misses;
 	if(sbarHit)
 	{
-		++of_sb_dbg_hits;
+		OF_PERF_DBG(++of_sb_dbg_hits);
 		byte *fb = screen->GetBuffer();
 		if(sbarTopBytes)
 			memcpy(fb, sbarCache, sbarTopBytes);
@@ -317,7 +318,7 @@ void BlakeStatusBar::DrawStatusBar()
 		drawScore();
 		return;
 	}
-	++of_sb_dbg_misses;
+	OF_PERF_DBG(++of_sb_dbg_misses);
 
 	// --- Full redraw: a readout changed (or no cache yet). ---
 	screen->DrawTexture(TexMan(STBar), botStx, botSty,

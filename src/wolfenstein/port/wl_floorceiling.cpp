@@ -435,10 +435,10 @@ bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 {
 	const bool active = OF_WolfGPU_IsActive();
 	if(active)
-		of_fl_dbg_active++;
+		OF_PERF_DBG(of_fl_dbg_active++);
 	if(!active || map == NULL || map->NumPlanes() == 0)
 	{
-		of_fl_dbg_bail = !active ? 1u : (map == NULL ? 2u : 3u);
+		OF_PERF_DBG(of_fl_dbg_bail = !active ? 1u : (map == NULL ? 2u : 3u));
 		return false;
 	}
 
@@ -448,7 +448,7 @@ bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 		R_GetDefaultPlaneSolidColor(true, floorColor);
 	bool solidCeiling = R_GetUniformPlaneSolidColor(false, ceilingColor) ||
 		R_GetDefaultPlaneSolidColor(false, ceilingColor);
-	of_fl_dbg_solid = (solidCeiling ? 2u : 0u) | (solidFloor ? 1u : 0u);
+	OF_PERF_DBG(of_fl_dbg_solid = (solidCeiling ? 2u : 0u) | (solidFloor ? 1u : 0u));
 
 	FTexture *floorTexture = solidFloor ? NULL : R_GetDefaultPlaneTexture(true);
 	if(!solidFloor && floorTexture == NULL)
@@ -457,9 +457,9 @@ bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 		R_GetDefaultPlaneTexture(false);
 	if(!solidCeiling && ceilingTexture == NULL)
 		ceilingTexture = R_GetUniformPlaneTexture(false);
-	of_fl_dbg_texdims = floorTexture ?
+	OF_PERF_DBG(of_fl_dbg_texdims = floorTexture ?
 		(((unsigned)floorTexture->GetWidth() << 8) |
-			(unsigned)floorTexture->GetHeight()) : 0u;
+			(unsigned)floorTexture->GetHeight()) : 0u);
 
 	int horizon = (viewheight >> 1) - viewshift;
 	if(horizon < 0)
@@ -471,17 +471,17 @@ bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 		viewz + (map->GetPlane(0).depth << FRACBITS), false,
 		ceilingColor, solidCeiling, ceilingTexture))
 	{
-		of_fl_dbg_bail = 4u;
+		OF_PERF_DBG(of_fl_dbg_bail = 4u);
 		return false;
 	}
 	if(!R_DrawPlaneBackdropHalfGPU(vbuf, vbufPitch, horizon, viewheight,
 		horizon, viewz, true, floorColor, solidFloor, floorTexture))
 	{
-		of_fl_dbg_bail = 5u;
+		OF_PERF_DBG(of_fl_dbg_bail = 5u);
 		return false;
 	}
-	of_fl_dbg_bail = 0u;
-	of_fl_dbg_gpu_true++;
+	OF_PERF_DBG(of_fl_dbg_bail = 0u);
+	OF_PERF_DBG(of_fl_dbg_gpu_true++);
 	return true;
 }
 #else

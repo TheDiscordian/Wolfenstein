@@ -4,10 +4,24 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC) && !defined(OF_ECWOLF_PERF_DISABLED)
+// Perf instrumentation is opt-in: build with PERF=1 (which defines
+// OF_ECWOLF_PERF) to enable the device perf line + bootlog, the PC
+// WALLPROF/SIMPROF/AUTOWALK probes, and the diagnostic counters.  Shipping
+// builds leave it off so none of it compiles in.
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC) && defined(OF_ECWOLF_PERF)
 #define OF_ECWOLF_PERF_ENABLED 1
 #else
 #define OF_ECWOLF_PERF_ENABLED 0
+#endif
+
+// Gate for the always-defined diagnostic counters (of_*_dbg_*) that feed both
+// the device perf line and the PC probes: the increments compile to nothing
+// unless PERF=1, so the hot raycast/sprite loops carry no counter overhead in
+// shipping builds.
+#ifdef OF_ECWOLF_PERF
+#define OF_PERF_DBG(stmt) do { stmt; } while(0)
+#else
+#define OF_PERF_DBG(stmt) ((void)0)
 #endif
 
 typedef enum OFWolfPerfPhase

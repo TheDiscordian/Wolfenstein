@@ -466,7 +466,7 @@ void ScaleSprite(AActor *actor, int xcenter, const Frame *frame, unsigned height
 	fixed x, y;
 	for(i = actx+startX, x = startX*xStep;x < xRun;x += xStep, ++i, dest = ++destBase)
 	{
-		++of_spr_dbg_cols;
+		OF_PERF_DBG(++of_spr_dbg_cols);
 		if(wallheight[i] > (signed)height)
 			continue;
 

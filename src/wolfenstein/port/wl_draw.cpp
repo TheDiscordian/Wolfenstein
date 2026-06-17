@@ -302,7 +302,7 @@ static const byte *WallTextureColumn(FTexture *texture, int texcoord)
 	return pixels + column * height;
 }
 
-#if defined(OF_PC)
+#if defined(OF_PC) && defined(OF_ECWOLF_PERF)
 // PC-only wall profiling: accumulate ScalePost (column draw) time per frame so
 // WallRefresh can split wl into raycast vs draw without a profiler.
 #include <time.h>
@@ -320,15 +320,15 @@ void ScalePost()
 		return;
 
 	extern uint32_t of_wl_dbg_posts;
-	++of_wl_dbg_posts;
+	OF_PERF_DBG(++of_wl_dbg_posts);
 
-#if defined(OF_PC)
+#if defined(OF_PC) && defined(OF_ECWOLF_PERF)
 	struct PostTimer {
 		uint64_t t0;
 		PostTimer() : t0(of_now_ns()) {}
 		~PostTimer() { g_wl_scalepost_ns += of_now_ns() - t0; }
 	} _postTimer;
-#else
+#elif OF_ECWOLF_PERF_ENABLED
 	// Device: accumulate ScalePost (column draw dispatch+setup) us so the perf
 	// line can split wl into raycast vs draw (wld) -- the device equivalent of
 	// the PC WALLPROF.
@@ -710,7 +710,7 @@ uint32_t of_wl_dbg_draw_us;   // device: ScalePost (column draw) us/frame; wl-th
 
 static inline void SprVisExtend(int tx, int ty)
 {
-	++of_wl_dbg_steps;   // one raycast tile-step (passvert/passhoriz mark site)
+	OF_PERF_DBG(++of_wl_dbg_steps);   // one raycast tile-step (passvert/passhoriz mark site)
 	if(tx < spr_vis_minx) spr_vis_minx = tx;
 	if(tx > spr_vis_maxx) spr_vis_maxx = tx;
 	if(ty < spr_vis_miny) spr_vis_miny = ty;
@@ -771,9 +771,7 @@ void DrawScaleds (void)
 
 	visptr = &vislist[0];
 
-	of_spr_dbg_cols = 0;
-	of_spr_dbg_actors = 0;
-	of_spr_dbg_xforms = 0;
+	OF_PERF_DBG(of_spr_dbg_cols = of_spr_dbg_actors = of_spr_dbg_xforms = 0);
 
 //
 // place active objects
@@ -782,7 +780,7 @@ void DrawScaleds (void)
 	for(AActor::Iterator iter = AActor::GetIterator();iter.Next();)
 	{
 		AActor *obj = iter;
-		++of_spr_dbg_actors;
+		OF_PERF_DBG(++of_spr_dbg_actors);
 
 		if (obj->sprite == SPR_NONE)
 			continue;
@@ -803,7 +801,7 @@ void DrawScaleds (void)
 		//
 		if (IsActorSpotVisible(spot))
 		{
-			++of_spr_dbg_xforms;
+			OF_PERF_DBG(++of_spr_dbg_xforms);
 			TransformActor (obj);
 			if (!obj->viewheight || (gamestate.victoryflag && obj == players[ConsolePlayer].mo))
 				continue;                                               // too close or far away
@@ -822,8 +820,7 @@ void DrawScaleds (void)
 // draw from back to front
 //
 	numvisable = (int) (visptr-&vislist[0]);
-	if((uint32_t)numvisable > of_spr_dbg_count)
-		of_spr_dbg_count = (uint32_t)numvisable;
+	OF_PERF_DBG(if((uint32_t)numvisable > of_spr_dbg_count) of_spr_dbg_count = (uint32_t)numvisable);
 
 	if (!numvisable)
 		return;                                                                 // no visable objects
@@ -1363,7 +1360,7 @@ void WallRefresh (void)
 	of_wl_dbg_posts = 0;
 	of_wl_dbg_draw_us = 0;   // device: accumulated by ScalePost PostTimer this frame
 
-#if defined(OF_PC)
+#if defined(OF_PC) && defined(OF_ECWOLF_PERF)
 	g_wl_scalepost_ns = 0;
 	const uint64_t wlStartNs = of_now_ns();
 #endif
@@ -1371,7 +1368,7 @@ void WallRefresh (void)
 	AsmRefresh();
 	ScalePost ();                   // no more optimization on last post
 
-#if defined(OF_PC)
+#if defined(OF_PC) && defined(OF_ECWOLF_PERF)
 	const uint64_t wlTotalNs = of_now_ns() - wlStartNs;
 	if(getenv("OF_LUMPDUMP"))
 	{

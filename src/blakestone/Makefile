@@ -92,6 +92,15 @@ CFLAGS   += -DOF_BOOT_LOG
 CXXFLAGS += -DOF_BOOT_LOG
 endif
 
+# `make PERF=1` enables the perf instrumentation: the device per-phase perf
+# line (mirrored to save slot 19 via the bootlog), the PC WALLPROF/SIMPROF
+# probes + OF_AUTOWALK, and the diagnostic counters.  Off by default, so
+# shipping builds compile none of it in.
+ifdef PERF
+CFLAGS   += -DOF_ECWOLF_PERF -DOF_BOOT_LOG
+CXXFLAGS += -DOF_ECWOLF_PERF -DOF_BOOT_LOG
+endif
+
 # `make FL_FLAT=1` enables the floor-command measurement experiment: the solid
 # floor/ceiling backdrop clears each half in one flat rect (no depth-fog bands).
 # Used to confirm the floor cost is GPU command-pipeline backpressure.

@@ -647,17 +647,22 @@ void CreateMenus()
 	// The Blake "LINC" terminal skin frames the menu in a panel whose inner
 	// width is ~x[29..290] of the 320px screen.  ECWolf's default option-menu
 	// widths (tuned for a borderless full-screen menu) push the MENUSTYLE_Blake
-	// selection bar and the right-column values past the panel's border on
-	// device.  Re-centre each option menu inside the panel: x=16, w=262,
-	// indent=27 => the highlight bar (getX()+indent-1 .. getX()+width) spans
-	// x 42..278, centred on screen centre 160.
+	// selection bar and the row decorations past the panel's border on device.
+	// x=16, indent=39, w=250 => the highlight bar (getX()+indent-1 .. getX()+
+	// width) spans x 54..266 (centred on 160) and the per-row checkbox at
+	// PrintX-24 = (getX()+indent)-24 = 31 stays inside the panel (was 19, on
+	// the bezel) -- both constraints met without a compromise.
 	Menu *const lincMenus[] = { &optionsMenu, &soundBase, &controlBase, &displayMenu, &automapMenu };
 	for (unsigned i = 0; i < sizeof(lincMenus) / sizeof(lincMenus[0]); ++i)
 	{
 		lincMenus[i]->setX(16);
-		lincMenus[i]->setWidth(262);
-		lincMenus[i]->setIndent(27);
+		lincMenus[i]->setWidth(250);
+		lincMenus[i]->setIndent(39);
 	}
+	// soundBase keeps its legacy Wolf y=45 (the retune only touches x/w/indent);
+	// that crowds its LINC title against the first row.  Match controlBase's
+	// y=60, which frames correctly.
+	soundBase.setY(60);
 #endif
 }
 

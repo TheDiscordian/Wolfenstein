@@ -726,7 +726,10 @@ void Menu::draw() const
 		DrawStripes(10);
 		VWB_DrawGraphic(headPicture, 160-headPicture->GetScaledWidth()/2, 0, MENU_TOP);
 	}
-	VWB_DrawGraphic(mcontrol, 160-mcontrol->GetScaledWidth()/2, 200-mcontrol->GetScaledHeight(), MENU_BOTTOM);
+	// M_MCONTL is a Wolf3D bottom-of-menu graphic; Blake's LINC skin already
+	// draws its own bottom bar, so this just stamps a stray box on the frame.
+	if(MenuStyle != MENUSTYLE_Blake)
+		VWB_DrawGraphic(mcontrol, 160-mcontrol->GetScaledWidth()/2, 200-mcontrol->GetScaledHeight(), MENU_BOTTOM);
 
 	WindowX = 0;
 	WindowW = 320;

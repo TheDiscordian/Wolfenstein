@@ -103,14 +103,6 @@ void ThinkerList::Tick()
 	}
 }
 
-#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
-// th-phase split probe: walked = every list node visited (the scattered
-// linked-list deref a dense active-list would avoid); ticked = active Tick()
-// calls; body_us = time inside those Tick bodies.  th - body_us ~= walk
-// overhead, so this says whether th is the walk (poolable) or the AI bodies.
-uint32_t of_th_dbg_walked, of_th_dbg_ticked, of_th_dbg_body_us;
-#endif
-
 void ThinkerList::Tick(Priority list)
 {
 	Iterator iter = thinkers[list].Head();
@@ -118,9 +110,6 @@ void ThinkerList::Tick(Priority list)
 	{
 		Thinker *thinker = iter;
 		nextThinker = ++iter;
-#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
-		++of_th_dbg_walked;
-#endif
 
 		if(thinker->ObjectFlags & OF_JustSpawned)
 		{
@@ -136,12 +125,7 @@ void ThinkerList::Tick(Priority list)
 			// ticking them is wasted work.  SetState clears the flag if
 			// anything changes their state.
 			if(!thinker->ofThinkDormant)
-			{
-				const uint32_t tBody = OF_WolfPerf_NowUS();
 				thinker->Tick();
-				of_th_dbg_body_us += OF_WolfPerf_NowUS() - tBody;
-				++of_th_dbg_ticked;
-			}
 #else
 			thinker->Tick();
 			GC::CheckGC();

@@ -708,16 +708,6 @@ uint32_t of_sb_dbg_hits, of_sb_dbg_misses;
 uint32_t of_wl_dbg_steps, of_wl_dbg_posts;
 uint32_t of_wl_dbg_draw_us;   // device: ScalePost (column draw) us/frame; wl-this = raycast
 
-// Wall raycast gate A/B probe.  AsmRefresh's per-step map->GetSpot reads a
-// scattered 88-byte MapSpot over a ~360KB plane (the suspected raycast cache
-// miss).  g_wall_gate_probe alternates by frame: on gated frames an empty tile
-// (simTileFlags==0) skips the scattered read; AsmRefresh time is bucketed into
-// gated/ungated so a same-scene rcg-vs-rcu split settles whether the read is
-// the cost (f6cd398 was reverted before the wld split made this observable).
-bool g_wall_gate_probe;
-uint32_t of_wl_dbg_rc_g, of_wl_dbg_rc_u, of_wl_dbg_rc_gn, of_wl_dbg_rc_un;
-uint32_t of_wl_dbg_spotreads;
-
 static inline void SprVisExtend(int tx, int ty)
 {
 	++of_wl_dbg_steps;   // one raycast tile-step (passvert/passhoriz mark site)
@@ -898,11 +888,6 @@ void AsmRefresh()
 	MapSpot focalspot = map->GetSpot(focaltx, focalty, 0);
 	bool playerInPushwallBackTile = focalspot->pushAmount != 0;
 
-	// Cache-resident solidity bytes for the gate probe; ==0 iff tile==NULL.
-	int swW = 0, swH = 0;
-	const unsigned char *sw = SimTileFlags(&swW, &swH);
-	(void)swH;
-
 	for(pixx=0;pixx<viewwidth;pixx++)
 	{
 		short angl=midangle+pixelangle[pixx];
@@ -1015,12 +1000,6 @@ vertentry:
 				break;
 			}
 			if(xspot[0]>=mapwidth || xspot[1]>=mapheight) break;
-			if(g_wall_gate_probe && sw && sw[(unsigned)xspot[1]*swW + xspot[0]] == 0)
-			{
-				tilehit = 0;       // empty tile: skip the scattered MapSpot read
-				goto passvert;
-			}
-			++of_wl_dbg_spotreads;
 			tilehit=map->GetSpot(xspot[0], xspot[1], 0);
 			if(tilehit && tilehit->tile)
 			{
@@ -1159,11 +1138,8 @@ vertentry:
 				break;
 			}
 passvert:
-			if(tilehit)         // null on the gated empty fast-path
-			{
-				tilehit->MarkVisible();
-				tilehit->amFlags |= AM_Visible;
-			}
+			tilehit->MarkVisible();
+			tilehit->amFlags |= AM_Visible;
 			SprVisExtend(xtile, yintercept>>16);
 			xtile+=xtilestep;
 			yintercept+=ystep;
@@ -1192,12 +1168,6 @@ horizentry:
 				break;
 			}
 			if(yspot[0]>=mapwidth || yspot[1]>=mapheight) break;
-			if(g_wall_gate_probe && sw && sw[(unsigned)yspot[1]*swW + yspot[0]] == 0)
-			{
-				tilehit = 0;       // empty tile: skip the scattered MapSpot read
-				goto passhoriz;
-			}
-			++of_wl_dbg_spotreads;
 			tilehit=map->GetSpot(yspot[0], yspot[1], 0);
 			if(tilehit && tilehit->tile)
 			{
@@ -1336,11 +1306,8 @@ horizentry:
 				break;
 			}
 passhoriz:
-			if(tilehit)         // null on the gated empty fast-path
-			{
-				tilehit->MarkVisible();
-				tilehit->amFlags |= AM_Visible;
-			}
+			tilehit->MarkVisible();
+			tilehit->amFlags |= AM_Visible;
 			SprVisExtend(xintercept>>16, ytile);
 			ytile+=ytilestep;
 			xintercept+=xstep;
@@ -1395,13 +1362,6 @@ void WallRefresh (void)
 	of_wl_dbg_steps = 0;
 	of_wl_dbg_posts = 0;
 	of_wl_dbg_draw_us = 0;   // device: accumulated by ScalePost PostTimer this frame
-	of_wl_dbg_spotreads = 0;
-
-	// A/B the raycast gate by frame parity so rcg (gated) vs rcu (ungated)
-	// raycast time is a same-scene comparison in one window.
-	static unsigned wallProbeParity = 0;
-	g_wall_gate_probe = (++wallProbeParity & 1u);
-	const uint32_t rcStart = OF_WolfPerf_NowUS();
 
 #if defined(OF_PC)
 	g_wl_scalepost_ns = 0;
@@ -1409,11 +1369,6 @@ void WallRefresh (void)
 #endif
 
 	AsmRefresh();
-
-	const uint32_t rcUS = OF_WolfPerf_NowUS() - rcStart;
-	if(g_wall_gate_probe) { of_wl_dbg_rc_g += rcUS; of_wl_dbg_rc_gn++; }
-	else                  { of_wl_dbg_rc_u += rcUS; of_wl_dbg_rc_un++; }
-
 	ScalePost ();                   // no more optimization on last post
 
 #if defined(OF_PC)

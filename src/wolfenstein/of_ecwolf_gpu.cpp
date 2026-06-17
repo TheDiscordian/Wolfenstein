@@ -99,8 +99,6 @@ extern uint32_t of_sb_dbg_misses;
 extern uint32_t of_wl_dbg_steps;
 extern uint32_t of_wl_dbg_posts;
 extern uint32_t of_wl_dbg_draw_us;   // device ScalePost (column draw) us, last frame
-extern uint32_t of_wl_dbg_rc_g, of_wl_dbg_rc_u, of_wl_dbg_rc_gn, of_wl_dbg_rc_un;
-extern uint32_t of_wl_dbg_spotreads; // per-step scattered MapSpot reads, last frame
 
 /* Timestamp (of_time_us) of the last acquire that actually blocked on the
  * display flip fence.  The flip fence retires when the display consumes the
@@ -340,7 +338,7 @@ void OF_WolfPerf_FrameEnd(void)
 
 	char pbuf[512];
 	snprintf(pbuf, sizeof(pbuf),
-		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u spa=%u spt=%u sbh=%u sbm=%u wls=%u wlp=%u wld=%u rcg=%u rcu=%u spd=%u t=%u.%u",
+		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u spa=%u spt=%u sbh=%u sbm=%u wls=%u wlp=%u wld=%u t=%u.%u",
 		fps_x10 / 10, fps_x10 % 10, frame_avg,
 		wolf_perf_avg(OF_WOLF_PERF_EVENTS),
 		wolf_perf_avg(OF_WOLF_PERF_SIM),
@@ -385,9 +383,6 @@ void OF_WolfPerf_FrameEnd(void)
 		(unsigned int)of_sb_dbg_hits, (unsigned int)of_sb_dbg_misses,
 		(unsigned int)of_wl_dbg_steps, (unsigned int)of_wl_dbg_posts,
 		(unsigned int)of_wl_dbg_draw_us,
-		(unsigned int)(of_wl_dbg_rc_gn ? of_wl_dbg_rc_g / of_wl_dbg_rc_gn : 0),
-		(unsigned int)(of_wl_dbg_rc_un ? of_wl_dbg_rc_u / of_wl_dbg_rc_un : 0),
-		(unsigned int)of_wl_dbg_spotreads,
 		tics_x10 / 10, tics_x10 % 10);
 	printf("%s\n", pbuf);
 	// Mirror the report into the bootlog save file (slot 19, ofbootlog.sav) so
@@ -395,7 +390,6 @@ void OF_WolfPerf_FrameEnd(void)
 	OF_BootLog("%s", pbuf);
 
 	memset(wolf_perf_accum, 0, sizeof(wolf_perf_accum));
-	of_wl_dbg_rc_g = of_wl_dbg_rc_u = of_wl_dbg_rc_gn = of_wl_dbg_rc_un = 0;
 	wolf_perf_frame_total = 0;
 	wolf_perf_tic_total = 0;
 	wolf_perf_window_start_us = now;

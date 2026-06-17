@@ -561,11 +561,16 @@ void CreateMenus()
 
 	controlBase.setHeadPicture("M_CONTRL");
 	controlBase.addItem(new BooleanMenuItem(language["STR_ALWAYSRUN"], alwaysrun, EnterControlBase));
+#if !defined(OF_ECWOLF_OPENFPGA) || defined(OF_PC)
+	// The Pocket has no mouse, and its controls ARE the joystick (always on),
+	// so the mouse toggles/sensitivity and the joystick-enable switch are
+	// meaningless on device.
 	controlBase.addItem(new BooleanMenuItem(language["STR_MOUSEEN"], mouseenabled, EnterControlBase));
 	controlBase.addItem(new BooleanMenuItem(language["STR_WINDOWEDMOUSE"], forcegrabmouse, EnterControlBase));
 	controlBase.addItem(new BooleanMenuItem(language["STR_DISABLEYAXIS"], mouseyaxisdisabled, EnterControlBase));
 	controlBase.addItem(new MenuSwitcherMenuItem(language["STR_SENS"], mouseSensitivity));
 	controlBase.addItem(new BooleanMenuItem(language["STR_JOYEN"], joystickenabled, EnterControlBase));
+#endif
 	controlBase.addItem(new MenuSwitcherMenuItem(language["STR_JOYSENS"], joySensitivity));
 	controlBase.addItem(new MenuSwitcherMenuItem(language["STR_CUSTOM"], controls));
 
@@ -588,15 +593,21 @@ void CreateMenus()
 
 	const char* aspectOptions[] = {"Aspect: Auto", "Aspect: 16:9", "Aspect: 16:10", "Aspect: 17:10", "Aspect: 4:3", "Aspect: 5:4", "Aspect: 21:9", "Aspect: 32:9"};
 	displayMenu.setHeadText(language["STR_DISPLAY"]);
+#if !defined(OF_ECWOLF_OPENFPGA) || defined(OF_PC)
+	// Fullscreen, vsync, aspect, and resolution are all fixed by the Pocket core
+	// (native 320x200, 4:3, scaler-owned) -- only meaningful on desktop.
 #ifndef __ANDROID__
 	displayMenu.addItem(new BooleanMenuItem(language["STR_FULLSCREEN"], vid_fullscreen, ToggleFullscreen));
 #endif
-#if SDL_VERSION_ATLEAST(2,0,0) && (!defined(OF_ECWOLF_OPENFPGA) || defined(OF_PC))
+#if SDL_VERSION_ATLEAST(2,0,0)
 	displayMenu.addItem(new BooleanMenuItem(language["STR_VSYNC"], vid_vsync, ToggleVsync));
 #endif
+#endif
 	displayMenu.addItem(new BooleanMenuItem("Show FPS", fpscounter));
+#if !defined(OF_ECWOLF_OPENFPGA) || defined(OF_PC)
 	displayMenu.addItem(new MultipleChoiceMenuItem(SetAspectRatio, aspectOptions, 8, vid_aspect));
 	displayMenu.addItem(new MenuSwitcherMenuItem(language["STR_SELECTRES"], resolutionMenu, EnterResolutionSelection));
+#endif
 	displayMenu.addItem(new LabelMenuItem(language["STR_SCREENSIZE"]));
 	displayMenu.addItem(new SliderMenuItem(viewsize, 110, 21, language["STR_SMALL"], language["STR_LARGE"], AdjustViewSize));
 

@@ -114,6 +114,8 @@ void CheckWeaponChange (AActor *self)
 
 	TicCmd_t &cmd = control[self->player->GetPlayerNum()];
 
+	bool slotPressed = false;	// number-key select: bstone shows avail/not-avail even on NULL
+
 	if(cmd.buttonstate[bt_nextweapon] && !cmd.buttonheld[bt_nextweapon])
 	{
 		newWeapon = self->player->weapons.PickNextWeapon(self->player);
@@ -132,9 +134,22 @@ void CheckWeaponChange (AActor *self)
 			{
 				newWeapon = self->player->weapons.Slots[i].PickWeapon(self->player);
 				cmd.buttonheld[bt_slot0 + i] = true;
+				slotPressed = true;
 				break;
 			}
 		}
+	}
+
+	// Blake LINC weapon-select feedback (bstone CheckWeaponChange): a number-key
+	// press reports availability either way; a next/prev cycle reports the new
+	// weapon (the only weapon-change path the Pocket has) when it actually moves.
+	if(self->player == &players[ConsolePlayer])
+	{
+		extern void Blake_WeaponSelectMsg(bool available);
+		if(slotPressed)
+			Blake_WeaponSelectMsg(newWeapon != NULL);
+		else if(newWeapon && newWeapon != self->player->ReadyWeapon)
+			Blake_WeaponSelectMsg(true);
 	}
 
 	if(newWeapon && newWeapon != self->player->ReadyWeapon)

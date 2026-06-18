@@ -279,6 +279,20 @@ void Blake_PickupInfoMsg(AActor *toucher, const ClassDef *itemClass)
 	}
 }
 
+// LINC weapon-select feedback (bstone CheckWeaponChange, 3d_agent.cpp:466).
+// available -> "ACTIVATED AND READY", else "NOT CURRENTLY AVAILABLE".  The DOS
+// game fires this on number-key selection; the Pocket has no number keys, so
+// CheckWeaponChange also calls it when a next/prev cycle lands on a weapon.
+void Blake_WeaponSelectMsg(bool available)
+{
+	extern DBaseStatusBar *StatusBar;
+	if (!IWad::CheckGameFilter("Blake"))
+		return;
+	StatusBar->DisplayInfoMessage(available
+		? "\r\r   SELECTED WEAPON\r ACTIVATED AND READY."
+		: "\r\r  SELECTED WEAPON NOT\r  CURRENTLY AVAILABLE.", 0x200, 300);
+}
+
 void BlakeStatusBar::DrawLed(double percent, double x, double y) const
 {
 	static FTextureID LED[2][3] = {

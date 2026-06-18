@@ -325,6 +325,7 @@ namespace {
 struct PinballBonusInfo { int bit; const char *text; int points; bool recurring; };
 const PinballBonusInfo pinballBonuses[] = {
 	// bit order == display priority (bstone B_* bit order / PinballBonus table).
+	{ 0x01, "^FC57    GUARDIAN ALIEN\r      DESTROYED!\r\r^FCA6   FIND THE EXIT TO\rCOMPLETE THIS MISSION",         0,       false }, // B_GALIEN_DESTROYED
 	{ 0x02, "^FC57\rROLLED SCORE DISPLAY!\r^FCA6   FULL AMMO BONUS!\r  FULL HEALTH BONUS!\r1,000,000 POINT BONUS!", 1000000, true  }, // B_SCORE_ROLLED
 	{ 0x04, "^FC57\r     GREAT SCORE!\r^FCA6   FULL AMMO BONUS!\r  FULL HEALTH BONUS!\r1,000,000 POINT BONUS!",     1000000, false }, // B_ONE_MILLION
 	{ 0x08, "^FC57\r\r     GREAT SCORE!\r^FCA6  EXTRA LIFE BONUS!\r",                                               0,       true  }, // B_EXTRA_MAN
@@ -356,6 +357,28 @@ void Blake_PinballReset()
 	pinballShown = 0;
 }
 
+// Guardian-Alien bonus (bstone 3d_state.cpp:1216: ActivatePinballBonus in the
+// death handler for the six AoG guardian bosses, !is_ps).  Fires once per level
+// on any of those boss deaths; AoG only.  Called from AActor::Die.
+void Blake_GuardianAlienBonus(AActor *ob)
+{
+	if(!ob || !IWad::CheckGameFilter("Blake")
+		|| IWad::GetGame().Name.CompareNoCase("Planet Strike") == 0)
+		return;
+	static const ClassDef * const bosses[] = {
+		ClassDef::FindClass("CyborgWarrior"),    ClassDef::FindClass("BioMechGuardian"),
+		ClassDef::FindClass("ReptilianWarrior"), ClassDef::FindClass("SpiderMutant"),
+		ClassDef::FindClass("BreatherBeast"),    ClassDef::FindClass("AcidDragon"),
+	};
+	for(unsigned i = 0; i < countof(bosses); ++i)
+		if(bosses[i] && ob->IsKindOf(bosses[i]))
+		{
+			if(!(pinballShown & 0x01) && !(pinballQueue & 0x01))
+				pinballQueue |= 0x01;
+			return;
+		}
+}
+
 void BlakeStatusBar::DrainPinballBonus()
 {
 	if(!pinballQueue || InfoMessagePriority >= MP_PINBALL_BONUS)
@@ -365,7 +388,13 @@ void BlakeStatusBar::DrainPinballBonus()
 		const PinballBonusInfo &b = pinballBonuses[i];
 		if(!(pinballQueue & b.bit))
 			continue;
-		DisplayInfoMessage(b.text, MP_PINBALL_BONUS, 7*60);
+		const char *text = b.text;
+		// On the final AoG episode bstone's B_GAliFunc replaces the guardian
+		// message with the "projection generators" objective (3d_state.cpp:1233);
+		// show that variant directly (Cluster 6 == bstone episode 5).
+		if(b.bit == 0x01 && levelInfo && levelInfo->Cluster == 6)
+			text = "^FC57    GUARDIAN ALIEN\r      DESTROYED!\r\r^FCA6 FIND AND DESTROY ALL\rPROJECTION GENERATORS!";
+		DisplayInfoMessage(text, MP_PINBALL_BONUS, 7*60);
 		SD_PlaySound("blake/rollscore");
 		if(!b.recurring)
 			pinballShown |= b.bit;

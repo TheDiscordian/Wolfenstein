@@ -298,6 +298,10 @@ void AActor::Die()
 	// PS reserved-item drop riding temp1's high byte.
 	Blake_CheckReservedDrop(this);
 
+	// AoG guardian-boss "GUARDIAN ALIEN DESTROYED" pinball bonus.
+	extern void Blake_GuardianAlienBonus(AActor *ob);
+	Blake_GuardianAlienBonus(this);
+
 	DropList *dropitems = GetDropList();
 	if(dropitems)
 	{

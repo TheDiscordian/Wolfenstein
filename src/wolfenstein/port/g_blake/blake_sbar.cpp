@@ -48,6 +48,7 @@
 #include "wl_game.h"
 #include "wl_iwad.h"
 #include "wl_play.h"
+#include "r_sprites.h"
 #include "xs_Float.h"
 #include "thingdef/thingdef.h"
 #include "of_ecwolf_gpu.h"
@@ -66,6 +67,8 @@ public:
 	{
 		memset(EcgLegend, 0, sizeof(EcgLegend));
 		memset(EcgSegments, 0, sizeof(EcgSegments));
+		iconW = iconH = 0;
+		iconKey = 0;
 	}
 
 	void DrawStatusBar();
@@ -118,7 +121,11 @@ public:
 		InfoMessage = msg;
 		InfoMessagePriority = priority;
 		InfoMessageTics = tics;
+		iconW = 0;	// pickups/attacks re-bake it via SetInfoMessageIcon
 	}
+
+	// Sets the item icon drawn beside the current info message (bstone ^SH).
+	void SetInfoMessageIcon(FTextureID id);   // bakes the sprite into iconPix
 
 protected:
 	void DrawInfoArea();
@@ -136,6 +143,14 @@ private:
 	FString InfoMessage;
 	int InfoMessagePriority;
 	int InfoMessageTics;
+	// Info-area icon (bstone ^SH/^AN), baked from the item/enemy sprite into a
+	// plain paletted buffer at set-time (during the tick) so the per-frame draw
+	// never touches a sprite texture during the GPU 3D frame -- doing so corrupts
+	// the Pocket GPU's column state (white lines in the 3D view).  iconW 0 = none.
+	int iconW, iconH;
+	int32_t iconKey;              // source texture id, for the info-area cache key
+	uint8_t iconPix[64*64];       // native-size paletted pixels (column-major)
+	uint8_t iconMask[64*64];      // 1 = opaque
 	bool StartupMsgPending;   // show the new-game greeting on the next NewGame()
 
 	// AoG health monitor state (bstone DrawHealthMonitor).
@@ -238,6 +253,16 @@ const char *Blake_AttackerInfoMsg(AActor *attacker)
 	return NULL;
 }
 
+// Sets the current info-message icon to a class's spawn sprite (bstone ^SH/^AN).
+// Free function so non-Blake TUs (wl_agent's attack path) can set it without the
+// BlakeStatusBar type.  Must be called AFTER DisplayInfoMessage (which clears it).
+void Blake_SetInfoIcon(const ClassDef *cls)
+{
+	extern DBaseStatusBar *StatusBar;
+	if (StatusBar && IWad::CheckGameFilter("Blake"))
+		static_cast<BlakeStatusBar *>(StatusBar)->SetInfoMessageIcon(R_GetClassIcon(cls));
+}
+
 // LINC "ACCESS DENIED" message when a locked door is tried without the key
 // (bstone OperateDoor, 3d_act1.cpp:1215).  lock 1..5 = red/yellow/blue/green/
 // gold (lockdefs.txt "Lock N Blake"); anything else = permanently locked.
@@ -289,6 +314,8 @@ void Blake_PickupInfoMsg(AActor *toucher, const ClassDef *itemClass)
 		}
 		else
 			StatusBar->DisplayInfoMessage(tmpl, 0x200, 300);
+		// The item's own spawn sprite is the info-area icon (bstone ^SH).
+		static_cast<BlakeStatusBar *>(StatusBar)->SetInfoMessageIcon(R_GetClassIcon(itemClass));
 		return;
 	}
 }
@@ -662,6 +689,8 @@ void BlakeStatusBar::DrawStatusBar()
 		infoKey = 0x811c9dc5u;
 		for(const char *c = InfoMessage.GetChars();c != NULL && *c;++c)
 			infoKey = (infoKey ^ (unsigned char)*c) * 16777619u;
+		// Fold in the icon: gold-bar variants share the text but differ in sprite.
+		infoKey = (infoKey ^ (uint32_t)iconKey) * 16777619u;
 		if(infoKey == 0)
 			infoKey = 1;
 	}
@@ -931,6 +960,39 @@ void BlakeStatusBar::DrawStatusBar()
 	drawScore();
 }
 
+// Bakes a class's spawn sprite into the info-area icon buffer.  Called at icon
+// set-time (Blake_PickupInfoMsg / the attack path), which runs during the game
+// tick -- BEFORE the GPU 3D frame -- so touching the sprite texture here is safe;
+// the per-frame DrawInfoArea blit then never touches a sprite texture.
+void BlakeStatusBar::SetInfoMessageIcon(FTextureID id)
+{
+	iconW = iconH = 0;
+	iconKey = id.GetIndex();
+	FTexture *tex = id.isValid() ? TexMan(id) : NULL;
+	if(!tex)
+		return;
+	const int w = tex->GetWidth(), h = tex->GetHeight();
+	if(w <= 0 || h <= 0 || w*h > (int)sizeof(iconPix))
+		return;
+	memset(iconMask, 0, (size_t)w*h);
+	for(int c = 0; c < w; ++c)
+	{
+		const FTexture::Span *spans;
+		const BYTE *col = tex->GetColumn(c, &spans);
+		for(; spans->Length; ++spans)
+		{
+			const int end = spans->TopOffset + spans->Length;
+			for(int r = spans->TopOffset; r < end && r < h; ++r)
+			{
+				iconPix[c*h + r] = col[r];
+				iconMask[c*h + r] = 1;
+			}
+		}
+	}
+	iconW = w;
+	iconH = h;
+}
+
 // Draws the message strip in the bottom status bar: the current timed
 // message if one is up, otherwise the no-messages/token-count idle text.
 void BlakeStatusBar::DrawInfoArea()
@@ -949,6 +1011,36 @@ void BlakeStatusBar::DrawInfoArea()
 			DTA_DestWidthF, stw,
 			DTA_DestHeightF, sth,
 			TAG_DONE);
+	}
+
+	// Pickup/enemy icon at the info-area's top-left (bstone ^SH/^AN); the message's
+	// leading \r\r drops the text below it so they don't collide.  Raw-blitted from
+	// the buffer baked at set-time -- the per-frame draw never touches a sprite
+	// texture (that corrupts the Pocket GPU's 3D column state, white lines).
+	if(InfoMessageTics != 0 && iconW > 0)
+	{
+		double dx = 8, dy = 200-STATUSLINES, dw = 24, dh = 24;
+		screen->VirtualToRealCoords(dx, dy, dw, dh, 320, 200, true, true);
+		const int rx = (int)dx, ry = (int)dy, rw = (int)dw, rh = (int)dh;
+		byte *fb = screen->GetBuffer();
+		const int pitch = screen->GetPitch();
+		const int sw = screen->GetWidth(), sh = screen->GetHeight();
+		for(int oy = 0; oy < rh; ++oy)
+		{
+			const int py = ry + oy;
+			if(py < 0 || py >= sh)
+				continue;
+			const int sry = oy * iconH / rh;
+			for(int ox = 0; ox < rw; ++ox)
+			{
+				const int px = rx + ox;
+				if(px < 0 || px >= sw)
+					continue;
+				const int srx = ox * iconW / rw;
+				if(iconMask[srx*iconH + sry])
+					fb[(size_t)py*pitch + px] = iconPix[srx*iconH + sry];
+			}
+		}
 	}
 
 	FString msg;

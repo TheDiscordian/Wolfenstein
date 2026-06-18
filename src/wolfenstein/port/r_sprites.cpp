@@ -189,6 +189,36 @@ FTextureID R_GetClassIcon(const ClassDef *cls)
 	return spriteFrames[loadedSprites[spawn->spriteInf].frames + spawn->frame].texture[0];
 }
 
+// Collects a class's animated info-area icon frames (bstone ^AN) into out[],
+// returning the count.  Walks the See (walk) cycle front (rotation 0) sprites so
+// enemies animate; falls back to the Spawn frame (1 frame) for static items.
+int R_GetClassIconFrames(const ClassDef *cls, FTextureID *out, int maxFrames)
+{
+	if(!cls || maxFrames <= 0)
+		return 0;
+	const Frame *start = cls->FindState(NAME_See);
+	if(!start)
+		start = cls->FindState(NAME_Spawn);
+	int n = 0;
+	const Frame *f = start;
+	for(int guard = 0; f && n < maxFrames && guard < 64; ++guard, f = f->next)
+	{
+		if(f->spriteInf == SPR_NONE || f->spriteInf >= loadedSprites.Size()
+			|| loadedSprites[f->spriteInf].numFrames == 0)
+		{
+			if(f->next == start)
+				break;
+			continue;
+		}
+		FTextureID t = spriteFrames[loadedSprites[f->spriteInf].frames + f->frame].texture[0];
+		if(t.isValid())
+			out[n++] = t;
+		if(f->next == start)	// walk cycle looped
+			break;
+	}
+	return n;
+}
+
 void R_InstallSprite(Sprite &frame, FTexture *tex, int dir, bool mirror)
 {
 	if(dir < -1 || dir >= 8)

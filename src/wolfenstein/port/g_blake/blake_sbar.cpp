@@ -67,7 +67,7 @@ public:
 	{
 		memset(EcgLegend, 0, sizeof(EcgLegend));
 		memset(EcgSegments, 0, sizeof(EcgSegments));
-		iconW = iconH = 0;
+		iconNF = iconFrame = iconAnimTics = 0;
 		iconKey = 0;
 	}
 
@@ -121,11 +121,13 @@ public:
 		InfoMessage = msg;
 		InfoMessagePriority = priority;
 		InfoMessageTics = tics;
-		iconW = 0;	// pickups/attacks re-bake it via SetInfoMessageIcon
+		iconNF = iconFrame = iconAnimTics = 0;	// pickups/attacks re-bake via SetInfoMessageIcon
 	}
 
-	// Sets the item icon drawn beside the current info message (bstone ^SH).
-	void SetInfoMessageIcon(FTextureID id);   // bakes the sprite into iconPix
+	// Sets the icon drawn in the info area's left box for the current message
+	// (bstone ^SH/^AN): bakes the class's walk-cycle frames (enemies) or spawn
+	// frame (items).  Pass NULL to clear.
+	void SetInfoMessageIcon(const class ClassDef *cls);
 
 protected:
 	void DrawInfoArea();
@@ -137,20 +139,30 @@ protected:
 	// (bstone DISPLAY_MSG / DisplayTime 0, e.g. the start-game greeting).
 	static const int INFOMSG_PERSIST = -1;
 
+	// Info-area enemy walk-cycle frame delay, in Tick calls (bstone piAnimTable
+	// maxdelay 20 at 70Hz; the port ticks the bar per rendered frame).
+	static const int ICON_ANIM_DELAY = 15;
+
 private:
 	int CurrentScore;
 	int ScoreRollWait;        // tics to show the "-ROLL-" placeholder after a score roll
 	FString InfoMessage;
 	int InfoMessagePriority;
 	int InfoMessageTics;
-	// Info-area icon (bstone ^SH/^AN), baked from the item/enemy sprite into a
-	// plain paletted buffer at set-time (during the tick) so the per-frame draw
-	// never touches a sprite texture during the GPU 3D frame -- doing so corrupts
-	// the Pocket GPU's column state (white lines in the 3D view).  iconW 0 = none.
-	int iconW, iconH;
-	int32_t iconKey;              // source texture id, for the info-area cache key
-	uint8_t iconPix[64*64];       // native-size paletted pixels (column-major)
-	uint8_t iconMask[64*64];      // 1 = opaque
+	// Info-area icon (bstone ^SH/^AN): the item/enemy sprite drawn in a black box
+	// at the info area's left, baked from the sprite into plain paletted buffers at
+	// set-time (during the tick) so the per-frame draw never touches a sprite
+	// texture during the GPU 3D frame -- doing so corrupts the Pocket GPU's column
+	// state (white lines in the 3D view).  Enemies animate their walk cycle (bstone
+	// ^AN); items are a single frame (bstone ^SH).  iconNF 0 = no icon.
+	static const int MAX_ICON_FRAMES = 6;
+	int iconNF;                   // number of baked frames (0 = none)
+	int iconFrame;                // current animation frame
+	int iconAnimTics;             // tic accumulator for the walk cycle
+	int iconW[MAX_ICON_FRAMES], iconH[MAX_ICON_FRAMES];
+	int32_t iconKey;              // source class id, for the info-area cache key
+	uint8_t iconPix[MAX_ICON_FRAMES][64*64];   // native-size paletted pixels (column-major)
+	uint8_t iconMask[MAX_ICON_FRAMES][64*64];  // 1 = opaque
 	bool StartupMsgPending;   // show the new-game greeting on the next NewGame()
 
 	// AoG health monitor state (bstone DrawHealthMonitor).
@@ -164,79 +176,79 @@ private:
 DBaseStatusBar *CreateStatusBar_Blake() { return new BlakeStatusBar(); }
 
 // The DOS "ATTACKING:" info-area message per enemy class (bstone ActorInfoMsg,
-// 3d_msgs.cpp, AOG variant) -- the ^AN icon / ^FC colour codes stripped (the
-// info area draws plain text + \r breaks), the name layout kept verbatim.
+// 3d_msgs.cpp, AOG variant).  ^FC17 makes "ATTACKING:" red and ^FCA6 the name
+// grey (both DOS-faithful); the icon is set separately, not via the ^AN code.
 namespace {
 struct BlakeAttackMsg { const char* className; const char* msg; };
 const BlakeAttackMsg blakeAttackMsgs[] = {
-	{ "RentACop",                "\r\r  ATTACKING:\rSECTOR PATROL" },
-	{ "SectorGuard",             "\r\r  ATTACKING:\r SECTOR GUARD" },
-	{ "ProGuard",                "\r\r  ATTACKING:\rSTAR SENTINEL" },
-	{ "TechWarrior",             "\r\r  ATTACKING:\r TECH WARRIOR" },
-	{ "STARTrooper",             "\r\r  ATTACKING:\r STAR TROOPER" },
-	{ "AlienProtector",          "  ATTACKING:\r    ALIEN\r  PROTECTOR" },
-	{ "GeneralScientist",        "\r\r  ATTACKING:\r   BIO-TECH" },
-	{ "FloatingBomb",            "  ATTACKING:\rPERSCAN DRONE\r  EXPLOSION" },
-	{ "VolatileTransport",       "  ATTACKING:\r VOLATILE MAT.\r  TRANSPORT\r  EXPLOSION" },
-	{ "GeneticGuard",            "  ATTACKING:\r HIGH-SECURITY\r GENETIC GUARD" },
-	{ "CyborgWarrior",           "  ATTACKING:\r   CYBORG\r   WARRIOR" },
-	{ "SpiderMutant",            "  ATTACKING:\r   SPIDER\r   MUTANT" },
-	{ "SpiderMutantMorphed",     "  ATTACKING:\r   SPIDER\r   MUTANT" },
-	{ "AcidDragon",              "\r  ATTACKING:\r ACID DRAGON" },
-	{ "BreatherBeast",           "  ATTACKING:\r   BREATHER\r    BEAST" },
-	{ "BioMechGuardian",         "  ATTACKING:\r   BIO-MECH\r   GUARDIAN" },
-	{ "ReptilianWarrior",        "  ATTACKING:\r  REPTILIAN\r   WARRIOR" },
-	{ "ReptilianWarriorMorphed", "  ATTACKING:\r  REPTILIAN\r   WARRIOR" },
-	{ "MechSentinel",            "  ATTACKING:\r EXPERIMENTAL\r MECH-SENTINEL" },
-	{ "MutantHuman",             "  ATTACKING:\r EXPERIMENTAL\r MUTANT HUMAN" },
-	{ "MutantHumanMorphed",      "  ATTACKING:\r EXPERIMENTAL\r MUTANT HUMAN" },
-	{ "SmallCanisterAlien",      "  ATTACKING:\r EXPERIMENTAL\r GENETIC ALIEN" },
-	{ "LargeCanisterAlien",      "  ATTACKING:\r EXPERIMENTAL\r GENETIC ALIEN" },
-	{ "GurneyMutant",            "  ATTACKING:\r   MUTATED\r    GUARD" },
-	{ "PODAlien",                "\r  ATTACKING:\r  POD ALIEN" },
-	{ "CeilingTurretRotate",     "  ATTACKING:\r  AUTOMATED\rHEAVY ARMORED\r ROBOT TURRET" },
-	{ "CeilingTurretStatic",     "  ATTACKING:\r  AUTOMATED\rHEAVY ARMORED\r ROBOT TURRET" },
-	{ "GiantStalker",            "  ATTACKING:\r  THE GIANT\r   STALKER" },
+	{ "RentACop",                "^FC17\r\r  ATTACKING:\r^FCA6SECTOR PATROL" },
+	{ "SectorGuard",             "^FC17\r\r  ATTACKING:\r^FCA6 SECTOR GUARD" },
+	{ "ProGuard",                "^FC17\r\r  ATTACKING:\r^FCA6STAR SENTINEL" },
+	{ "TechWarrior",             "^FC17\r\r  ATTACKING:\r^FCA6 TECH WARRIOR" },
+	{ "STARTrooper",             "^FC17\r\r  ATTACKING:\r^FCA6 STAR TROOPER" },
+	{ "AlienProtector",          "^FC17  ATTACKING:\r^FCA6    ALIEN\r  PROTECTOR" },
+	{ "GeneralScientist",        "^FC17\r\r  ATTACKING:\r^FCA6   BIO-TECH" },
+	{ "FloatingBomb",            "^FC17  ATTACKING:\r^FCA6PERSCAN DRONE\r  EXPLOSION" },
+	{ "VolatileTransport",       "^FC17  ATTACKING:\r^FCA6 VOLATILE MAT.\r  TRANSPORT\r  EXPLOSION" },
+	{ "GeneticGuard",            "^FC17  ATTACKING:\r^FCA6 HIGH-SECURITY\r GENETIC GUARD" },
+	{ "CyborgWarrior",           "^FC17  ATTACKING:\r^FCA6   CYBORG\r   WARRIOR" },
+	{ "SpiderMutant",            "^FC17  ATTACKING:\r^FCA6   SPIDER\r   MUTANT" },
+	{ "SpiderMutantMorphed",     "^FC17  ATTACKING:\r^FCA6   SPIDER\r   MUTANT" },
+	{ "AcidDragon",              "^FC17\r  ATTACKING:\r^FCA6 ACID DRAGON" },
+	{ "BreatherBeast",           "^FC17  ATTACKING:\r^FCA6   BREATHER\r    BEAST" },
+	{ "BioMechGuardian",         "^FC17  ATTACKING:\r^FCA6   BIO-MECH\r   GUARDIAN" },
+	{ "ReptilianWarrior",        "^FC17  ATTACKING:\r^FCA6  REPTILIAN\r   WARRIOR" },
+	{ "ReptilianWarriorMorphed", "^FC17  ATTACKING:\r^FCA6  REPTILIAN\r   WARRIOR" },
+	{ "MechSentinel",            "^FC17  ATTACKING:\r^FCA6 EXPERIMENTAL\r MECH-SENTINEL" },
+	{ "MutantHuman",             "^FC17  ATTACKING:\r^FCA6 EXPERIMENTAL\r MUTANT HUMAN" },
+	{ "MutantHumanMorphed",      "^FC17  ATTACKING:\r^FCA6 EXPERIMENTAL\r MUTANT HUMAN" },
+	{ "SmallCanisterAlien",      "^FC17  ATTACKING:\r^FCA6 EXPERIMENTAL\r GENETIC ALIEN" },
+	{ "LargeCanisterAlien",      "^FC17  ATTACKING:\r^FCA6 EXPERIMENTAL\r GENETIC ALIEN" },
+	{ "GurneyMutant",            "^FC17  ATTACKING:\r^FCA6   MUTATED\r    GUARD" },
+	{ "PODAlien",                "^FC17\r  ATTACKING:\r^FCA6  POD ALIEN" },
+	{ "CeilingTurretRotate",     "^FC17  ATTACKING:\r^FCA6  AUTOMATED\rHEAVY ARMORED\r ROBOT TURRET" },
+	{ "CeilingTurretStatic",     "^FC17  ATTACKING:\r^FCA6  AUTOMATED\rHEAVY ARMORED\r ROBOT TURRET" },
+	{ "GiantStalker",            "^FC17  ATTACKING:\r^FCA6  THE GIANT\r   STALKER" },
 };
 
 // The DOS pickup info-area message per Blake pickup class (bstone BonusMsg,
-// 3d_msgs.cpp, AOG variant) -- ^SH icon / ^FC colour codes stripped, the
-// \r line layout + label text kept verbatim.  The two ConcessionCoin tokens
-// carry "%d" where bstone substitutes the live food-token total.
+// 3d_msgs.cpp, AOG variant).  ^FC57 makes the label green and ^FCA6 the name
+// grey (both DOS-faithful); the icon is set separately, not via the ^SH code.
+// The two ConcessionCoin tokens carry "%d" for the live food-token total.
 struct BlakePickupMsg { const char* className; const char* msg; };
 const BlakePickupMsg blakePickupMsgs[] = {
-	{ "RedAccessCard",        "\r\r ACCESS CARD:\r  RED LEVEL" },
-	{ "YellowAccessCard",     "\r\r ACCESS CARD:\r YELLOW LEVEL" },
-	{ "GreenAccessCard",      "\r\r ACCESS CARD:\r GREEN LEVEL" },
-	{ "BlueAccessCard",       "\r\r ACCESS CARD:\r  BLUE LEVEL" },
-	{ "GoldAccessCard",       "\r\r ACCESS CARD:\r  GOLD LEVEL" },
-	{ "RedAccessKey",         "\r\r ACCESS CARD:\r  RED LEVEL" },
-	{ "YellowAccessKey",      "\r\r ACCESS CARD:\r YELLOW LEVEL" },
-	{ "BlueAccessKey",        "\r\r ACCESS CARD:\r  BLUE LEVEL" },
-	{ "SlowFireProtector",    "\r\r   WEAPON:\r  SLOW FIRE\r  PROTECTOR\r" },
-	{ "RapidAssaultWeapon",   "\r\r   WEAPON:\r RAPID ASSAULT\r   WEAPON" },
-	{ "DualNeutronDisruptor", "\r\r   WEAPON:\r DUAL NEUTRON\r   DISRUPTER" },
-	{ "PlasmaDischargeUnit",  "\r   WEAPON:\r   PLASMA\r DISCHARGE\r    UNIT" },
-	{ "AntiPlasmaCannon",     "\r\r   WEAPON:\r ANTI-PLASMA\r   CANNON" },
-	{ "ChargeUnit",           "\r   WEAPON:\r ENERGY PACK\r   (8 UNITS)" },	// both give 8 (bstone bo_clip patches msg[45])
-	{ "ChargePack",           "\r   WEAPON:\r ENERGY PACK\r   (8 UNITS)" },
-	{ "FirstAidKit",          "\r\r   HEALTH:\r  FIRST AID\r     KIT" },
-	{ "HamMeat",              "\r\r    FOOD:\r  RAW MEAT" },
-	{ "ChickenLeg",           "\r\r    FOOD:\r  RAW MEAT" },
-	{ "Sandwich",             "\r\r    FOOD:\r  SANDWICH" },
-	{ "CandyBar",             "\r\r    FOOD:\r  CANDY BAR" },
-	{ "FullWaterBowl",        "\r\r    FOOD:\r FRESH WATER" },
-	{ "BlakeWaterPuddle",     "\r\r    FOOD:\r WATER PUDDLE" },
-	{ "MoneyBag",             "\r\r    BONUS:\r  MONEY BAG" },
-	{ "Loot",                 "\r\r    BONUS:\r    LOOT" },
-	{ "Gold1Bar",             "\r\r    BONUS:\r  GOLD BARS" },
-	{ "Gold2Bars",            "\r\r    BONUS:\r  GOLD BARS" },
-	{ "Gold3Bars",            "\r\r    BONUS:\r  GOLD BARS" },
-	{ "Gold5Bars",            "\r\r    BONUS:\r  GOLD BARS" },
-	{ "XylanOrb",             "\r\r    BONUS:\r  XYLAN ORB" },
-	{ "ConcessionCoin",       "\r  FOOD TOKEN:\r   1 CREDIT\r\r  TOKENS: %d" },
-	{ "ConcessionCoin5",      "\r  FOOD TOKEN:\r   5 CREDITS\r  TOKENS: %d" },
-	{ "RadarPack",            "\r   RADAR:  \rMAGNIFICATION\r   ENERGY" },
+	{ "RedAccessCard",        "^FC57\r\r ACCESS CARD:\r^FCA6  RED LEVEL" },
+	{ "YellowAccessCard",     "^FC57\r\r ACCESS CARD:\r^FCA6 YELLOW LEVEL" },
+	{ "GreenAccessCard",      "^FC57\r\r ACCESS CARD:\r^FCA6 GREEN LEVEL" },
+	{ "BlueAccessCard",       "^FC57\r\r ACCESS CARD:\r^FCA6  BLUE LEVEL" },
+	{ "GoldAccessCard",       "^FC57\r\r ACCESS CARD:\r^FCA6  GOLD LEVEL" },
+	{ "RedAccessKey",         "^FC57\r\r ACCESS CARD:\r^FCA6  RED LEVEL" },
+	{ "YellowAccessKey",      "^FC57\r\r ACCESS CARD:\r^FCA6 YELLOW LEVEL" },
+	{ "BlueAccessKey",        "^FC57\r\r ACCESS CARD:\r^FCA6  BLUE LEVEL" },
+	{ "SlowFireProtector",    "^FC57\r\r   WEAPON:\r^FCA6  SLOW FIRE\r  PROTECTOR\r" },
+	{ "RapidAssaultWeapon",   "^FC57\r\r   WEAPON:\r^FCA6 RAPID ASSAULT\r   WEAPON" },
+	{ "DualNeutronDisruptor", "^FC57\r\r   WEAPON:\r^FCA6 DUAL NEUTRON\r   DISRUPTER" },
+	{ "PlasmaDischargeUnit",  "^FC57\r   WEAPON:\r^FCA6   PLASMA\r DISCHARGE\r    UNIT" },
+	{ "AntiPlasmaCannon",     "^FC57\r\r   WEAPON:\r^FCA6 ANTI-PLASMA\r   CANNON" },
+	{ "ChargeUnit",           "^FC57\r   WEAPON:\r^FCA6 ENERGY PACK\r   (8 UNITS)" },	// both give 8 (bstone bo_clip patches msg[45])
+	{ "ChargePack",           "^FC57\r   WEAPON:\r^FCA6 ENERGY PACK\r   (8 UNITS)" },
+	{ "FirstAidKit",          "^FC57\r\r   HEALTH:\r^FCA6  FIRST AID\r     KIT" },
+	{ "HamMeat",              "^FC57\r\r    FOOD:\r^FCA6  RAW MEAT" },
+	{ "ChickenLeg",           "^FC57\r\r    FOOD:\r^FCA6  RAW MEAT" },
+	{ "Sandwich",             "^FC57\r\r    FOOD:\r^FCA6  SANDWICH" },
+	{ "CandyBar",             "^FC57\r\r    FOOD:\r^FCA6  CANDY BAR" },
+	{ "FullWaterBowl",        "^FC57\r\r    FOOD:\r^FCA6 FRESH WATER" },
+	{ "BlakeWaterPuddle",     "^FC57\r\r    FOOD:\r^FCA6 WATER PUDDLE" },
+	{ "MoneyBag",             "^FC57\r\r    BONUS:\r^FCA6  MONEY BAG" },
+	{ "Loot",                 "^FC57\r\r    BONUS:\r^FCA6    LOOT" },
+	{ "Gold1Bar",             "^FC57\r\r    BONUS:\r^FCA6  GOLD BARS" },
+	{ "Gold2Bars",            "^FC57\r\r    BONUS:\r^FCA6  GOLD BARS" },
+	{ "Gold3Bars",            "^FC57\r\r    BONUS:\r^FCA6  GOLD BARS" },
+	{ "Gold5Bars",            "^FC57\r\r    BONUS:\r^FCA6  GOLD BARS" },
+	{ "XylanOrb",             "^FC57\r\r    BONUS:\r^FCA6  XYLAN ORB" },
+	{ "ConcessionCoin",       "^FC57\r  FOOD TOKEN:\r^FCA6   1 CREDIT\r\r  TOKENS: %d" },
+	{ "ConcessionCoin5",      "^FC57\r  FOOD TOKEN:\r^FCA6   5 CREDITS\r  TOKENS: %d" },
+	{ "RadarPack",            "^FC57\r   RADAR:  \r^FCA6MAGNIFICATION\r   ENERGY" },
 };
 }
 
@@ -260,7 +272,7 @@ void Blake_SetInfoIcon(const ClassDef *cls)
 {
 	extern DBaseStatusBar *StatusBar;
 	if (StatusBar && IWad::CheckGameFilter("Blake"))
-		static_cast<BlakeStatusBar *>(StatusBar)->SetInfoMessageIcon(R_GetClassIcon(cls));
+		static_cast<BlakeStatusBar *>(StatusBar)->SetInfoMessageIcon(cls);
 }
 
 // LINC "ACCESS DENIED" message when a locked door is tried without the key
@@ -315,7 +327,7 @@ void Blake_PickupInfoMsg(AActor *toucher, const ClassDef *itemClass)
 		else
 			StatusBar->DisplayInfoMessage(tmpl, 0x200, 300);
 		// The item's own spawn sprite is the info-area icon (bstone ^SH).
-		static_cast<BlakeStatusBar *>(StatusBar)->SetInfoMessageIcon(R_GetClassIcon(itemClass));
+		static_cast<BlakeStatusBar *>(StatusBar)->SetInfoMessageIcon(itemClass);
 		return;
 	}
 }
@@ -689,8 +701,10 @@ void BlakeStatusBar::DrawStatusBar()
 		infoKey = 0x811c9dc5u;
 		for(const char *c = InfoMessage.GetChars();c != NULL && *c;++c)
 			infoKey = (infoKey ^ (unsigned char)*c) * 16777619u;
-		// Fold in the icon: gold-bar variants share the text but differ in sprite.
+		// Fold in the icon: gold-bar variants share the text but differ in sprite,
+		// and the current walk-cycle frame so animation busts the cache each step.
 		infoKey = (infoKey ^ (uint32_t)iconKey) * 16777619u;
+		infoKey = (infoKey ^ (uint32_t)iconFrame) * 16777619u;
 		if(infoKey == 0)
 			infoKey = 1;
 	}
@@ -960,37 +974,49 @@ void BlakeStatusBar::DrawStatusBar()
 	drawScore();
 }
 
-// Bakes a class's spawn sprite into the info-area icon buffer.  Called at icon
-// set-time (Blake_PickupInfoMsg / the attack path), which runs during the game
-// tick -- BEFORE the GPU 3D frame -- so touching the sprite texture here is safe;
-// the per-frame DrawInfoArea blit then never touches a sprite texture.
-void BlakeStatusBar::SetInfoMessageIcon(FTextureID id)
+// Bakes a class's info-area icon frames (enemy walk cycle, or item spawn frame)
+// into the icon buffers.  Called at icon set-time (Blake_PickupInfoMsg / the
+// attack path), which runs during the game tick -- BEFORE the GPU 3D frame -- so
+// touching the sprite textures here is safe; the per-frame DrawInfoArea blit then
+// never touches a sprite texture.
+void BlakeStatusBar::SetInfoMessageIcon(const ClassDef *cls)
 {
-	iconW = iconH = 0;
-	iconKey = id.GetIndex();
-	FTexture *tex = id.isValid() ? TexMan(id) : NULL;
-	if(!tex)
+	iconNF = iconFrame = iconAnimTics = 0;
+	iconKey = cls ? (int32_t)(intptr_t)cls : 0;
+	if(!cls)
 		return;
-	const int w = tex->GetWidth(), h = tex->GetHeight();
-	if(w <= 0 || h <= 0 || w*h > (int)sizeof(iconPix))
-		return;
-	memset(iconMask, 0, (size_t)w*h);
-	for(int c = 0; c < w; ++c)
+
+	FTextureID frames[MAX_ICON_FRAMES];
+	const int nf = R_GetClassIconFrames(cls, frames, MAX_ICON_FRAMES);
+	for(int i = 0; i < nf; ++i)
 	{
-		const FTexture::Span *spans;
-		const BYTE *col = tex->GetColumn(c, &spans);
-		for(; spans->Length; ++spans)
+		FTexture *tex = frames[i].isValid() ? TexMan(frames[i]) : NULL;
+		if(!tex)
+			continue;
+		const int w = tex->GetWidth(), h = tex->GetHeight();
+		if(w <= 0 || h <= 0 || w*h > (int)sizeof(iconPix[0]))
+			continue;
+		uint8_t *pix = iconPix[iconNF];
+		uint8_t *mask = iconMask[iconNF];
+		memset(mask, 0, (size_t)w*h);
+		for(int c = 0; c < w; ++c)
 		{
-			const int end = spans->TopOffset + spans->Length;
-			for(int r = spans->TopOffset; r < end && r < h; ++r)
+			const FTexture::Span *spans;
+			const BYTE *col = tex->GetColumn(c, &spans);
+			for(; spans->Length; ++spans)
 			{
-				iconPix[c*h + r] = col[r];
-				iconMask[c*h + r] = 1;
+				const int end = spans->TopOffset + spans->Length;
+				for(int r = spans->TopOffset; r < end && r < h; ++r)
+				{
+					pix[c*h + r] = col[r];
+					mask[c*h + r] = 1;
+				}
 			}
 		}
+		iconW[iconNF] = w;
+		iconH[iconNF] = h;
+		++iconNF;
 	}
-	iconW = w;
-	iconH = h;
 }
 
 // Draws the message strip in the bottom status bar: the current timed
@@ -1013,35 +1039,46 @@ void BlakeStatusBar::DrawInfoArea()
 			TAG_DONE);
 	}
 
-	// Pickup/enemy icon at the info-area's top-left (bstone ^SH/^AN); the message's
-	// leading \r\r drops the text below it so they don't collide.  Raw-blitted from
-	// the buffer baked at set-time -- the per-frame draw never touches a sprite
-	// texture (that corrupts the Pocket GPU's 3D column state, white lines).
-	if(InfoMessageTics != 0 && iconW > 0)
+	// Pickup/enemy icon in a black box at the info area's left (bstone ^SH/^AN, a
+	// 37x37 VW_Bar with the sprite scaled into it): fill the box black, then blit
+	// the current frame scaled+masked so transparent areas stay black.  Enemies
+	// animate their walk cycle (iconFrame, advanced in Tick); items are one frame.
+	// Raw-blitted from buffers baked at set-time -- the per-frame draw never touches
+	// a sprite texture (that corrupts the Pocket GPU's 3D column state, white lines).
+	const bool showIcon = (InfoMessageTics != 0 && iconNF > 0);
+	if(showIcon)
 	{
-		double dx = 6, dy = 200-STATUSLINES+1, dw = 14, dh = 14;
-		screen->VirtualToRealCoords(dx, dy, dw, dh, 320, 200, true, true);
-		const int rx = (int)dx, ry = (int)dy, rw = (int)dw, rh = (int)dh;
+		double bx = 3, by = 200-STATUSLINES+3, bw = 37, bh = 37;
+		screen->VirtualToRealCoords(bx, by, bw, bh, 320, 200, true, true);
+		const int rx = (int)bx, ry = (int)by, rw = (int)bw, rh = (int)bh;
 		byte *fb = screen->GetBuffer();
 		const int pitch = screen->GetPitch();
 		const int sw = screen->GetWidth(), sh = screen->GetHeight();
+		const int fr = clamp(iconFrame, 0, iconNF-1);
+		const int iw = iconW[fr], ih = iconH[fr];
+		const uint8_t *pix = iconPix[fr], *mask = iconMask[fr];
+		const byte black = GPalette.BlackIndex;
 		for(int oy = 0; oy < rh; ++oy)
 		{
 			const int py = ry + oy;
 			if(py < 0 || py >= sh)
 				continue;
-			const int sry = oy * iconH / rh;
+			const int sry = oy * ih / rh;
+			byte *row = fb + (size_t)py*pitch;
 			for(int ox = 0; ox < rw; ++ox)
 			{
 				const int px = rx + ox;
 				if(px < 0 || px >= sw)
 					continue;
-				const int srx = ox * iconW / rw;
-				if(iconMask[srx*iconH + sry])
-					fb[(size_t)py*pitch + px] = iconPix[srx*iconH + sry];
+				const int srx = ox * iw / rw;
+				row[px] = mask[srx*ih + sry] ? pix[srx*ih + sry] : black;
 			}
 		}
 	}
+
+	// With the icon box present, text indents past it (bstone left_margin advances
+	// to the box's right edge: INFOAREA_X 3 + box 37 = 40); otherwise margin 3.
+	const double leftMargin = showIcon ? 40.0 : 3.0;
 
 	FString msg;
 	if(InfoMessageTics != 0)
@@ -1088,7 +1125,7 @@ void BlakeStatusBar::DrawInfoArea()
 	// ^-prefixed control codes (bstone HandleControlCodes): ^FCxx picks the
 	// font colour by palette row, ^XX ends the message, the others are
 	// skipped along with their operands.
-	double x = 3;
+	double x = leftMargin;
 	double y = 200-STATUSLINES+3;
 	EColorRange color = CR_GRAY;
 	FString segment;
@@ -1108,7 +1145,7 @@ void BlakeStatusBar::DrawInfoArea()
 				break;
 			if(*ch == '\r')
 			{
-				x = 3;
+				x = leftMargin;
 				y += 6;
 				++ch;
 				continue;
@@ -1226,6 +1263,13 @@ void BlakeStatusBar::Tick()
 	{
 		InfoMessage = "";
 		InfoMessagePriority = 0;
+	}
+
+	// Advance the info-area enemy walk cycle (bstone ^AN, maxdelay ~20 tics).
+	if(iconNF > 1 && ++iconAnimTics >= ICON_ANIM_DELAY)
+	{
+		iconAnimTics = 0;
+		iconFrame = (iconFrame + 1) % iconNF;
 	}
 
 	// All-enemies-destroyed pinball bonus.  Edge-detected here rather than in

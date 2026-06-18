@@ -203,8 +203,8 @@ const BlakePickupMsg blakePickupMsgs[] = {
 	{ "DualNeutronDisruptor", "\r\r   WEAPON:\r DUAL NEUTRON\r   DISRUPTER" },
 	{ "PlasmaDischargeUnit",  "\r   WEAPON:\r   PLASMA\r DISCHARGE\r    UNIT" },
 	{ "AntiPlasmaCannon",     "\r\r   WEAPON:\r ANTI-PLASMA\r   CANNON" },
-	{ "ChargeUnit",           "\r   WEAPON:\r ENERGY PACK\r   (  UNITS)" },
-	{ "ChargePack",           "\r   WEAPON:\r ENERGY PACK\r   (  UNITS)" },
+	{ "ChargeUnit",           "\r   WEAPON:\r ENERGY PACK\r   (8 UNITS)" },	// both give 8 (bstone bo_clip patches msg[45])
+	{ "ChargePack",           "\r   WEAPON:\r ENERGY PACK\r   (8 UNITS)" },
 	{ "FirstAidKit",          "\r\r   HEALTH:\r  FIRST AID\r     KIT" },
 	{ "HamMeat",              "\r\r    FOOD:\r  RAW MEAT" },
 	{ "ChickenLeg",           "\r\r    FOOD:\r  RAW MEAT" },

@@ -362,7 +362,11 @@ FUNC(Door_Open)
 		if(args[3] != 0)
 		{
 			if(!P_CheckKeys(activator, args[3], false))
+			{
+				extern void Blake_DoorDeniedMsg(AActor *, int);
+				Blake_DoorDeniedMsg(activator, args[3]);
 				return 0;
+			}
 		}
 	}
 

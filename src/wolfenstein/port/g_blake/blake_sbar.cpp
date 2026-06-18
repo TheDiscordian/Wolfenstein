@@ -184,6 +184,28 @@ const char *Blake_AttackerInfoMsg(AActor *attacker)
 	return NULL;
 }
 
+// LINC "ACCESS DENIED" message when a locked door is tried without the key
+// (bstone OperateDoor, 3d_act1.cpp:1215).  lock 1..5 = red/yellow/blue/green/
+// gold (lockdefs.txt "Lock N Blake"); anything else = permanently locked.
+// Blake-only -- the strings are wrong for Wolfenstein's gold/silver keys.
+void Blake_DoorDeniedMsg(AActor *activator, int lock)
+{
+	extern DBaseStatusBar *StatusBar;
+	if (!activator || !activator->player || !IWad::CheckGameFilter("Blake"))
+		return;
+	const char *msg;
+	switch (lock)
+	{
+	case 1:  msg = "\r\r      RED LEVEL\r    ACCESS DENIED!"; break;
+	case 2:  msg = "\r\r     YELLOW LEVEL\r    ACCESS DENIED!"; break;
+	case 3:  msg = "\r\r      BLUE LEVEL\r    ACCESS DENIED!"; break;
+	case 4:  msg = "\r\r     GREEN LEVEL\r    ACCESS DENIED!"; break;
+	case 5:  msg = "\r\r      GOLD LEVEL\r    ACCESS DENIED!"; break;
+	default: msg = "\r\r   DOOR PERMANENTLY\r        LOCKED."; break;
+	}
+	StatusBar->DisplayInfoMessage(msg, 0x200, 300);
+}
+
 void BlakeStatusBar::DrawLed(double percent, double x, double y) const
 {
 	static FTextureID LED[2][3] = {

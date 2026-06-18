@@ -169,6 +169,46 @@ const BlakeAttackMsg blakeAttackMsgs[] = {
 	{ "CeilingTurretStatic",     "  ATTACKING:\r  AUTOMATED\rHEAVY ARMORED\r ROBOT TURRET" },
 	{ "GiantStalker",            "  ATTACKING:\r  THE GIANT\r   STALKER" },
 };
+
+// The DOS pickup info-area message per Blake pickup class (bstone BonusMsg,
+// 3d_msgs.cpp, AOG variant) -- ^SH icon / ^FC colour codes stripped, the
+// \r line layout + label text kept verbatim.  The two ConcessionCoin tokens
+// carry "%d" where bstone substitutes the live food-token total.
+struct BlakePickupMsg { const char* className; const char* msg; };
+const BlakePickupMsg blakePickupMsgs[] = {
+	{ "RedAccessCard",        "\r\r ACCESS CARD:\r  RED LEVEL" },
+	{ "YellowAccessCard",     "\r\r ACCESS CARD:\r YELLOW LEVEL" },
+	{ "GreenAccessCard",      "\r\r ACCESS CARD:\r GREEN LEVEL" },
+	{ "BlueAccessCard",       "\r\r ACCESS CARD:\r  BLUE LEVEL" },
+	{ "GoldAccessCard",       "\r\r ACCESS CARD:\r  GOLD LEVEL" },
+	{ "RedAccessKey",         "\r\r ACCESS CARD:\r  RED LEVEL" },
+	{ "YellowAccessKey",      "\r\r ACCESS CARD:\r YELLOW LEVEL" },
+	{ "BlueAccessKey",        "\r\r ACCESS CARD:\r  BLUE LEVEL" },
+	{ "SlowFireProtector",    "\r\r   WEAPON:\r  SLOW FIRE\r  PROTECTOR\r" },
+	{ "RapidAssaultWeapon",   "\r\r   WEAPON:\r RAPID ASSAULT\r   WEAPON" },
+	{ "DualNeutronDisruptor", "\r\r   WEAPON:\r DUAL NEUTRON\r   DISRUPTER" },
+	{ "PlasmaDischargeUnit",  "\r   WEAPON:\r   PLASMA\r DISCHARGE\r    UNIT" },
+	{ "AntiPlasmaCannon",     "\r\r   WEAPON:\r ANTI-PLASMA\r   CANNON" },
+	{ "ChargeUnit",           "\r   WEAPON:\r ENERGY PACK\r   (  UNITS)" },
+	{ "ChargePack",           "\r   WEAPON:\r ENERGY PACK\r   (  UNITS)" },
+	{ "FirstAidKit",          "\r\r   HEALTH:\r  FIRST AID\r     KIT" },
+	{ "HamMeat",              "\r\r    FOOD:\r  RAW MEAT" },
+	{ "ChickenLeg",           "\r\r    FOOD:\r  RAW MEAT" },
+	{ "Sandwich",             "\r\r    FOOD:\r  SANDWICH" },
+	{ "CandyBar",             "\r\r    FOOD:\r  CANDY BAR" },
+	{ "FullWaterBowl",        "\r\r    FOOD:\r FRESH WATER" },
+	{ "BlakeWaterPuddle",     "\r\r    FOOD:\r WATER PUDDLE" },
+	{ "MoneyBag",             "\r\r    BONUS:\r  MONEY BAG" },
+	{ "Loot",                 "\r\r    BONUS:\r    LOOT" },
+	{ "Gold1Bar",             "\r\r    BONUS:\r  GOLD BARS" },
+	{ "Gold2Bars",            "\r\r    BONUS:\r  GOLD BARS" },
+	{ "Gold3Bars",            "\r\r    BONUS:\r  GOLD BARS" },
+	{ "Gold5Bars",            "\r\r    BONUS:\r  GOLD BARS" },
+	{ "XylanOrb",             "\r\r    BONUS:\r  XYLAN ORB" },
+	{ "ConcessionCoin",       "\r  FOOD TOKEN:\r   1 CREDIT\r\r  TOKENS: %d" },
+	{ "ConcessionCoin5",      "\r  FOOD TOKEN:\r   5 CREDITS\r  TOKENS: %d" },
+	{ "RadarPack",            "\r   RADAR:  \rMAGNIFICATION\r   ENERGY" },
+};
 }
 
 // Returns the attacker's "ATTACKING:" info message, or NULL if it's not a mapped
@@ -204,6 +244,39 @@ void Blake_DoorDeniedMsg(AActor *activator, int lock)
 	default: msg = "\r\r   DOOR PERMANENTLY\r        LOCKED."; break;
 	}
 	StatusBar->DisplayInfoMessage(msg, 0x200, 300);
+}
+
+// LINC info-area bonus message when the player grabs a pickup (bstone GetBonus
+// -> DisplayInfoMsg, MP_BONUS).  Looked up by actor class; Blake-only.  Called
+// from AInventory::Touch after a successful pickup, so the live token total is
+// already updated for the ConcessionCoin "%d".  Takes the class (captured
+// before the pickup) since the world actor may be destroyed by then.
+void Blake_PickupInfoMsg(AActor *toucher, const ClassDef *itemClass)
+{
+	extern DBaseStatusBar *StatusBar;
+	if (!itemClass || !toucher || toucher != players[ConsolePlayer].mo
+		|| !IWad::CheckGameFilter("Blake"))
+		return;
+	const FName cls = itemClass->GetName();
+	for (unsigned i = 0; i < countof(blakePickupMsgs); ++i)
+	{
+		if (cls != FName(blakePickupMsgs[i].className))
+			continue;
+		const char *tmpl = blakePickupMsgs[i].msg;
+		if (strchr(tmpl, '%'))
+		{
+			unsigned int tokens = 0;
+			static const ClassDef * const coinCls = ClassDef::FindClass("ConcessionCoin");
+			if (AInventory *coins = toucher->FindInventory(coinCls))
+				tokens = coins->amount;
+			FString out;
+			out.Format(tmpl, tokens);
+			StatusBar->DisplayInfoMessage(out, 0x200, 300);
+		}
+		else
+			StatusBar->DisplayInfoMessage(tmpl, 0x200, 300);
+		return;
+	}
 }
 
 void BlakeStatusBar::DrawLed(double percent, double x, double y) const

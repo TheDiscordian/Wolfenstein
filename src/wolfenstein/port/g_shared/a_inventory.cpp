@@ -232,6 +232,10 @@ void AInventory::Touch(AActor *toucher)
 	if(!(toucher->flags & FL_PICKUP))
 		return;
 
+	// Capture the pickup's class before the grab: GoAwayAndDie may Destroy()
+	// this world actor, but the Blake info-area message needs its identity.
+	const ClassDef *pickupClass = GetClass();
+
 	if(!CallTryPickup(toucher))
 		return;
 
@@ -242,7 +246,11 @@ void AInventory::Touch(AActor *toucher)
 
 	PlaySoundLocActor(pickupsound, toucher);
 	if(toucher->player == &players[ConsolePlayer])
+	{
 		StartBonusFlash();
+		extern void Blake_PickupInfoMsg(AActor *, const ClassDef *);
+		Blake_PickupInfoMsg(toucher, pickupClass);
+	}
 }
 
 bool AInventory::TryPickup(AActor *toucher)

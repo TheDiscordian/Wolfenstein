@@ -61,7 +61,7 @@ enum
 class BlakeStatusBar : public DBaseStatusBar
 {
 public:
-	BlakeStatusBar() : CurrentScore(0), InfoMessagePriority(0), InfoMessageTics(0),
+	BlakeStatusBar() : CurrentScore(0), ScoreRollWait(0), InfoMessagePriority(0), InfoMessageTics(0),
 		StartupMsgPending(false), EcgScrollTics(0), HeartTics(0), HeartBright(false)
 	{
 		memset(EcgLegend, 0, sizeof(EcgLegend));
@@ -132,6 +132,7 @@ protected:
 
 private:
 	int CurrentScore;
+	int ScoreRollWait;        // tics to show the "-ROLL-" placeholder after a score roll
 	FString InfoMessage;
 	int InfoMessagePriority;
 	int InfoMessageTics;
@@ -375,6 +376,8 @@ void BlakeStatusBar::DrainPinballBonus()
 		players[ConsolePlayer].GivePoints(b.points);
 		if(b.bit == 0x02 || b.bit == 0x04)	// score rolled / one million
 			Blake_FullAmmoHealth();
+		if(b.bit == 0x02)			// bstone B_RollFunc: start the "-ROLL-" display
+			ScoreRollWait = 60*10;
 		break;	// one bonus per drain; the rest wait until this one expires
 	}
 }
@@ -505,7 +508,15 @@ void BlakeStatusBar::DrawStatusBar()
 	// (transparent glyphs over a baked-in old score would ghost).
 	auto drawScore = [&]() {
 		FString score;
-		score.Format("%7d", CurrentScore);
+		if(CurrentScore > 9999999)	// bstone DrawScoreNum: roll the 7-digit display
+		{
+			if(ScoreRollWait > 0)
+				score = " -ROLL-";	// N_BLANK/DASH/R/O/L/L/DASH placeholder
+			else
+				score.Format("%07d", CurrentScore % 10000000);
+		}
+		else
+			score.Format("%7d", CurrentScore);
 		DrawString(ScoreFont, score, 256, 155, false);
 	};
 
@@ -967,6 +978,9 @@ void BlakeStatusBar::Tick()
 		CurrentScore += scoreDelta/4;
 	else
 		CurrentScore += clamp<int>(scoreDelta, 0, 8);
+
+	if(ScoreRollWait > 0)
+		--ScoreRollWait;
 
 	if(InfoMessageTics > 0 && --InfoMessageTics == 0)
 	{

@@ -314,11 +314,12 @@ void Blake_WeaponSelectMsg(bool available)
 // bonus queued but not yet shown is lost on save/reload -- a minor cosmetic
 // difference from bstone's saved per-level queue.
 //
-// Implemented here: the three score-driven bonuses (score rolled past the 7-
-// digit display, half-million "great score", and each earned extra life).  The
-// level-tally bonuses (all enemies/points/informants) and the Guardian-Alien
-// bonus are intentionally not wired -- they need a faithful per-level point
-// total (the port only counts treasure items) and a boss class the port lacks.
+// All seven bstone bonuses are wired: Guardian-Alien (0x01), score rolled
+// (0x02), half-million "great score" (0x04), extra life (0x08), all enemies
+// destroyed (0x10), all points collected (0x20) and all informants alive (0x40).
+// The score-driven ones queue from Blake_CheckPinballBonus; the level-tally ones
+// edge-detect in Tick (the port bumps stat counters after GivePoints, opposite
+// to bstone, so a score-time check would miss the final kill/pickup).
 #define MP_PINBALL_BONUS 0x3000
 
 namespace {

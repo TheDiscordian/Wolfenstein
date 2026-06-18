@@ -45,6 +45,7 @@
 #include "v_video.h"
 #include "wl_agent.h"
 #include "wl_def.h"
+#include "wl_game.h"
 #include "wl_iwad.h"
 #include "wl_play.h"
 #include "xs_Float.h"
@@ -326,6 +327,7 @@ const PinballBonusInfo pinballBonuses[] = {
 	{ 0x02, "^FC57\rROLLED SCORE DISPLAY!\r^FCA6   FULL AMMO BONUS!\r  FULL HEALTH BONUS!\r1,000,000 POINT BONUS!", 1000000, true  }, // B_SCORE_ROLLED
 	{ 0x04, "^FC57\r     GREAT SCORE!\r^FCA6   FULL AMMO BONUS!\r  FULL HEALTH BONUS!\r1,000,000 POINT BONUS!",     1000000, false }, // B_ONE_MILLION
 	{ 0x08, "^FC57\r\r     GREAT SCORE!\r^FCA6  EXTRA LIFE BONUS!\r",                                               0,       true  }, // B_EXTRA_MAN
+	{ 0x10, "^FC57\r\r ALL ENEMY DESTROYED!\r^FCA6  50,000 POINT BONUS!\r",                                        50000,   false }, // B_ENEMY_DESTROYED
 };
 uint16_t pinballQueue = 0;	// bonuses earned, waiting to be shown
 uint16_t pinballShown = 0;	// non-recurring bonuses already shown this level
@@ -971,6 +973,14 @@ void BlakeStatusBar::Tick()
 		InfoMessage = "";
 		InfoMessagePriority = 0;
 	}
+
+	// All-enemies-destroyed pinball bonus.  Edge-detected here rather than in
+	// GivePoints (bstone's hook) because AActor::Die scores BEFORE bumping
+	// killcount, so a score-time check would miss the final kill.
+	if(gamestate.killtotal > 0 && gamestate.killcount >= gamestate.killtotal
+		&& IWad::CheckGameFilter("Blake")
+		&& !(pinballShown & 0x10) && !(pinballQueue & 0x10))
+		pinballQueue |= 0x10;	// B_ENEMY_DESTROYED
 
 	// Drain a queued pinball bonus once the info area is free.
 	DrainPinballBonus();

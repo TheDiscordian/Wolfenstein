@@ -1019,7 +1019,7 @@ void BlakeStatusBar::DrawInfoArea()
 	// texture (that corrupts the Pocket GPU's 3D column state, white lines).
 	if(InfoMessageTics != 0 && iconW > 0)
 	{
-		double dx = 8, dy = 200-STATUSLINES, dw = 24, dh = 24;
+		double dx = 6, dy = 200-STATUSLINES+1, dw = 14, dh = 14;
 		screen->VirtualToRealCoords(dx, dy, dw, dh, 320, 200, true, true);
 		const int rx = (int)dx, ry = (int)dy, rw = (int)dw, rh = (int)dh;
 		byte *fb = screen->GetBuffer();

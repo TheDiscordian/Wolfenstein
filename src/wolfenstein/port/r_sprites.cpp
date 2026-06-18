@@ -190,10 +190,17 @@ FTextureID R_GetClassIcon(const ClassDef *cls)
 }
 
 // Collects a class's animated info-area icon frames (bstone ^AN) into out[],
-// returning the count.  Walks the See (walk) cycle front (rotation 0) sprites so
-// enemies animate; falls back to the Spawn frame (1 frame) for static items.
+// returning the count.  Walks the See (walk) cycle sprites so enemies animate;
+// falls back to the Spawn frame (1 frame) for static items.
+//
+// DOS draws the info icon at sprite rotation "8" (bstone piShapeTable SPR_*_W*_8,
+// a 3/4 view facing the viewer's right, mid-stride) -- NOT the dead-front view.
+// ECWolf loads that rotation into texture[1] (digit 8 -> dir 1 for Blake's 8-way
+// sprites); single-rotation sprites only have texture[0], so fall back to it.
 int R_GetClassIconFrames(const ClassDef *cls, FTextureID *out, int maxFrames)
 {
+	const int ICON_ROT = 1;	// bstone "_8" 3/4 view; texture[0] is dead-front
+
 	if(!cls || maxFrames <= 0)
 		return 0;
 	const Frame *start = cls->FindState(NAME_See);
@@ -210,7 +217,10 @@ int R_GetClassIconFrames(const ClassDef *cls, FTextureID *out, int maxFrames)
 				break;
 			continue;
 		}
-		FTextureID t = spriteFrames[loadedSprites[f->spriteInf].frames + f->frame].texture[0];
+		const Sprite &spr = spriteFrames[loadedSprites[f->spriteInf].frames + f->frame];
+		FTextureID t = spr.texture[ICON_ROT];
+		if(!t.isValid())
+			t = spr.texture[0];
 		if(t.isValid())
 			out[n++] = t;
 		if(f->next == start)	// walk cycle looped

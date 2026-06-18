@@ -529,7 +529,21 @@ void BlakeStatusBar::DrawStatusBar()
 	// NOT CurrentScore: it rolls up a little every frame (Tick) after any score
 	// change, so keying on it churned the cache every frame in combat (a full
 	// ~25ms redraw each frame).  The score is redrawn per-frame via drawScore().
+	// Reused to key the PS idle objective hint (next-floor lock + detonator
+	// possession; the level is already in sbarKey[2]) so it can't go stale.
 	sbarKey[3] = 0;
+	if(isPS && levelInfo)
+	{
+		extern bool Blake_PsFloorUnlocked(int lvl);
+		unsigned int hint = Blake_PsFloorUnlocked(levelInfo->LevelNumber + 1) ? 1u : 0u;
+		if(players[ConsolePlayer].mo)
+		{
+			static const ClassDef * const detCls = ClassDef::FindClass("PlasmaDetonator");
+			if(AInventory *d = detCls ? players[ConsolePlayer].mo->FindInventory(detCls) : NULL)
+				hint |= (d->amount > 0) ? 2u : 0u;
+		}
+		sbarKey[3] = hint;
+	}
 	// Key on the info-area message CONTENT, not InfoMessageTics: the timer ticks
 	// down every frame while a message shows, but the drawn text is unchanged,
 	// so keying on the timer churned the cache the whole time a message was up.
@@ -842,6 +856,32 @@ void BlakeStatusBar::DrawInfoArea()
 				tokens = coins->amount;
 		}
 		msg.Format("\r    NO MESSAGES.\r    FOOD TOKENS: %u", tokens);
+
+		// PS objective hint while the next floor is still locked (bstone
+		// DisplayNoMoMsgs).  AoG shows none.  bstone keys on mapon (0-based);
+		// our LevelNumber is 1-based, so mapon 19 (goldfire) = LevelNumber 20.
+		static const bool isPS = IWad::GetGame().Name.CompareNoCase("Planet Strike") == 0;
+		if(isPS && levelInfo)
+		{
+			const int lvl = levelInfo->LevelNumber;
+			extern bool Blake_PsFloorUnlocked(int lvl);
+			if(!Blake_PsFloorUnlocked(lvl + 1))	// next floor not yet unlocked
+			{
+				if(lvl == 20)
+					msg += "\r\r^FC39  DESTROY GOLDFIRE!";
+				else if(lvl < 20 || lvl > 24)
+				{
+					unsigned int detonators = 0;
+					static const ClassDef * const detCls = ClassDef::FindClass("PlasmaDetonator");
+					if(players[ConsolePlayer].mo)
+						if(AInventory *d = players[ConsolePlayer].mo->FindInventory(detCls))
+							detonators = d->amount;
+					msg += detonators ? "\r\r^FC39DESTROY SECURITY CUBE!"
+									  : "\r\r^FC39 FIND THE DETONATOR!";
+				}
+				// lvl 21..24: final approach floors, no hint (bstone case 20..23).
+			}
+		}
 	}
 
 	// Messages are \r-separated lines drawn 6px apart in the small font.

@@ -1289,17 +1289,32 @@ void TP_PrintPageNumber()
 // map (vsimap.txt) names M_EPIS1..6.  (^AN animations -- used by the intro /
 // enemy-showcase pages, not the mission briefings -- are still a stub below.)
 // -------------------------------------------------------------------------
-static FTexture *TP_ShapeTexture(int shapenum)
+static FTexture *TP_ShapeTexture(int shapenum, bool *scaled = NULL)
 {
+	const char *name = NULL;
+	bool sc = false;
+	char namebuf[16];
+
 	if (shapenum >= 144 && shapenum <= 149)
 	{
-		char namebuf[16];
+		// C_EPISODE1..6PIC -- the per-mission location pics (pis_pic).
 		snprintf(namebuf, sizeof(namebuf), "M_EPIS%d", shapenum - 144 + 1);
-		FTextureID id = TexMan.CheckForTexture(namebuf, FTexture::TEX_Any);
-		if (id.isValid())
-			return TexMan(id);
+		name = namebuf;
 	}
-	return NULL;
+	else if (shapenum == 53)
+	{
+		// AOG piShapeTable[53] = SPR_VITAL_STAND (pis_scaled) -- the Projection
+		// Generator icon inline in the Mission 6 briefing objective.
+		name = "EXDEA0";
+		sc = true;
+	}
+
+	if (scaled)
+		*scaled = sc;
+	if (!name)
+		return NULL;
+	FTextureID id = TexMan.CheckForTexture(name, FTexture::TEX_Any);
+	return id.isValid() ? TexMan(id) : NULL;
 }
 
 int16_t TP_DrawShape(
@@ -1308,12 +1323,14 @@ int16_t TP_DrawShape(
 	int16_t shapenum,
 	pisType shapetype)
 {
-	FTexture *tex = TP_ShapeTexture(shapenum);
+	bool scaled = false;
+	FTexture *tex = TP_ShapeTexture(shapenum, &scaled);
 	if (!tex)
-		return 0;	// index not a mapped pic -- skip, don't draw garbage
+		return 0;	// index not a mapped shape -- skip, don't draw garbage
 
-	// VGAGRAPH pics are byte (8px) aligned, as in bstone's TP_DrawShape.
-	if (shapetype == pis_pic || shapetype == pis_latchpic)
+	// VGAGRAPH pics are byte (8px) aligned in bstone's TP_DrawShape; scaled
+	// sprites (the ^SH035 Projection Generator) are not.
+	if (!scaled)
 		x = static_cast<int16_t>((x + 7) & ~7);
 
 	VWB_DrawGraphic(tex, x, y, MENU_NONE);

@@ -134,6 +134,56 @@ private:
 
 DBaseStatusBar *CreateStatusBar_Blake() { return new BlakeStatusBar(); }
 
+// The DOS "ATTACKING:" info-area message per enemy class (bstone ActorInfoMsg,
+// 3d_msgs.cpp, AOG variant) -- the ^AN icon / ^FC colour codes stripped (the
+// info area draws plain text + \r breaks), the name layout kept verbatim.
+namespace {
+struct BlakeAttackMsg { const char* className; const char* msg; };
+const BlakeAttackMsg blakeAttackMsgs[] = {
+	{ "RentACop",                "\r\r  ATTACKING:\rSECTOR PATROL" },
+	{ "SectorGuard",             "\r\r  ATTACKING:\r SECTOR GUARD" },
+	{ "ProGuard",                "\r\r  ATTACKING:\rSTAR SENTINEL" },
+	{ "TechWarrior",             "\r\r  ATTACKING:\r TECH WARRIOR" },
+	{ "STARTrooper",             "\r\r  ATTACKING:\r STAR TROOPER" },
+	{ "AlienProtector",          "  ATTACKING:\r    ALIEN\r  PROTECTOR" },
+	{ "GeneralScientist",        "\r\r  ATTACKING:\r   BIO-TECH" },
+	{ "FloatingBomb",            "  ATTACKING:\rPERSCAN DRONE\r  EXPLOSION" },
+	{ "VolatileTransport",       "  ATTACKING:\r VOLATILE MAT.\r  TRANSPORT\r  EXPLOSION" },
+	{ "GeneticGuard",            "  ATTACKING:\r HIGH-SECURITY\r GENETIC GUARD" },
+	{ "CyborgWarrior",           "  ATTACKING:\r   CYBORG\r   WARRIOR" },
+	{ "SpiderMutant",            "  ATTACKING:\r   SPIDER\r   MUTANT" },
+	{ "SpiderMutantMorphed",     "  ATTACKING:\r   SPIDER\r   MUTANT" },
+	{ "AcidDragon",              "\r  ATTACKING:\r ACID DRAGON" },
+	{ "BreatherBeast",           "  ATTACKING:\r   BREATHER\r    BEAST" },
+	{ "BioMechGuardian",         "  ATTACKING:\r   BIO-MECH\r   GUARDIAN" },
+	{ "ReptilianWarrior",        "  ATTACKING:\r  REPTILIAN\r   WARRIOR" },
+	{ "ReptilianWarriorMorphed", "  ATTACKING:\r  REPTILIAN\r   WARRIOR" },
+	{ "MechSentinel",            "  ATTACKING:\r EXPERIMENTAL\r MECH-SENTINEL" },
+	{ "MutantHuman",             "  ATTACKING:\r EXPERIMENTAL\r MUTANT HUMAN" },
+	{ "MutantHumanMorphed",      "  ATTACKING:\r EXPERIMENTAL\r MUTANT HUMAN" },
+	{ "SmallCanisterAlien",      "  ATTACKING:\r EXPERIMENTAL\r GENETIC ALIEN" },
+	{ "LargeCanisterAlien",      "  ATTACKING:\r EXPERIMENTAL\r GENETIC ALIEN" },
+	{ "GurneyMutant",            "  ATTACKING:\r   MUTATED\r    GUARD" },
+	{ "PODAlien",                "\r  ATTACKING:\r  POD ALIEN" },
+	{ "CeilingTurretRotate",     "  ATTACKING:\r  AUTOMATED\rHEAVY ARMORED\r ROBOT TURRET" },
+	{ "CeilingTurretStatic",     "  ATTACKING:\r  AUTOMATED\rHEAVY ARMORED\r ROBOT TURRET" },
+	{ "GiantStalker",            "  ATTACKING:\r  THE GIANT\r   STALKER" },
+};
+}
+
+// Returns the attacker's "ATTACKING:" info message, or NULL if it's not a mapped
+// Blake enemy (so Wolfenstein and unmapped actors show nothing).
+const char *Blake_AttackerInfoMsg(AActor *attacker)
+{
+	if (!attacker)
+		return NULL;
+	const FName cls = attacker->GetClass()->GetName();
+	for (unsigned i = 0; i < countof(blakeAttackMsgs); ++i)
+		if (cls == FName(blakeAttackMsgs[i].className))
+			return blakeAttackMsgs[i].msg;
+	return NULL;
+}
+
 void BlakeStatusBar::DrawLed(double percent, double x, double y) const
 {
 	static FTextureID LED[2][3] = {

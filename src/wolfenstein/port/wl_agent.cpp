@@ -346,6 +346,16 @@ void player_t::TakeDamage (int points, AActor *attacker)
 	if (points > 0)
 		PlaySoundLocActor("player/pain", mo);
 
+	// Show the attacking enemy in the LINC info area (bstone 3d_agent.cpp:1015;
+	// priority 0x200 = MP_TAKE_DAMAGE, 300 tics = DISPLAY_MSG_STD_TIME).  Returns
+	// NULL for non-Blake / unmapped attackers, so Wolfenstein shows nothing.
+	if (attacker && attacker != mo && (attacker->flags & FL_ISMONSTER))
+	{
+		extern const char *Blake_AttackerInfoMsg(AActor *attacker);
+		if (const char *amsg = Blake_AttackerInfoMsg(attacker))
+			StatusBar->DisplayInfoMessage(amsg, 0x200, 300);
+	}
+
 	StatusBar->UpdateFace(points);
 	StatusBar->DrawStatusBar();
 }

@@ -304,12 +304,17 @@ void player_t::GiveExtraMan (int amount)
 
 void player_t::GivePoints (int32_t points)
 {
+	int32_t scoreBefore = score;
+	int livesBefore = lives;
 	score += FixedMul(points, gamestate.difficulty->ScoreMultiplier);
 	while (score >= nextextra)
 	{
 		nextextra += gameinfo.ExtraPoints;
 		GiveExtraMan (1);
 	}
+	// Blake pinball score bonuses (no-op for other games).
+	extern void Blake_CheckPinballBonus(int32_t scoreBefore, int32_t scoreAfter, bool gainedLife);
+	Blake_CheckPinballBonus(scoreBefore, score, lives > livesBefore);
 }
 
 /*

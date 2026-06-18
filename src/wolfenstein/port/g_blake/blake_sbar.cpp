@@ -37,6 +37,7 @@
 #include "a_keys.h"
 #include "colormatcher.h"
 #include "id_ca.h"
+#include "id_sd.h"
 #include "id_us.h"
 #include "id_vh.h"
 #include "g_mapinfo.h"
@@ -103,6 +104,10 @@ public:
 	void NewGameMessage() { StartupMsgPending = true; }
 
 	void Tick();
+
+	// Drains one queued pinball bonus into the info area when it's free
+	// (bstone DisplayPinballBonus).  Public so GivePoints' check can poke it.
+	void DrainPinballBonus();
 
 	void DisplayInfoMessage(const char *msg, int priority, int tics)
 	{
@@ -298,6 +303,96 @@ void Blake_WeaponSelectMsg(bool available)
 	StatusBar->DisplayInfoMessage(available
 		? "\r\r   SELECTED WEAPON\r ACTIVATED AND READY."
 		: "\r\r  SELECTED WEAPON NOT\r  CURRENTLY AVAILABLE.", 0x200, 300);
+}
+
+// --- Pinball score bonuses (bstone CheckPinballBonus / DisplayPinballBonus) --
+// The DOS game awards "pinball" bonuses at score milestones, shown in the info
+// area above all gameplay messages (MP_PINBALL_BONUS) and drained one at a time
+// as the area frees up.  State is per-level and transient (not serialised): a
+// bonus queued but not yet shown is lost on save/reload -- a minor cosmetic
+// difference from bstone's saved per-level queue.
+//
+// Implemented here: the three score-driven bonuses (score rolled past the 7-
+// digit display, half-million "great score", and each earned extra life).  The
+// level-tally bonuses (all enemies/points/informants) and the Guardian-Alien
+// bonus are intentionally not wired -- they need a faithful per-level point
+// total (the port only counts treasure items) and a boss class the port lacks.
+#define MP_PINBALL_BONUS 0x3000
+
+namespace {
+struct PinballBonusInfo { int bit; const char *text; int points; bool recurring; };
+const PinballBonusInfo pinballBonuses[] = {
+	// bit order == display priority (bstone B_* bit order / PinballBonus table).
+	{ 0x02, "^FC57\rROLLED SCORE DISPLAY!\r^FCA6   FULL AMMO BONUS!\r  FULL HEALTH BONUS!\r1,000,000 POINT BONUS!", 1000000, true  }, // B_SCORE_ROLLED
+	{ 0x04, "^FC57\r     GREAT SCORE!\r^FCA6   FULL AMMO BONUS!\r  FULL HEALTH BONUS!\r1,000,000 POINT BONUS!",     1000000, false }, // B_ONE_MILLION
+	{ 0x08, "^FC57\r\r     GREAT SCORE!\r^FCA6  EXTRA LIFE BONUS!\r",                                               0,       true  }, // B_EXTRA_MAN
+};
+uint16_t pinballQueue = 0;	// bonuses earned, waiting to be shown
+uint16_t pinballShown = 0;	// non-recurring bonuses already shown this level
+
+// Full weapon charge + health (bstone B_MillFunc / B_RollFunc: GiveAmmo 99,
+// HealSelf 99).  Only the weapon charge (ChargeUnit) is topped up -- the food-
+// token currency (ConcessionCoin) is a separate Ammo subclass and is left be.
+void Blake_FullAmmoHealth()
+{
+	player_t &p = players[ConsolePlayer];
+	if(!p.mo)
+		return;
+	p.health = 100;
+	static const ClassDef * const chargeCls = ClassDef::FindClass("ChargeUnit");
+	for(AInventory *item = p.mo->inventory; item; item = item->inventory)
+		if(item->GetClass()->IsDescendantOf(chargeCls))
+			item->amount = item->maxamount;
+}
+}
+
+// Clears the per-level pinball queue (called on floor entry).
+void Blake_PinballReset()
+{
+	pinballQueue = 0;
+	pinballShown = 0;
+}
+
+void BlakeStatusBar::DrainPinballBonus()
+{
+	if(!pinballQueue || InfoMessagePriority >= MP_PINBALL_BONUS)
+		return;
+	for(unsigned i = 0; i < countof(pinballBonuses); ++i)
+	{
+		const PinballBonusInfo &b = pinballBonuses[i];
+		if(!(pinballQueue & b.bit))
+			continue;
+		DisplayInfoMessage(b.text, MP_PINBALL_BONUS, 7*60);
+		SD_PlaySound("blake/rollscore");
+		if(!b.recurring)
+			pinballShown |= b.bit;
+		pinballQueue &= ~b.bit;
+		// Award the bonus points (re-enters GivePoints -> CheckPinballBonus, but
+		// the message we just set blocks a nested drain, so further bonuses just
+		// queue and wait for the next Tick).
+		players[ConsolePlayer].GivePoints(b.points);
+		if(b.bit == 0x02 || b.bit == 0x04)	// score rolled / one million
+			Blake_FullAmmoHealth();
+		break;	// one bonus per drain; the rest wait until this one expires
+	}
+}
+
+// Queues score-milestone bonuses (bstone CheckPinballBonus).  Blake-only.
+// Called from player_t::GivePoints with the pre/post score and whether the
+// extra-man threshold actually granted a life this call.
+void Blake_CheckPinballBonus(int32_t scoreBefore, int32_t scoreAfter, bool gainedLife)
+{
+	if(!IWad::CheckGameFilter("Blake"))
+		return;
+	const int32_t MAX_DISPLAY_SCORE = 9999999;
+	if(scoreBefore <= MAX_DISPLAY_SCORE && scoreAfter > MAX_DISPLAY_SCORE && !(pinballShown & 0x02))
+		pinballQueue |= 0x02;	// B_SCORE_ROLLED (recurring -> never in shown)
+	if(scoreBefore < 500000 && scoreAfter >= 500000 && !(pinballShown & 0x04))
+		pinballQueue |= 0x04;	// B_ONE_MILLION
+	if(gainedLife)
+		pinballQueue |= 0x08;	// B_EXTRA_MAN
+	if(pinballQueue)
+		static_cast<BlakeStatusBar *>(StatusBar)->DrainPinballBonus();
 }
 
 void BlakeStatusBar::DrawLed(double percent, double x, double y) const
@@ -876,6 +971,9 @@ void BlakeStatusBar::Tick()
 		InfoMessage = "";
 		InfoMessagePriority = 0;
 	}
+
+	// Drain a queued pinball bonus once the info area is free.
+	DrainPinballBonus();
 
 	// AoG health monitor (bstone DrawHealthMonitor). ECG segment indices:
 	// 0 silence, 1-8 shape #1 (66%+), 9-17 shape #2 (33-65%), 18-27 shape #3.

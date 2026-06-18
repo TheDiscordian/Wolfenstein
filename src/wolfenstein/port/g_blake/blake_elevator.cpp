@@ -136,6 +136,9 @@ void Blake_FloorEntered()
 {
 	if(!IsBlake() || !levelInfo)
 		return;
+	// Per-level pinball bonus queue resets on each floor entry.
+	extern void Blake_PinballReset();
+	Blake_PinballReset();
 	const int lvl = levelInfo->LevelNumber;
 	if(lvl < 1 || lvl >= (int)countof(floorMeta))
 		return;

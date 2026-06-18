@@ -845,6 +845,17 @@ int Menu::handle()
 
 	do
 	{
+		// Blake's LINC menus cycle palette 0xF0-0xFE each frame (the terminal
+		// "shimmer" that animates the mission pics).  Re-present only when the
+		// rotation actually advanced this tic.
+		if (MenuStyle == MENUSTYLE_Blake)
+		{
+			extern bool CycleColors();	// jm_tp.cpp
+			CalcTics();
+			if (CycleColors())
+				VW_UpdateScreen();
+		}
+
 		//
 		// CHANGE GUN SHAPE
 		//

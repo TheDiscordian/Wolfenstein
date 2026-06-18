@@ -157,9 +157,44 @@ static void VWB_Bar(int x, int y, int w, int h, uint8_t color)
 	VWB_Clear(color, dx, dy, dx + dw, dy + dh);
 }
 
-// Host has no VGA palette cycling; the presenter calls CycleColors during
-// pauses purely cosmetically.  No-op.
-static inline void CycleColors() {}
+// CycleColors: the DOS LINC "shimmer".  Rotate palette indices 0xF0-0xFE in
+// five sub-ranges each frame (bstone 3d_main.cpp), driven by `tics`.  The
+// backend re-applies the palette through a per-index LUT (device) / re-blits
+// the indexed buffer (PC) on the next present, so a static menu/briefing page
+// recolours -- this is what animates the mission pics and the briefing text.
+bool CycleColors()
+{
+	static const struct { uint8_t init_delay, first, last; } crng[5] = {
+		{  7, 0xF0, 0xF1 },
+		{ 15, 0xF2, 0xF3 },
+		{ 30, 0xF4, 0xF5 },
+		{ 10, 0xF6, 0xF9 },
+		{ 12, 0xFA, 0xFE },
+	};
+	static uint8_t delay_count[5];
+
+	PalEntry *pal = screen->GetPalette();
+	bool changed = false;
+	for (int r = 0; r < 5; ++r)
+	{
+		if ((uint8_t)tics >= delay_count[r])
+		{
+			PalEntry last = pal[crng[r].last];				// rotate forward, wrap last->first
+			for (int i = crng[r].last; i > crng[r].first; --i)
+				pal[i] = pal[i - 1];
+			pal[crng[r].first] = last;
+			delay_count[r] = crng[r].init_delay;
+			changed = true;
+		}
+		else
+		{
+			delay_count[r] -= (uint8_t)tics;
+		}
+	}
+	if (changed)
+		screen->UpdatePalette();
+	return changed;
+}
 
 // -------------------------------------------------------------------------
 // ShPrint -- shadowed print (3d_inter.cpp:55).  Draws the string offset by

@@ -90,11 +90,13 @@ public:
 		// InitInfoMsg path): armed by NewGameMessage() when a game is (re)started
 		// or the player respawns after dying, and shown here, after the clear
 		// above, so it survives into the level.  Priority 0 leaves it overridable
-		// by any gameplay message, matching the original's "system" message.
+		// by any gameplay message, matching the original's "system" message; the
+		// persist count keeps it up until then instead of decaying to idle
+		// (bstone shows it with DisplayTime 0).
 		if(StartupMsgPending)
 		{
 			StartupMsgPending = false;
-			DisplayInfoMessage("R.E.B.A.\rAGENT: BLAKE STONE\rALL SYSTEMS READY.", 0, 300);
+			DisplayInfoMessage("R.E.B.A.\rAGENT: BLAKE STONE\rALL SYSTEMS READY.", 0, INFOMSG_PERSIST);
 		}
 	}
 
@@ -116,6 +118,11 @@ protected:
 	void DrawInfoArea();
 	void DrawLed(double percent, double x, double y) const;
 	void DrawString(FFont *font, const char* string, double x, double y, bool shadow, EColorRange color=CR_UNTRANSLATED, bool center=false) const;
+
+	// A negative tic count means the message persists until a higher- or
+	// equal-priority message replaces it, never reverting to idle on the clock
+	// (bstone DISPLAY_MSG / DisplayTime 0, e.g. the start-game greeting).
+	static const int INFOMSG_PERSIST = -1;
 
 private:
 	int CurrentScore;
@@ -420,7 +427,7 @@ void BlakeStatusBar::DrawStatusBar()
 	// so keying on the timer churned the cache the whole time a message was up.
 	// Idle (no message) keys to 0; the token count is in sbarKey[5].
 	uint32_t infoKey = 0;
-	if(InfoMessageTics > 0)
+	if(InfoMessageTics != 0)
 	{
 		infoKey = 0x811c9dc5u;
 		for(const char *c = InfoMessage.GetChars();c != NULL && *c;++c)
@@ -715,7 +722,7 @@ void BlakeStatusBar::DrawInfoArea()
 	}
 
 	FString msg;
-	if(InfoMessageTics > 0)
+	if(InfoMessageTics != 0)
 		msg = InfoMessage;
 	else
 	{

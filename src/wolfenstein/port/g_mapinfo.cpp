@@ -591,7 +591,7 @@ protected:
 
 GameInfo gameinfo;
 
-GameInfo::GameInfo() : PageIndexText("pg %d of %d"), ExtraPoints(40000)
+GameInfo::GameInfo() : PageIndexText("pg %d of %d"), ExtraPoints(40000), MaxLives(9)
 {
 }
 
@@ -695,6 +695,8 @@ protected:
 		}
 		else if(key.CompareNoCase("extrapoints") == 0)
 			ParseIntAssignment(gameinfo.ExtraPoints);
+		else if(key.CompareNoCase("maxlives") == 0)
+			ParseIntAssignment(gameinfo.MaxLives);
 		else if(key.CompareNoCase("signon") == 0)
 			ParseStringAssignment(gameinfo.SignonLump);
 		else if(key.CompareNoCase("menufade") == 0)

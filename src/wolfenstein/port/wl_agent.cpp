@@ -288,8 +288,8 @@ void player_t::GiveExtraMan (int amount)
 		lives += amount;
 		if (lives < 0)
 			lives = 0;
-		else if(lives > 9)
-			lives = 9;
+		else if(lives > gameinfo.MaxLives)
+			lives = gameinfo.MaxLives;
 	}
 	PlaySoundLocActor ("misc/1up", mo);
 }

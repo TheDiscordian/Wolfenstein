@@ -101,6 +101,7 @@ public:
 	FName	PushwallSoundSequence;
 	fixed	GibFactor;
 	int		ExtraPoints;
+	int		MaxLives;		// extra-man cap (Wolf 9, Blake 4)
 
 	TArray<FName>	PlayerClasses;
 	TArray<FString>	QuitMessages;

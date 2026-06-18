@@ -302,7 +302,7 @@ void player_t::GiveExtraMan (int amount)
 ===============
 */
 
-void player_t::GivePoints (int32_t points)
+void player_t::GivePoints (int32_t points, bool addToStats)
 {
 	int32_t scoreBefore = score;
 	int livesBefore = lives;
@@ -312,9 +312,10 @@ void player_t::GivePoints (int32_t points)
 		nextextra += gameinfo.ExtraPoints;
 		GiveExtraMan (1);
 	}
-	// Blake pinball score bonuses (no-op for other games).
-	extern void Blake_CheckPinballBonus(int32_t scoreBefore, int32_t scoreAfter, bool gainedLife);
-	Blake_CheckPinballBonus(scoreBefore, score, lives > livesBefore);
+	// Blake pinball score bonuses (no-op for other games).  addToStats=false for
+	// bonus / electro / Goldstern awards keeps them out of the per-level total.
+	extern void Blake_CheckPinballBonus(int32_t scoreBefore, int32_t scoreAfter, bool gainedLife, bool addToStats);
+	Blake_CheckPinballBonus(scoreBefore, score, lives > livesBefore, addToStats);
 }
 
 /*

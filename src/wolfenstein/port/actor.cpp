@@ -274,14 +274,18 @@ void AActor::Destroy()
 static FRandom pr_dropitem("DropItem");
 void AActor::Die()
 {
+	// Blake: electro-spheres/alien and Goldstern award points but are excluded
+	// from the per-level points total, so they don't count toward accum either.
+	extern bool Blake_PointsExcluded(AActor *a);
+	const bool addStats = !Blake_PointsExcluded(this);
 	if(target && target->player)
-		target->player->GivePoints(points);
+		target->player->GivePoints(points, addStats);
 	else if(points)
 	{
 		// The targetting system may need some refinement, so if we don't have
 		// a usable target to give points to then we should give to player 1
 		// and possibly investigate.
-		players[0].GivePoints(points);
+		players[0].GivePoints(points, addStats);
 		NetDPrintf("%s %d points with no target\n", __FUNCTION__, points);
 	}
 

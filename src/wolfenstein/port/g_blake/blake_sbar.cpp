@@ -330,9 +330,27 @@ const PinballBonusInfo pinballBonuses[] = {
 	{ 0x04, "^FC57\r     GREAT SCORE!\r^FCA6   FULL AMMO BONUS!\r  FULL HEALTH BONUS!\r1,000,000 POINT BONUS!",     1000000, false }, // B_ONE_MILLION
 	{ 0x08, "^FC57\r\r     GREAT SCORE!\r^FCA6  EXTRA LIFE BONUS!\r",                                               0,       true  }, // B_EXTRA_MAN
 	{ 0x10, "^FC57\r\r ALL ENEMY DESTROYED!\r^FCA6  50,000 POINT BONUS!\r",                                        50000,   false }, // B_ENEMY_DESTROYED
+	{ 0x20, "^FC57\r\r ALL POINTS COLLECTED!\r^FCA6  50,000 POINT BONUS!\r",                                       50000,   false }, // B_TOTAL_POINTS
+	{ 0x40, "^FC57\r\r ALL INFORMANTS ALIVE!\r^FCA6  50,000 POINT BONUS!\r",                                       50000,   false }, // B_INFORMANTS_ALIVE
 };
 uint16_t pinballQueue = 0;	// bonuses earned, waiting to be shown
 uint16_t pinballShown = 0;	// non-recurring bonuses already shown this level
+int32_t levelPointsTotal = 0;	// bstone total_points: every award available this floor
+int32_t levelPointsAccum = 0;	// bstone accum_points: points actually earned this floor
+
+// Dormant spawner -> live monster point fixup (bstone counts the EVENTUAL
+// monster's value in total_points, since these carry `points 0` and morph into
+// a point-bearing monster via A_SpawnItemEx).  Values == bstone actor_points.
+struct WaitFormPoints { const char *className; int points; };
+const WaitFormPoints blakeWaitForms[] = {
+	{ "SpiderMutantMorphed",     5000 },	// -> SpiderMutant
+	{ "ReptilianWarriorMorphed", 8000 },	// -> ReptilianWarrior
+	{ "MutantHumanMorphed",      6055 },	// -> MutantHuman
+	{ "SmallAlienCanister",      3750 },	// -> SmallCanisterAlien
+	{ "LargeAlienCanister",      6050 },	// -> LargeCanisterAlien
+	{ "GurneyMutantSleep",       3750 },	// -> GurneyMutant
+	{ "PODAlienEgg",             5075 },	// -> PODAlien
+};
 
 // Full weapon charge + health (bstone B_MillFunc / B_RollFunc: GiveAmmo 99,
 // HealSelf 99).  Only the weapon charge (ChargeUnit) is topped up -- the food-
@@ -350,11 +368,67 @@ void Blake_FullAmmoHealth()
 }
 }
 
-// Clears the per-level pinball queue (called on floor entry).
+// bstone keeps these out of BOTH total_points and accum_points: electro-spheres
+// and the electro alien are dynamically/specially spawned (3d_game.cpp:1099 sets
+// new_actor=nullptr so they never hit the load-time total), and Goldstern/Goldfire
+// is add_to_stats=false (3d_state.cpp:1321).  Excluding them from our total AND
+// our accum keeps the ALL-POINTS bonus consistent.  Called from AActor::Die too.
+bool Blake_PointsExcluded(AActor *a)
+{
+	if(!a)
+		return false;
+	static const ClassDef * const ex[] = {
+		ClassDef::FindClass("ElectroSphere"), ClassDef::FindClass("ElectroAlien"),
+		ClassDef::FindClass("DrGoldfire"),    ClassDef::FindClass("MorphedGoldfire"),
+	};
+	for(unsigned i = 0; i < countof(ex); ++i)
+		if(ex[i] && a->IsKindOf(ex[i]))
+			return true;
+	return false;
+}
+
+// Sums every point award available on the floor (bstone total_points), computed
+// at floor entry after SpawnThings(): treasure value + live-monster points, with
+// dormant spawners counting their morphed monster's value and the excluded
+// classes left out.
+static int32_t Blake_ComputeLevelPointsTotal()
+{
+	int32_t total = 0;
+	static const ClassDef * const scoreItemCls = ClassDef::FindClass("ScoreItem");
+	for(AActor::Iterator it = AActor::GetIterator(); it.Next();)
+	{
+		AActor *a = it;
+		if(!a)
+			continue;
+		if(scoreItemCls && a->IsKindOf(scoreItemCls))	// treasure: value is in amount
+		{
+			total += static_cast<AInventory *>(a)->amount;
+			continue;
+		}
+		const FName cls = a->GetClass()->GetName();
+		bool waited = false;
+		for(unsigned i = 0; i < countof(blakeWaitForms); ++i)
+			if(cls == FName(blakeWaitForms[i].className))
+			{
+				total += blakeWaitForms[i].points;
+				waited = true;
+				break;
+			}
+		if(waited)
+			continue;
+		if(a->points && !Blake_PointsExcluded(a))
+			total += a->points;
+	}
+	return total;
+}
+
+// Clears the per-level pinball state (called on floor entry, after SpawnThings).
 void Blake_PinballReset()
 {
 	pinballQueue = 0;
 	pinballShown = 0;
+	levelPointsAccum = 0;
+	levelPointsTotal = IWad::CheckGameFilter("Blake") ? Blake_ComputeLevelPointsTotal() : 0;
 }
 
 // Guardian-Alien bonus (bstone 3d_state.cpp:1216: ActivatePinballBonus in the
@@ -401,8 +475,9 @@ void BlakeStatusBar::DrainPinballBonus()
 		pinballQueue &= ~b.bit;
 		// Award the bonus points (re-enters GivePoints -> CheckPinballBonus, but
 		// the message we just set blocks a nested drain, so further bonuses just
-		// queue and wait for the next Tick).
-		players[ConsolePlayer].GivePoints(b.points);
+		// queue and wait for the next Tick).  add_to_stats=false: bonus points
+		// never count toward the per-level points total (bstone GivePoints(,false)).
+		players[ConsolePlayer].GivePoints(b.points, false);
 		if(b.bit == 0x02 || b.bit == 0x04)	// score rolled / one million
 			Blake_FullAmmoHealth();
 		if(b.bit == 0x02)			// bstone B_RollFunc: start the "-ROLL-" display
@@ -412,12 +487,15 @@ void BlakeStatusBar::DrainPinballBonus()
 }
 
 // Queues score-milestone bonuses (bstone CheckPinballBonus).  Blake-only.
-// Called from player_t::GivePoints with the pre/post score and whether the
-// extra-man threshold actually granted a life this call.
-void Blake_CheckPinballBonus(int32_t scoreBefore, int32_t scoreAfter, bool gainedLife)
+// Called from player_t::GivePoints with the pre/post score, whether the extra-
+// man threshold granted a life, and whether this award counts toward the per-
+// level points total (add_to_stats: false for bonus/electro/goldstern awards).
+void Blake_CheckPinballBonus(int32_t scoreBefore, int32_t scoreAfter, bool gainedLife, bool addToStats)
 {
 	if(!IWad::CheckGameFilter("Blake"))
 		return;
+	if(addToStats)
+		levelPointsAccum += scoreAfter - scoreBefore;	// ScoreMultiplier==1 for Blake
 	const int32_t MAX_DISPLAY_SCORE = 9999999;
 	if(scoreBefore <= MAX_DISPLAY_SCORE && scoreAfter > MAX_DISPLAY_SCORE && !(pinballShown & 0x02))
 		pinballQueue |= 0x02;	// B_SCORE_ROLLED (recurring -> never in shown)
@@ -1064,6 +1142,24 @@ void BlakeStatusBar::Tick()
 		&& IWad::CheckGameFilter("Blake")
 		&& !(pinballShown & 0x10) && !(pinballQueue & 0x10))
 		pinballQueue |= 0x10;	// B_ENEMY_DESTROYED
+
+	// All-points-collected bonus (bstone B_TOTAL_POINTS).  Edge-detected here for
+	// the same reason as 0x10: treasurecount/points are tallied after GivePoints.
+	if(levelPointsTotal > 0 && levelPointsAccum >= levelPointsTotal
+		&& !(pinballShown & 0x20) && !(pinballQueue & 0x20))
+		pinballQueue |= 0x20;	// B_TOTAL_POINTS
+
+	// All-informants-alive bonus (bstone B_INFORMANTS_ALIVE): gated on the enemy
+	// AND points bonuses already shown (bstone BONUS_SHOWN & (0x10|0x20)).
+	if(levelInfo && (pinballShown & 0x30) == 0x30
+		&& !(pinballShown & 0x40) && !(pinballQueue & 0x40))
+	{
+		extern int Blake_InformantsTotal(int lvl);
+		extern int Blake_InformantsAlive(int lvl);
+		const int lvl = levelInfo->LevelNumber;
+		if(Blake_InformantsTotal(lvl) > 0 && Blake_InformantsAlive(lvl) >= Blake_InformantsTotal(lvl))
+			pinballQueue |= 0x40;	// B_INFORMANTS_ALIVE
+	}
 
 	// Drain a queued pinball bonus once the info area is free.
 	DrainPinballBonus();

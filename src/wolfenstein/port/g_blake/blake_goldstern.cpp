@@ -299,10 +299,12 @@ ACTION_FUNCTION(A_GoldfireDie)
 	gold.goldSpawned = false;
 	gold.waitTime = MIN_GOLDIE_WAIT + pr_goldstern(MAX_GOLDIE_WAIT - MIN_GOLDIE_WAIT);
 
+	// add_to_stats=false: Goldstern is excluded from the per-level points total
+	// (bstone 3d_state.cpp:1321), so its kill must not count toward accum either.
 	if(self->target && self->target->player)
-		self->target->player->GivePoints(GOLDIE_POINTS);
+		self->target->player->GivePoints(GOLDIE_POINTS, false);
 	else
-		players[0].GivePoints(GOLDIE_POINTS);
+		players[0].GivePoints(GOLDIE_POINTS, false);
 
 	// AOG boss floor: the first kill drops the gold access card.
 	if(EpisodeInfo::GetNumEpisodes() > 1 && Mapon() == 9 && !bossKeyDropped)

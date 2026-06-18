@@ -94,7 +94,7 @@ extern class player_t
 		AActor	*FindTarget();
 		inline unsigned int GetPlayerNum() const;
 		void	GiveExtraMan(int amount);
-		void	GivePoints(int32_t points);
+		void	GivePoints(int32_t points, bool addToStats=true);
 		size_t	PropagateMark();
 		void	Reborn();
 		void	Serialize(FArchive &arc);

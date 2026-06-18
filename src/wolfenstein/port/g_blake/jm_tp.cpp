@@ -1333,10 +1333,11 @@ int16_t TP_DrawShape(
 	if (!scaled)
 		x = static_cast<int16_t>((x + 7) & ~7);
 
+	// Draw the ^BX/^SP frame (if set) behind the shape and get the framed
+	// width, then the shape, then advance the cursor (bstone TP_DrawShape).
+	int16_t width = TP_BoxAroundShape(x, y, shapenum, shapetype);
 	VWB_DrawGraphic(tex, x, y, MENU_NONE);
-
-	int16_t width = static_cast<int16_t>(tex->GetScaledWidth());
-	cur_x = static_cast<int16_t>(cur_x + width);	// advance past the shape (bstone)
+	cur_x = static_cast<int16_t>(cur_x + width);
 	return x;
 }
 
@@ -1353,14 +1354,39 @@ int16_t TP_BoxAroundShape(
 	uint16_t shapenum,
 	pisType shapetype)
 {
-	// Measure-only (the fl_boxshape/fl_shadowpic frames aren't used by the
-	// briefings): return the shape width so ^CE centring and cursor advance
-	// account for the picture.
-	(void)x1;
-	(void)y1;
+	// Returns the shape width (+ any box/shadow padding) for ^CE centring and
+	// cursor advance, and draws the ^BX (fl_boxshape) frame / ^SP (fl_shadowpic)
+	// shadow around it, mirroring bstone TP_BoxAroundShape.  Called with x1<0 by
+	// the centring pre-pass (measure only -- the >=0 guards skip drawing).
 	(void)shapetype;
 	FTexture *tex = TP_ShapeTexture(shapenum);
-	return tex ? static_cast<int16_t>(tex->GetScaledWidth()) : 0;
+	if (!tex)
+		return 0;
+
+	int x2 = x1 + tex->GetScaledWidth() - 1;
+	int y2 = y1 + tex->GetScaledHeight() - 1;
+
+	if (flags & fl_boxshape)
+	{
+		x1 -= 1; x2 += 1; y1 -= 1; y2 += 1;
+		if (x1 >= 0 && y1 >= 0)
+		{
+			VWB_Bar(x1, y1, x2 - x1 + 1, 1, static_cast<uint8_t>(ltcolor));	// top
+			VWB_Bar(x1, y2, x2 - x1 + 1, 1, static_cast<uint8_t>(dkcolor));	// bottom
+			VWB_Bar(x1, y1, 1, y2 - y1 + 1, static_cast<uint8_t>(ltcolor));	// left
+			VWB_Bar(x2, y1, 1, y2 - y1 + 1, static_cast<uint8_t>(dkcolor));	// right
+		}
+	}
+	if (flags & fl_shadowpic)
+	{
+		x2 += 1; y2 += 1;
+		if (x1 >= 0 && y1 >= 0)
+		{
+			VWB_Bar(x1 + 1, y2, x2 - (x1 + 1) + 1, 1, static_cast<uint8_t>(shcolor));	// bottom shadow
+			VWB_Bar(x2, y1 + 1, 1, y2 - (y1 + 1) + 1, static_cast<uint8_t>(shcolor));	// right shadow
+		}
+	}
+	return static_cast<int16_t>(x2 - x1 + 1);
 }
 
 void TP_PurgeAllGfx()

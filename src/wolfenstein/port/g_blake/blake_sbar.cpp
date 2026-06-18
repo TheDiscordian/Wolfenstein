@@ -48,6 +48,7 @@
 #include "wl_game.h"
 #include "wl_iwad.h"
 #include "wl_play.h"
+#include "r_sprites.h"
 #include "xs_Float.h"
 #include "thingdef/thingdef.h"
 #include "of_ecwolf_gpu.h"
@@ -66,6 +67,7 @@ public:
 	{
 		memset(EcgLegend, 0, sizeof(EcgLegend));
 		memset(EcgSegments, 0, sizeof(EcgSegments));
+		InfoMessageIcon.SetInvalid();
 	}
 
 	void DrawStatusBar();
@@ -118,7 +120,11 @@ public:
 		InfoMessage = msg;
 		InfoMessagePriority = priority;
 		InfoMessageTics = tics;
+		InfoMessageIcon.SetInvalid();	// pickups re-set it via SetInfoMessageIcon
 	}
+
+	// Sets the item icon drawn beside the current info message (bstone ^SH).
+	void SetInfoMessageIcon(FTextureID id) { InfoMessageIcon = id; }
 
 protected:
 	void DrawInfoArea();
@@ -136,6 +142,7 @@ private:
 	FString InfoMessage;
 	int InfoMessagePriority;
 	int InfoMessageTics;
+	FTextureID InfoMessageIcon;   // item icon beside the message (bstone ^SH); invalid = none
 	bool StartupMsgPending;   // show the new-game greeting on the next NewGame()
 
 	// AoG health monitor state (bstone DrawHealthMonitor).
@@ -238,6 +245,16 @@ const char *Blake_AttackerInfoMsg(AActor *attacker)
 	return NULL;
 }
 
+// Sets the current info-message icon to a class's spawn sprite (bstone ^SH/^AN).
+// Free function so non-Blake TUs (wl_agent's attack path) can set it without the
+// BlakeStatusBar type.  Must be called AFTER DisplayInfoMessage (which clears it).
+void Blake_SetInfoIcon(const ClassDef *cls)
+{
+	extern DBaseStatusBar *StatusBar;
+	if (StatusBar && IWad::CheckGameFilter("Blake"))
+		static_cast<BlakeStatusBar *>(StatusBar)->SetInfoMessageIcon(R_GetClassIcon(cls));
+}
+
 // LINC "ACCESS DENIED" message when a locked door is tried without the key
 // (bstone OperateDoor, 3d_act1.cpp:1215).  lock 1..5 = red/yellow/blue/green/
 // gold (lockdefs.txt "Lock N Blake"); anything else = permanently locked.
@@ -289,6 +306,8 @@ void Blake_PickupInfoMsg(AActor *toucher, const ClassDef *itemClass)
 		}
 		else
 			StatusBar->DisplayInfoMessage(tmpl, 0x200, 300);
+		// The item's own spawn sprite is the info-area icon (bstone ^SH).
+		static_cast<BlakeStatusBar *>(StatusBar)->SetInfoMessageIcon(R_GetClassIcon(itemClass));
 		return;
 	}
 }
@@ -662,6 +681,8 @@ void BlakeStatusBar::DrawStatusBar()
 		infoKey = 0x811c9dc5u;
 		for(const char *c = InfoMessage.GetChars();c != NULL && *c;++c)
 			infoKey = (infoKey ^ (unsigned char)*c) * 16777619u;
+		// Fold in the icon: gold-bar variants share the text but differ in sprite.
+		infoKey = (infoKey ^ (uint32_t)InfoMessageIcon.GetIndex()) * 16777619u;
 		if(infoKey == 0)
 			infoKey = 1;
 	}
@@ -949,6 +970,21 @@ void BlakeStatusBar::DrawInfoArea()
 			DTA_DestWidthF, stw,
 			DTA_DestHeightF, sth,
 			TAG_DONE);
+	}
+
+	// Pickup item icon at the info-area's top-left (bstone ^SH); the message's
+	// leading \r\r drops the text below it so they don't collide.
+	if(InfoMessageTics != 0 && InfoMessageIcon.isValid())
+	{
+		if(FTexture *icon = TexMan(InfoMessageIcon))
+		{
+			double ix = 8, iy = 200-STATUSLINES, iw = 16, ih = 16;
+			screen->VirtualToRealCoords(ix, iy, iw, ih, 320, 200, true, true);
+			screen->DrawTexture(icon, ix, iy,
+				DTA_DestWidthF, iw,
+				DTA_DestHeightF, ih,
+				TAG_DONE);
+		}
 	}
 
 	FString msg;

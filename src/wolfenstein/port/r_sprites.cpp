@@ -173,6 +173,22 @@ FTexture *R_GetAMSprite(AActor *actor, angle_t rotangle, bool &flip)
 	return tex;
 }
 
+// Resolves a class's Spawn-state front (rotation 0) sprite to a texture, for
+// the Blake info-area pickup icon.  Returns an invalid FTextureID if there's no
+// spawn sprite.
+FTextureID R_GetClassIcon(const ClassDef *cls)
+{
+	FTextureID none;
+	none.SetInvalid();
+	if(!cls)
+		return none;
+	const Frame *spawn = cls->FindState(NAME_Spawn);
+	if(!spawn || spawn->spriteInf == SPR_NONE || spawn->spriteInf >= loadedSprites.Size()
+		|| loadedSprites[spawn->spriteInf].numFrames == 0)
+		return none;
+	return spriteFrames[loadedSprites[spawn->spriteInf].frames + spawn->frame].texture[0];
+}
+
 void R_InstallSprite(Sprite &frame, FTexture *tex, int dir, bool mirror)
 {
 	if(dir < -1 || dir >= 8)

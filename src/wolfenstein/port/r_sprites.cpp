@@ -189,47 +189,23 @@ FTextureID R_GetClassIcon(const ClassDef *cls)
 	return spriteFrames[loadedSprites[spawn->spriteInf].frames + spawn->frame].texture[0];
 }
 
-// Collects a class's animated info-area icon frames (bstone ^AN) into out[],
-// returning the count.  Walks the See (walk) cycle sprites so enemies animate;
-// falls back to the Spawn frame (1 frame) for static items.
+// Collects a class's info-area icon frames into out[], returning the count.
 //
-// DOS draws the info icon at sprite rotation "8" (bstone piShapeTable SPR_*_W*_8,
-// a 3/4 view facing the viewer's right, mid-stride) -- NOT the dead-front view.
-// ECWolf loads that rotation into texture[1] (digit 8 -> dir 1 for Blake's 8-way
-// sprites); single-rotation sprites only have texture[0], so fall back to it.
+// WHITE-LINES BISECT (device-only GPU corruption): the animated multi-frame /
+// rotation-8 reads added after the last confirmed-clean build re-trigger the
+// device sprite recomposite.  Reverted to the proven-clean read: the single
+// Spawn-state front sprite (texture[0]) -- exactly what the clean build baked.
+// This keeps the weapon/item fix (single-rotation -> texture[0]) and loses the
+// enemy walk animation + angled view; re-add those once the GPU path is safe.
 int R_GetClassIconFrames(const ClassDef *cls, FTextureID *out, int maxFrames)
 {
-	const int ICON_ROT = 1;	// bstone "_8" 3/4 view; texture[0] is dead-front
-
 	if(!cls || maxFrames <= 0)
 		return 0;
-	const Frame *start = cls->FindState(NAME_See);
-	if(!start)
-		start = cls->FindState(NAME_Spawn);
-	int n = 0;
-	const Frame *f = start;
-	for(int guard = 0; f && n < maxFrames && guard < 64; ++guard, f = f->next)
-	{
-		if(f->spriteInf == SPR_NONE || f->spriteInf >= loadedSprites.Size()
-			|| loadedSprites[f->spriteInf].numFrames == 0)
-		{
-			if(f->next == start)
-				break;
-			continue;
-		}
-		const Sprite &spr = spriteFrames[loadedSprites[f->spriteInf].frames + f->frame];
-		// Only 8-rotation actors (enemies) have the angled view in texture[1];
-		// single-rotation sprites (weapons, items) only populate texture[0] --
-		// texture[1..7] are garbage there, so never read them.
-		FTextureID t = spr.texture[spr.rotations >= 8 ? ICON_ROT : 0];
-		if(!t.isValid())
-			t = spr.texture[0];
-		if(t.isValid())
-			out[n++] = t;
-		if(f->next == start)	// walk cycle looped
-			break;
-	}
-	return n;
+	FTextureID t = R_GetClassIcon(cls);
+	if(!t.isValid())
+		return 0;
+	out[0] = t;
+	return 1;
 }
 
 void R_InstallSprite(Sprite &frame, FTexture *tex, int dir, bool mirror)

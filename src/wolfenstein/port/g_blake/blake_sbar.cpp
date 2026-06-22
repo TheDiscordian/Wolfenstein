@@ -139,10 +139,10 @@ protected:
 	// (bstone DISPLAY_MSG / DisplayTime 0, e.g. the start-game greeting).
 	static const int INFOMSG_PERSIST = -1;
 
-	// Info-area enemy walk-cycle frame delay, in game-tics (bstone piAnimTable
-	// maxdelay 20 @ TICRATE 70).  Accumulated against `tics` (not render frames)
-	// so the speed is frame-rate independent and matches the original.
-	static const int ICON_ANIM_DELAY = 20;
+	// Info-area enemy walk-cycle frame delay, in Tick calls (the clean build's
+	// timing).  TEMP: reverted from the game-tic accumulator to isolate whether
+	// the timing change is what trips the device white lines.
+	static const int ICON_ANIM_DELAY = 15;
 
 private:
 	int CurrentScore;
@@ -1308,9 +1308,8 @@ void BlakeStatusBar::Tick()
 		InfoMessagePriority = 0;
 	}
 
-	// Advance the info-area enemy walk cycle by elapsed game-tics (bstone ^AN).
-	iconAnimTics += tics;
-	if(iconNF > 1 && iconAnimTics >= ICON_ANIM_DELAY)
+	// Advance the info-area enemy walk cycle (the clean build's per-Tick timing).
+	if(iconNF > 1 && ++iconAnimTics >= ICON_ANIM_DELAY)
 	{
 		iconAnimTics = 0;
 		iconFrame = (iconFrame + 1) % iconNF;

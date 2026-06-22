@@ -538,7 +538,12 @@ ACTION_FUNCTION(A_Look)
 	if(fov < 0.00001f)
 		fov = 180;
 
-	SightPlayer(self, minseedist, maxseedist, maxheardist, fov, state);
+	// Friendly actors (Blake bio-techs) ignore the player on plain line-of-sight;
+	// they only wake if no longer friendly or the player made noise (bstone T_Path,
+	// 3d_act2.cpp).  Matches the gate the chase path already uses.  Wolf has no
+	// friendly actors, so this is a no-op there.
+	if(!(self->flags & FL_FRIENDLY) || madenoise)
+		SightPlayer(self, minseedist, maxseedist, maxheardist, fov, state);
 	return true;
 }
 // Create A_LookEx as an alias to A_Look since we're technically emulating this

@@ -161,10 +161,6 @@ private:
 	int iconFrame;                // current animation frame
 	int iconAnimTics;             // tic accumulator for the walk cycle
 	int iconW[MAX_ICON_FRAMES], iconH[MAX_ICON_FRAMES];
-	// Opaque-content bounds within the (often padded) sprite frame, so the figure
-	// is centred in the box by its actual pixels, not the canvas.
-	int iconCX0[MAX_ICON_FRAMES], iconCY0[MAX_ICON_FRAMES];
-	int iconCW[MAX_ICON_FRAMES], iconCH[MAX_ICON_FRAMES];
 	int32_t iconKey;              // source class id, for the info-area cache key
 	uint8_t iconPix[MAX_ICON_FRAMES][64*64];   // native-size paletted pixels (column-major)
 	uint8_t iconMask[MAX_ICON_FRAMES][64*64];  // 1 = opaque
@@ -1004,7 +1000,6 @@ void BlakeStatusBar::SetInfoMessageIcon(const ClassDef *cls)
 		uint8_t *pix = iconPix[iconNF];
 		uint8_t *mask = iconMask[iconNF];
 		memset(mask, 0, (size_t)w*h);
-		int minx = w, miny = h, maxx = -1, maxy = -1;
 		for(int c = 0; c < w; ++c)
 		{
 			const FTexture::Span *spans;
@@ -1016,21 +1011,11 @@ void BlakeStatusBar::SetInfoMessageIcon(const ClassDef *cls)
 				{
 					pix[c*h + r] = col[r];
 					mask[c*h + r] = 1;
-					if(c < minx) minx = c;
-					if(c > maxx) maxx = c;
-					if(r < miny) miny = r;
-					if(r > maxy) maxy = r;
 				}
 			}
 		}
-		if(maxx < minx)	// fully transparent -- skip
-			continue;
 		iconW[iconNF] = w;
 		iconH[iconNF] = h;
-		iconCX0[iconNF] = minx;
-		iconCY0[iconNF] = miny;
-		iconCW[iconNF] = maxx - minx + 1;
-		iconCH[iconNF] = maxy - miny + 1;
 		++iconNF;
 	}
 }
@@ -1064,58 +1049,30 @@ void BlakeStatusBar::DrawInfoArea()
 	const bool showIcon = (InfoMessageTics != 0 && iconNF > 0);
 	if(showIcon)
 	{
-		byte *fb = screen->GetBuffer();
-		const int pitch = screen->GetPitch();
-		const int sw = screen->GetWidth(), sh = screen->GetHeight();
-		const byte black = GPalette.BlackIndex;
-
-		// The 37x37 black box (bstone VW_Bar).
 		double bx = 3, by = 200-STATUSLINES+3, bw = 37, bh = 37;
 		screen->VirtualToRealCoords(bx, by, bw, bh, 320, 200, true, true);
 		const int rx = (int)bx, ry = (int)by, rw = (int)bw, rh = (int)bh;
+		byte *fb = screen->GetBuffer();
+		const int pitch = screen->GetPitch();
+		const int sw = screen->GetWidth(), sh = screen->GetHeight();
+		const int fr = clamp(iconFrame, 0, iconNF-1);
+		const int iw = iconW[fr], ih = iconH[fr];
+		const uint8_t *pix = iconPix[fr], *mask = iconMask[fr];
+		const byte black = GPalette.BlackIndex;
 		for(int oy = 0; oy < rh; ++oy)
 		{
 			const int py = ry + oy;
 			if(py < 0 || py >= sh)
 				continue;
+			const int sry = oy * ih / rh;
 			byte *row = fb + (size_t)py*pitch;
 			for(int ox = 0; ox < rw; ++ox)
 			{
 				const int px = rx + ox;
-				if(px >= 0 && px < sw)
-					row[px] = black;
-			}
-		}
-
-		// The sprite's opaque content, scaled UNIFORMLY by 37/64 (bstone
-		// vid_draw_ui_sprite: new_side/dimension) and centred in the box by its
-		// content bounds -- NOT stretched to fill (which distorted the aspect),
-		// and centred on the figure (not the padded canvas).
-		const int fr = clamp(iconFrame, 0, iconNF-1);
-		const int ih = iconH[fr];
-		const int cx0 = iconCX0[fr], cy0 = iconCY0[fr], cw = iconCW[fr], ch = iconCH[fr];
-		const uint8_t *pix = iconPix[fr], *mask = iconMask[fr];
-		const double scale = 37.0/64.0;
-		double svw = cw*scale, svh = ch*scale;
-		double sx = (3 + 37.0/2.0) - svw/2.0;
-		double sy = (200-STATUSLINES+3 + 37.0/2.0) - svh/2.0;
-		screen->VirtualToRealCoords(sx, sy, svw, svh, 320, 200, true, true);
-		const int spx = (int)sx, spy = (int)sy, spw = (int)svw, sph = (int)svh;
-		for(int oy = 0; oy < sph; ++oy)
-		{
-			const int py = spy + oy;
-			if(py < 0 || py >= sh)
-				continue;
-			const int sry = cy0 + oy * ch / sph;
-			byte *row = fb + (size_t)py*pitch;
-			for(int ox = 0; ox < spw; ++ox)
-			{
-				const int px = spx + ox;
 				if(px < 0 || px >= sw)
 					continue;
-				const int srx = cx0 + ox * cw / spw;
-				if(mask[srx*ih + sry])
-					row[px] = pix[srx*ih + sry];
+				const int srx = ox * iw / rw;
+				row[px] = mask[srx*ih + sry] ? pix[srx*ih + sry] : black;
 			}
 		}
 	}

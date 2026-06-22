@@ -131,6 +131,7 @@ public:
 
 protected:
 	void DrawInfoArea();
+	void drawInfoIcon();	// the box+animated sprite, drawn live every frame
 	void DrawLed(double percent, double x, double y) const;
 	void DrawString(FFont *font, const char* string, double x, double y, bool shadow, EColorRange color=CR_UNTRANSLATED, bool center=false) const;
 
@@ -139,10 +140,11 @@ protected:
 	// (bstone DISPLAY_MSG / DisplayTime 0, e.g. the start-game greeting).
 	static const int INFOMSG_PERSIST = -1;
 
-	// Info-area enemy walk-cycle frame delay, in Tick calls (the clean build's
-	// timing).  TEMP: reverted from the game-tic accumulator to isolate whether
-	// the timing change is what trips the device white lines.
-	static const int ICON_ANIM_DELAY = 15;
+	// Info-area enemy walk-cycle frame delay, in Tick calls (~60Hz).  The icon is
+	// drawn live by drawInfoIcon() off the cache key, so animation speed no longer
+	// drives the bar-redraw rate (that was what tripped the device white lines).
+	// 6 -> ~10fps, the brisk "running" cadence of the DOS info-area enemy.
+	static const int ICON_ANIM_DELAY = 6;
 
 private:
 	int CurrentScore;
@@ -706,10 +708,11 @@ void BlakeStatusBar::DrawStatusBar()
 		infoKey = 0x811c9dc5u;
 		for(const char *c = InfoMessage.GetChars();c != NULL && *c;++c)
 			infoKey = (infoKey ^ (unsigned char)*c) * 16777619u;
-		// Fold in the icon: gold-bar variants share the text but differ in sprite,
-		// and the current walk-cycle frame so animation busts the cache each step.
+		// Fold in the icon class (gold-bar variants share the text but differ in
+		// sprite).  NOT iconFrame -- the walk animation is drawn live by
+		// drawInfoIcon() every frame, so it must not bust the cache (a per-frame
+		// full-bar redraw is what tripped the device white lines).
 		infoKey = (infoKey ^ (uint32_t)iconKey) * 16777619u;
-		infoKey = (infoKey ^ (uint32_t)iconFrame) * 16777619u;
 		if(infoKey == 0)
 			infoKey = 1;
 	}
@@ -760,6 +763,7 @@ void BlakeStatusBar::DrawStatusBar()
 				sbarBotBytes);
 		drawEcg();
 		drawScore();
+		drawInfoIcon();	// live every frame, like the ECG/score (off the cache key)
 		return;
 	}
 	OF_PERF_DBG(++of_sb_dbg_misses);
@@ -977,6 +981,7 @@ void BlakeStatusBar::DrawStatusBar()
 	// -- so a cache hit composites the live score onto clean background (no
 	// transparent-glyph ghosting), matching the snapshot the next hit restores.
 	drawScore();
+	drawInfoIcon();	// same deal: live over the icon-free snapshot, animates on hits
 }
 
 // Bakes a class's info-area icon frames (enemy walk cycle, or item spawn frame)
@@ -1035,6 +1040,63 @@ void BlakeStatusBar::SetInfoMessageIcon(const ClassDef *cls)
 	}
 }
 
+// Draws the info-area icon: the 37x37 black box (bstone VW_Bar) with the current
+// frame's sprite scaled into it (uniform 37/64, centred on the opaque-content
+// bounds).  Called LIVE every frame (after the status-bar cache snapshot/restore,
+// like drawScore) so the walk animation never busts the cache -- a per-frame
+// full-bar redraw is what tripped the device's 3D-view white lines.  Single write
+// pass over the box; raw-blitted from set-time-baked buffers (never touches a
+// sprite texture during the GPU frame).
+void BlakeStatusBar::drawInfoIcon()
+{
+	if(InfoMessageTics == 0 || iconNF <= 0)
+		return;
+
+	byte *fb = screen->GetBuffer();
+	const int pitch = screen->GetPitch();
+	const int sw = screen->GetWidth(), sh = screen->GetHeight();
+	const byte black = GPalette.BlackIndex;
+
+	double bx = 3, by = 200-STATUSLINES+3, bw = 37, bh = 37;
+	screen->VirtualToRealCoords(bx, by, bw, bh, 320, 200, true, true);
+	const int rx = (int)bx, ry = (int)by, rw = (int)bw, rh = (int)bh;
+
+	const int fr = clamp(iconFrame, 0, iconNF-1);
+	const int ih = iconH[fr];
+	const int cx0 = iconCX0[fr], cy0 = iconCY0[fr], cw = iconCW[fr], ch = iconCH[fr];
+	const uint8_t *pix = iconPix[fr], *mask = iconMask[fr];
+	const double scale = 37.0/64.0;
+	double svw = cw*scale, svh = ch*scale;
+	double sx = (3 + 37.0/2.0) - svw/2.0;
+	double sy = (200-STATUSLINES+3 + 37.0/2.0) - svh/2.0;
+	screen->VirtualToRealCoords(sx, sy, svw, svh, 320, 200, true, true);
+	const int spx = (int)sx, spy = (int)sy, spw = (int)svw, sph = (int)svh;
+
+	for(int oy = 0; oy < rh; ++oy)
+	{
+		const int py = ry + oy;
+		if(py < 0 || py >= sh)
+			continue;
+		byte *row = fb + (size_t)py*pitch;
+		for(int ox = 0; ox < rw; ++ox)
+		{
+			const int px = rx + ox;
+			if(px < 0 || px >= sw)
+				continue;
+			byte val = black;
+			const int rely = py - spy, relx = px - spx;
+			if(spw > 0 && sph > 0 && relx >= 0 && relx < spw && rely >= 0 && rely < sph)
+			{
+				const int srx = cx0 + relx * cw / spw;
+				const int sry = cy0 + rely * ch / sph;
+				if(mask[srx*ih + sry])
+					val = pix[srx*ih + sry];
+			}
+			row[px] = val;
+		}
+	}
+}
+
 // Draws the message strip in the bottom status bar: the current timed
 // message if one is up, otherwise the no-messages/token-count idle text.
 void BlakeStatusBar::DrawInfoArea()
@@ -1055,69 +1117,11 @@ void BlakeStatusBar::DrawInfoArea()
 			TAG_DONE);
 	}
 
-	// Pickup/enemy icon in a black box at the info area's left (bstone ^SH/^AN, a
-	// 37x37 VW_Bar with the sprite scaled into it): fill the box black, then blit
-	// the current frame scaled+masked so transparent areas stay black.  Enemies
-	// animate their walk cycle (iconFrame, advanced in Tick); items are one frame.
-	// Raw-blitted from buffers baked at set-time -- the per-frame draw never touches
-	// a sprite texture (that corrupts the Pocket GPU's 3D column state, white lines).
-	// Pickup/enemy icon in a black box at the info area's left (bstone ^SH/^AN, a
-	// 37x37 VW_Bar with the sprite scaled into it).  Drawn in a SINGLE write pass
-	// over the box -- each box pixel written exactly once (scaled content where it
-	// covers, else black) -- matching the write pattern of the build with no white
-	// lines.  Raw-blitted from set-time-baked buffers; never touches a sprite
-	// texture during the GPU frame (that corrupts the Pocket GPU's column state).
+	// The icon box+sprite is drawn LIVE every frame by drawInfoIcon() (called after
+	// the status-bar cache snapshot/restore, like the ECG and score) so the walk
+	// animation never busts the cache -- a per-frame full-bar redraw is what tripped
+	// the device white lines.  Here we only need showIcon to indent the message text.
 	const bool showIcon = (InfoMessageTics != 0 && iconNF > 0);
-	if(showIcon)
-	{
-		byte *fb = screen->GetBuffer();
-		const int pitch = screen->GetPitch();
-		const int sw = screen->GetWidth(), sh = screen->GetHeight();
-		const byte black = GPalette.BlackIndex;
-
-		// Box (bstone VW_Bar) in real coords.
-		double bx = 3, by = 200-STATUSLINES+3, bw = 37, bh = 37;
-		screen->VirtualToRealCoords(bx, by, bw, bh, 320, 200, true, true);
-		const int rx = (int)bx, ry = (int)by, rw = (int)bw, rh = (int)bh;
-
-		// Content scaled uniformly by 37/64 (bstone vid_draw_ui_sprite) and centred
-		// in the box on its opaque-content bounds (not stretched, not the padded
-		// canvas) -- the real sub-rect of the box the figure occupies.
-		const int fr = clamp(iconFrame, 0, iconNF-1);
-		const int ih = iconH[fr];
-		const int cx0 = iconCX0[fr], cy0 = iconCY0[fr], cw = iconCW[fr], ch = iconCH[fr];
-		const uint8_t *pix = iconPix[fr], *mask = iconMask[fr];
-		const double scale = 37.0/64.0;
-		double svw = cw*scale, svh = ch*scale;
-		double sx = (3 + 37.0/2.0) - svw/2.0;
-		double sy = (200-STATUSLINES+3 + 37.0/2.0) - svh/2.0;
-		screen->VirtualToRealCoords(sx, sy, svw, svh, 320, 200, true, true);
-		const int spx = (int)sx, spy = (int)sy, spw = (int)svw, sph = (int)svh;
-
-		for(int oy = 0; oy < rh; ++oy)
-		{
-			const int py = ry + oy;
-			if(py < 0 || py >= sh)
-				continue;
-			byte *row = fb + (size_t)py*pitch;
-			for(int ox = 0; ox < rw; ++ox)
-			{
-				const int px = rx + ox;
-				if(px < 0 || px >= sw)
-					continue;
-				byte val = black;
-				const int rely = py - spy, relx = px - spx;
-				if(spw > 0 && sph > 0 && relx >= 0 && relx < spw && rely >= 0 && rely < sph)
-				{
-					const int srx = cx0 + relx * cw / spw;
-					const int sry = cy0 + rely * ch / sph;
-					if(mask[srx*ih + sry])
-						val = pix[srx*ih + sry];
-				}
-				row[px] = val;
-			}
-		}
-	}
 
 	// With the icon box present, text indents past it (bstone left_margin advances
 	// to the box's right edge: INFOAREA_X 3 + box 37 = 40); otherwise margin 3.

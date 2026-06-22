@@ -161,6 +161,10 @@ private:
 	int iconFrame;                // current animation frame
 	int iconAnimTics;             // tic accumulator for the walk cycle
 	int iconW[MAX_ICON_FRAMES], iconH[MAX_ICON_FRAMES];
+	// Opaque-content bounds within the (often padded) sprite frame, so the figure
+	// is centred in the box by its actual pixels, not the canvas.
+	int iconCX0[MAX_ICON_FRAMES], iconCY0[MAX_ICON_FRAMES];
+	int iconCW[MAX_ICON_FRAMES], iconCH[MAX_ICON_FRAMES];
 	int32_t iconKey;              // source class id, for the info-area cache key
 	uint8_t iconPix[MAX_ICON_FRAMES][64*64];   // native-size paletted pixels (column-major)
 	uint8_t iconMask[MAX_ICON_FRAMES][64*64];  // 1 = opaque
@@ -1000,6 +1004,7 @@ void BlakeStatusBar::SetInfoMessageIcon(const ClassDef *cls)
 		uint8_t *pix = iconPix[iconNF];
 		uint8_t *mask = iconMask[iconNF];
 		memset(mask, 0, (size_t)w*h);
+		int minx = w, miny = h, maxx = -1, maxy = -1;
 		for(int c = 0; c < w; ++c)
 		{
 			const FTexture::Span *spans;
@@ -1011,11 +1016,21 @@ void BlakeStatusBar::SetInfoMessageIcon(const ClassDef *cls)
 				{
 					pix[c*h + r] = col[r];
 					mask[c*h + r] = 1;
+					if(c < minx) minx = c;
+					if(c > maxx) maxx = c;
+					if(r < miny) miny = r;
+					if(r > maxy) maxy = r;
 				}
 			}
 		}
+		if(maxx < minx)	// fully transparent -- skip
+			continue;
 		iconW[iconNF] = w;
 		iconH[iconNF] = h;
+		iconCX0[iconNF] = minx;
+		iconCY0[iconNF] = miny;
+		iconCW[iconNF] = maxx - minx + 1;
+		iconCH[iconNF] = maxy - miny + 1;
 		++iconNF;
 	}
 }
@@ -1046,33 +1061,60 @@ void BlakeStatusBar::DrawInfoArea()
 	// animate their walk cycle (iconFrame, advanced in Tick); items are one frame.
 	// Raw-blitted from buffers baked at set-time -- the per-frame draw never touches
 	// a sprite texture (that corrupts the Pocket GPU's 3D column state, white lines).
+	// Pickup/enemy icon in a black box at the info area's left (bstone ^SH/^AN, a
+	// 37x37 VW_Bar with the sprite scaled into it).  Drawn in a SINGLE write pass
+	// over the box -- each box pixel written exactly once (scaled content where it
+	// covers, else black) -- matching the write pattern of the build with no white
+	// lines.  Raw-blitted from set-time-baked buffers; never touches a sprite
+	// texture during the GPU frame (that corrupts the Pocket GPU's column state).
 	const bool showIcon = (InfoMessageTics != 0 && iconNF > 0);
 	if(showIcon)
 	{
-		double bx = 3, by = 200-STATUSLINES+3, bw = 37, bh = 37;
-		screen->VirtualToRealCoords(bx, by, bw, bh, 320, 200, true, true);
-		const int rx = (int)bx, ry = (int)by, rw = (int)bw, rh = (int)bh;
 		byte *fb = screen->GetBuffer();
 		const int pitch = screen->GetPitch();
 		const int sw = screen->GetWidth(), sh = screen->GetHeight();
-		const int fr = clamp(iconFrame, 0, iconNF-1);
-		const int iw = iconW[fr], ih = iconH[fr];
-		const uint8_t *pix = iconPix[fr], *mask = iconMask[fr];
 		const byte black = GPalette.BlackIndex;
+
+		// Box (bstone VW_Bar) in real coords.
+		double bx = 3, by = 200-STATUSLINES+3, bw = 37, bh = 37;
+		screen->VirtualToRealCoords(bx, by, bw, bh, 320, 200, true, true);
+		const int rx = (int)bx, ry = (int)by, rw = (int)bw, rh = (int)bh;
+
+		// Content scaled uniformly by 37/64 (bstone vid_draw_ui_sprite) and centred
+		// in the box on its opaque-content bounds (not stretched, not the padded
+		// canvas) -- the real sub-rect of the box the figure occupies.
+		const int fr = clamp(iconFrame, 0, iconNF-1);
+		const int ih = iconH[fr];
+		const int cx0 = iconCX0[fr], cy0 = iconCY0[fr], cw = iconCW[fr], ch = iconCH[fr];
+		const uint8_t *pix = iconPix[fr], *mask = iconMask[fr];
+		const double scale = 37.0/64.0;
+		double svw = cw*scale, svh = ch*scale;
+		double sx = (3 + 37.0/2.0) - svw/2.0;
+		double sy = (200-STATUSLINES+3 + 37.0/2.0) - svh/2.0;
+		screen->VirtualToRealCoords(sx, sy, svw, svh, 320, 200, true, true);
+		const int spx = (int)sx, spy = (int)sy, spw = (int)svw, sph = (int)svh;
+
 		for(int oy = 0; oy < rh; ++oy)
 		{
 			const int py = ry + oy;
 			if(py < 0 || py >= sh)
 				continue;
-			const int sry = oy * ih / rh;
 			byte *row = fb + (size_t)py*pitch;
 			for(int ox = 0; ox < rw; ++ox)
 			{
 				const int px = rx + ox;
 				if(px < 0 || px >= sw)
 					continue;
-				const int srx = ox * iw / rw;
-				row[px] = mask[srx*ih + sry] ? pix[srx*ih + sry] : black;
+				byte val = black;
+				const int rely = py - spy, relx = px - spx;
+				if(spw > 0 && sph > 0 && relx >= 0 && relx < spw && rely >= 0 && rely < sph)
+				{
+					const int srx = cx0 + relx * cw / spw;
+					const int sry = cy0 + rely * ch / sph;
+					if(mask[srx*ih + sry])
+						val = pix[srx*ih + sry];
+				}
+				row[px] = val;
 			}
 		}
 	}

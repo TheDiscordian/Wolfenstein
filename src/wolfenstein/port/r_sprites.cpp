@@ -218,9 +218,9 @@ int R_GetClassIconFrames(const ClassDef *cls, FTextureID *out, int maxFrames)
 			continue;
 		}
 		const Sprite &spr = spriteFrames[loadedSprites[f->spriteInf].frames + f->frame];
-		// 8-rotation actors (enemies) have the angled view in texture[1]; single-
-		// rotation sprites (weapons/items) only populate texture[0] (texture[1..7]
-		// are garbage there).  Enemy path is unchanged vs the clean build.
+		// Only 8-rotation actors (enemies) have the angled view in texture[1];
+		// single-rotation sprites (weapons, items) only populate texture[0] --
+		// texture[1..7] are garbage there, so never read them.
 		FTextureID t = spr.texture[spr.rotations >= 8 ? ICON_ROT : 0];
 		if(!t.isValid())
 			t = spr.texture[0];

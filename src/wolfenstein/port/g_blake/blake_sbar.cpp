@@ -795,10 +795,12 @@ void BlakeStatusBar::DrawStatusBar()
 		VWB_Clear(colors[0], screenWidth-scaleFactorX, topy, screenWidth, static_cast<int>(boty-scaleFactorY));
 	}
 
-	// Draw the top information
+	// Draw the top information.  "SECRET" comes from the map's mapinfo `secret`
+	// flag, not a LevelNumber range -- the AOG maps are numbered globally
+	// (MAP01..MAP90 -> LevelNumber 1..90), so the old `> 20` test mislabelled
+	// every area past 20 as secret.
 	FString lives, area;
-	// TODO: Don't depend on LevelNumber for this switch
-	if(levelInfo->LevelNumber > 20)
+	if(levelInfo->Secret)
 		area = "SECRET";
 	else
 		area.Format("AREA: %d", levelInfo->LevelNumber);

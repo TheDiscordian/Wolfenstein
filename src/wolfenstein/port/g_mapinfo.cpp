@@ -293,6 +293,7 @@ LevelInfo::LevelInfo() : ResetHealth(false), ResetInventory(false),
 	LevelNumber = 0;
 	Cluster = 0;
 	NoIntermission = false;
+	Secret = false;
 	SecretDeathSounds = false;
 	SpawnWithWeaponRaised = false;
 	ForceTally = false;
@@ -549,6 +550,8 @@ protected:
 			mapInfo.ResetHealth = true;
 		else if(key.CompareNoCase("ResetInventory") == 0)
 			mapInfo.ResetInventory = true;
+		else if(key.CompareNoCase("Secret") == 0)
+			mapInfo.Secret = true;
 		else if(key.CompareNoCase("SecretDeathSounds") == 0)
 			ParseBoolAssignment(mapInfo.SecretDeathSounds);
 		else if(key.CompareNoCase("SpawnWithWeaponRaised") == 0)

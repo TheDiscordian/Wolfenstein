@@ -193,6 +193,7 @@ public:
 	int				SkyHorizonOffset;
 
 	bool			DeathCam;
+	bool			Secret;			// info-area shows "SECRET" instead of "AREA: n"
 	bool			SecretDeathSounds;
 	bool			SpawnWithWeaponRaised;
 	bool			ForceTally;

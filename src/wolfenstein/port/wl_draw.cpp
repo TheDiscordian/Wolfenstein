@@ -64,8 +64,8 @@
 =============================================================================
 */
 
-int DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch);
-void DrawFloorAndCeiling(byte *vbuf, unsigned vbufPitch, int min_wallheight, int skipHalves = 0);
+bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch);
+void DrawFloorAndCeiling(byte *vbuf, unsigned vbufPitch, int min_wallheight);
 void DrawParallax(byte *vbuf, unsigned vbufPitch);
 bool HasParallax(void);
 
@@ -1447,7 +1447,7 @@ void ThreeDStartFadeIn()
 void R_RenderView()
 {
 	const bool hasParallax = HasParallax();
-	int gpuBackdrop = 0;	// bitmask of halves the GPU backdrop drew (FC_CEILING/FC_FLOOR)
+	bool gpuBackdrop = false;
 
 	uint32_t perfStart = OF_WolfPerf_NowUS();
 	CalcViewVariables();
@@ -1491,12 +1491,10 @@ void R_RenderView()
 	if(GetFeatureFlags() & FF_CLOUDSKY)
 		DrawClouds(vbuf, vbufPitch, min_wallheight);
 #endif
-	if(gpuBackdrop != FC_BOTH)
+	if(!gpuBackdrop)
 	{
-		// CPU-draw only the halves the GPU backdrop didn't take (gpuBackdrop is 0
-		// off-device, so both halves draw as before).
 		perfStart = OF_WolfPerf_NowUS();
-		DrawFloorAndCeiling(vbuf, vbufPitch, min_wallheight, gpuBackdrop);
+		DrawFloorAndCeiling(vbuf, vbufPitch, min_wallheight);
 		OF_WolfPerf_Add(OF_WOLF_PERF_FLOORCEIL, perfStart);
 	}
 #if defined(OF_ECWOLF_SPRITE_GPU_ENABLED)

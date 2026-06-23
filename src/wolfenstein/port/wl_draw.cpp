@@ -885,11 +885,6 @@ void AsmRefresh()
 	MapSpot focalspot = map->GetSpot(focaltx, focalty, 0);
 	bool playerInPushwallBackTile = focalspot->pushAmount != 0;
 
-	// Hoist the z=0 plane base and map width out of the per-step GetSpot in the
-	// DDA below -- it runs for every tile-step (thousands per frame).
-	const MapSpot of_planeMap = map->GetSpot(0, 0, 0);
-	const unsigned of_mapw = mapwidth;
-
 	for(pixx=0;pixx<viewwidth;pixx++)
 	{
 		short angl=midangle+pixelangle[pixx];
@@ -1002,7 +997,7 @@ vertentry:
 				break;
 			}
 			if(xspot[0]>=mapwidth || xspot[1]>=mapheight) break;
-			tilehit=of_planeMap + xspot[1]*of_mapw + xspot[0];
+			tilehit=map->GetSpot(xspot[0], xspot[1], 0);
 			if(tilehit && tilehit->tile)
 			{
 				if(tilehit->tile->offsetVertical)
@@ -1170,7 +1165,7 @@ horizentry:
 				break;
 			}
 			if(yspot[0]>=mapwidth || yspot[1]>=mapheight) break;
-			tilehit=of_planeMap + yspot[1]*of_mapw + yspot[0];
+			tilehit=map->GetSpot(yspot[0], yspot[1], 0);
 			if(tilehit && tilehit->tile)
 			{
 				if(tilehit->tile->offsetHorizontal)

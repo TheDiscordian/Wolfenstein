@@ -90,22 +90,11 @@ static inline void OF_WolfPerf_FrameEnd(void) {}
 // pixels, the EndFrameStatusBar(viewY0,viewY1) boundary, and the
 // SetNextVideoFramePreserveExcludeRows preserve list.
 //
-// This bug has been REINTRODUCED twice -- both times by a change that looked
-// safe and verified clean on PC:
-//   - status-bar cache key folded in the icon animation frame -> every walk
-//     step busted the bar cache -> per-frame full-bar redraw over the view top.
-//     Fix: draw the live element off the cache key (commit dcf38ff).
-//   - floor/ceiling GPU backdrop split per-half -> changed the GPU/CPU draw
-//     interleaving in the view region.  Reverted (commit 5839bf6).
-//
-// HARD RULE: white lines are DEVICE-ONLY.  On PC every OF_WolfGPU_* below is a
-// no-op stub returning false, so the GPU/cache path NEVER runs and PC rendering
-// CANNOT reproduce or rule out white lines.  Therefore any change in this region
-// (status bar, floor/ceiling, sprites, overlays, the GPU backdrop) is NOT
-// "verified" by a clean PC render -- it MUST be tested on the Pocket before it
-// is called ready, and MUST land as its own easily-revertable commit, never
-// bundled into the shippable line.  If it can't be device-tested yet, it is not
-// ready -- say so.
+// White lines are DEVICE-ONLY: on PC every OF_WolfGPU_* below is a no-op stub
+// returning false, so the GPU/cache path never runs and a clean PC render
+// CANNOT reproduce or rule them out.  Any change in this region (status bar,
+// floor/ceiling, sprites, overlays, the GPU backdrop) must be tested on the
+// Pocket before it is called ready, and must land as its own revertable commit.
 // ===========================================================================
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 void OF_WolfGPU_Init(void);

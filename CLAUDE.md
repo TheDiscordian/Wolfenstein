@@ -44,9 +44,17 @@ the log** — never ask the tester to capture anything.
    `strings <elf> | grep 'fr=%u ev=%u'` (present == instrumented).
 2. Deploy; the tester plays (`OF_AUTOWALK` is env-gated, so device play is
    manual/normal).
-3. The per-phase perf line is mirrored to bootlog save slot 19
-   (`ofbootlog.sav` on the card); read it back from there. Floor diag fields:
-   `fl=` floorceil µs, `flb=` which halves fell back to CPU.
+3. **Reading the log — IMPORTANT, this is easy to forget.** The bootlog
+   registers **slot 19**, which collides with save slot 9 (`savegam9`), so the
+   perf lines land *inside that save's backing file*:
+   `Saves/<core>/common/<Profile>_9.sav` (e.g. `Saves/blakestone/common/AliensOfGold_9.sav`).
+   There is **no file named `ofbootlog.sav` on the card** — do not search for one
+   (that wasted an entire session). Read it with:
+   `strings Saves/blakestone/common/AliensOfGold_9.sav | grep 'fr='`
+   The collision also means a PERF build clobbers the player's save slot 9 — fine
+   for throwaway measurement builds, but never ship `PERF=1`.
+   Key fields: `fl=` floorceil µs, `flb=` halves left to CPU (0 = both on the GPU
+   backdrop), `flg=` frames the backdrop engaged, `wl=`/`wld=` wall µs.
 
 ## Build / deploy
 

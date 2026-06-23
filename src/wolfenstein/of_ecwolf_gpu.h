@@ -78,6 +78,35 @@ static inline void OF_WolfPerf_AddTicks(unsigned int) {}
 static inline void OF_WolfPerf_FrameEnd(void) {}
 #endif
 
+// ===========================================================================
+// ⚠ WHITE-LINES INVARIANT -- read before changing ANY framebuffer write,
+//   GPU-vs-CPU draw split, draw ordering, or cache handling in the 3D-view region.
+//
+// The 3D view is rendered by the hardware GPU into SDRAM the CPU framebuffer
+// shares through a cache.  A CPU write into 3D-view rows, OR a change to which
+// half/region the GPU vs CPU draws, OR the order they draw in, corrupts the top
+// rows of the view ("white lines") unless the cache-coherency protocol is kept:
+// OF_WolfGPU_PrepareForCPUAccessRect/Column before CPU touches GPU-written
+// pixels, the EndFrameStatusBar(viewY0,viewY1) boundary, and the
+// SetNextVideoFramePreserveExcludeRows preserve list.
+//
+// This bug has been REINTRODUCED twice -- both times by a change that looked
+// safe and verified clean on PC:
+//   - status-bar cache key folded in the icon animation frame -> every walk
+//     step busted the bar cache -> per-frame full-bar redraw over the view top.
+//     Fix: draw the live element off the cache key (commit dcf38ff).
+//   - floor/ceiling GPU backdrop split per-half -> changed the GPU/CPU draw
+//     interleaving in the view region.  Reverted (commit 5839bf6).
+//
+// HARD RULE: white lines are DEVICE-ONLY.  On PC every OF_WolfGPU_* below is a
+// no-op stub returning false, so the GPU/cache path NEVER runs and PC rendering
+// CANNOT reproduce or rule out white lines.  Therefore any change in this region
+// (status bar, floor/ceiling, sprites, overlays, the GPU backdrop) is NOT
+// "verified" by a clean PC render -- it MUST be tested on the Pocket before it
+// is called ready, and MUST land as its own easily-revertable commit, never
+// bundled into the shippable line.  If it can't be device-tested yet, it is not
+// ready -- say so.
+// ===========================================================================
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 void OF_WolfGPU_Init(void);
 void OF_WolfGPU_Shutdown(void);

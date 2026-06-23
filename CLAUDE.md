@@ -52,4 +52,4 @@ Verify the on-card ELF after `make copy` (`cmp` / `sha256sum`).
 ## Branches
 
 `blake-union` is the shippable Blake Stone branch; `blake-bootlog` holds
-perf-diagnostic work. Ryan opens upstream PRs himself.
+perf-diagnostic work. Discordian opens upstream PRs himself.

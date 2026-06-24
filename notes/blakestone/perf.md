@@ -36,7 +36,12 @@ A PERF build overwrites slot 9, so **never ship `PERF=1`**.
 
 Perf-line fields: `fl=` floorceil µs, `flb=` halves left to CPU (0 = both GPU,
 1 ceiling, 2 floor, 3 both), `flg=` frames the backdrop engaged, `wl=`/`wld=`
-wall µs (total / GPU-dispatch).
+wall µs (total / GPU-dispatch). White-lines probe: `gbf=` count of frames where
+`GPU_STATUS` still showed busy/DMA right after the `EndFrameStatusBar` fence
+drain, `gst=` OR of the status bits seen there (bit0 busy, bit1 ring-empty,
+bit2 DMA-busy). `gbf=0` every window = the fence is honouring write-commit (probe
+clears the GPU-drain hypothesis); `gbf>0` with bit2 set in `gst` = residual GPU
+writes at publish = white-lines smoking gun.
 
 To check whether a core actually *ran* (vs was merely deployed), read the card
 mtimes: `Saves/<core>/`, `System/lastcore.bin`, `recent.bin`, Browser MRU

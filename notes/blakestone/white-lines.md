@@ -65,8 +65,14 @@ valgrind-clean CPU path.
 
 - **Shippable-clean:** `fa49c572` (icon-decouple + HUD secret-flag fix, no hoist,
   no per-half, non-PERF) — device-confirmed clean.
-- **Next diagnostic:** on-device GPU write-inflight probe — sample `GPU_STATUS`
-  (0x14, bit2 = DMA_BUSY) / `GPU_DBG_WR_INFLIGHT` (0x34) right after the
-  EndFrameStatusBar drain, read-only and non-layout-perturbing, logged to the perf
-  line, to see whether GPU writes to the top view rows are actually retired when
-  the frame is published. Needs the device (deploy PERF=1, ~15s play, read slot-9).
+- **Next diagnostic — BUILT, awaiting a device run.** On-device GPU write-inflight
+  probe: `OF_WolfGPU_EndFrameStatusBar` samples `GPU_STATUS` (0x14; bit0 busy,
+  bit2 DMA_BUSY) read-only right after the `of_gpu_finish()` fence drain and
+  accumulates two `OF_ECWOLF_PERF`-gated perf-line fields — `gbf=` (frames where
+  the GPU still reported busy/DMA after the fence) and `gst=` (OR of the status
+  bits seen there). There is no `0x34 WR_INFLIGHT` register; the real interface is
+  `of_gpu_debug_snapshot()` / `GPU_STATUS`. Read-only, no framebuffer write, so it
+  can't perturb the layout. To run: deploy a `PERF=1` build, play ~15 s, read the
+  slot-9 save (`strings AliensOfGold_9.sav | grep 'fr='`). `gbf>0` with bit2 in
+  `gst` = the GPU is still committing view-band pixels at publish (smoking gun);
+  `gbf=0` clears the GPU-drain hypothesis and points further down the seam.

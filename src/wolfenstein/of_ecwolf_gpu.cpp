@@ -68,6 +68,17 @@ static uint32_t gpu_dbg_rejects;
 static uint32_t gpu_dbg_fence_late;
 static uint32_t gpu_dbg_forced_swaps;
 
+#if OF_ECWOLF_PERF_ENABLED
+/* White-lines probe (measurement only): sampled in OF_WolfGPU_EndFrameStatusBar
+ * right after the of_gpu_finish() drain.  busy_after_finish counts frames where
+ * GPU_STATUS still reported the pipeline/DMA busy AFTER the fence retired -- i.e.
+ * view-band writes possibly still in flight when the frame is published.
+ * status_or ORs the raw status bits seen there so the offending bit is visible.
+ * Read-only: it touches no framebuffer pixel, so it can't perturb the layout. */
+static uint32_t gpu_dbg_busy_after_finish;
+static uint32_t gpu_dbg_busy_after_finish_status;
+#endif
+
 /* Floor/ceiling backdrop diagnostic (measurement only).  Written by
  * DrawFloorAndCeilingBackdropGPU in wl_floorceiling.cpp:
  *  - of_fl_dbg_gpu_true: frames the GPU backdrop path completed (returned true)
@@ -336,9 +347,9 @@ void OF_WolfPerf_FrameEnd(void)
 	prev_rs = _gpu_dbg_ring_spin_iters;
 	prev_ds = _gpu_dbg_dma_spin_iters;
 
-	char pbuf[512];
+	char pbuf[640];
 	snprintf(pbuf, sizeof(pbuf),
-		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u spa=%u spt=%u sbh=%u sbm=%u wls=%u wlp=%u wld=%u t=%u.%u",
+		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u spa=%u spt=%u sbh=%u sbm=%u wls=%u wlp=%u wld=%u gbf=%u gst=%u t=%u.%u",
 		fps_x10 / 10, fps_x10 % 10, frame_avg,
 		wolf_perf_avg(OF_WOLF_PERF_EVENTS),
 		wolf_perf_avg(OF_WOLF_PERF_SIM),
@@ -383,6 +394,8 @@ void OF_WolfPerf_FrameEnd(void)
 		(unsigned int)of_sb_dbg_hits, (unsigned int)of_sb_dbg_misses,
 		(unsigned int)of_wl_dbg_steps, (unsigned int)of_wl_dbg_posts,
 		(unsigned int)of_wl_dbg_draw_us,
+		(unsigned int)gpu_dbg_busy_after_finish,
+		(unsigned int)gpu_dbg_busy_after_finish_status,
 		tics_x10 / 10, tics_x10 % 10);
 	printf("%s\n", pbuf);
 	// Mirror the report into the bootlog save file (slot 19, ofbootlog.sav) so
@@ -405,6 +418,8 @@ void OF_WolfPerf_FrameEnd(void)
 	of_spr_dbg_xforms = 0;
 	of_sb_dbg_hits = 0;
 	of_sb_dbg_misses = 0;
+	gpu_dbg_busy_after_finish = 0;
+	gpu_dbg_busy_after_finish_status = 0;
 }
 #endif
 
@@ -1489,6 +1504,19 @@ void OF_WolfGPU_EndFrameStatusBar(int viewY0, int viewY1)
 		of_gpu_finish();
 		OF_WolfPerf_Add(OF_WOLF_PERF_GPU_FINISH, perfStart);
 		gpu_frame_dirty = false;
+#if OF_ECWOLF_PERF_ENABLED
+		/* White-lines probe: the fence has retired, so per the RTL all view-band
+		 * writes should already be committed to SDRAM.  Sample GPU_STATUS
+		 * read-only and flag any residual busy/DMA -- if this ever trips, the
+		 * view band's top rows can be published while GPU writes are still in
+		 * flight, which is the white-lines hypothesis. */
+		{
+			const uint32_t st = GPU_STATUS;
+			gpu_dbg_busy_after_finish_status |= st;
+			if(st & (GPU_STATUS_BUSY | GPU_STATUS_DMA_BUSY))
+				gpu_dbg_busy_after_finish++;
+		}
+#endif
 	}
 	gpu_flush_cpu_dirty_lines();
 	if(had_gpu_work)

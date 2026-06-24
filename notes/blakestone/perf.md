@@ -39,9 +39,18 @@ Perf-line fields: `fl=` floorceil µs, `flb=` halves left to CPU (0 = both GPU,
 wall µs (total / GPU-dispatch). White-lines probe: `gbf=` count of frames where
 `GPU_STATUS` still showed busy/DMA right after the `EndFrameStatusBar` fence
 drain, `gst=` OR of the status bits seen there (bit0 busy, bit1 ring-empty,
-bit2 DMA-busy). `gbf=0` every window = the fence is honouring write-commit (probe
-clears the GPU-drain hypothesis); `gbf>0` with bit2 set in `gst` = residual GPU
-writes at publish = white-lines smoking gun.
+bit2 DMA-busy); `vbd=` count of CPU-dirty framebuffer lines that landed inside
+the view band `[viewscreeny, viewscreeny+viewheight)` -- that band is GPU-resident
+and NOT cache-invalidated by EndFrameStatusBar, so `vbd>0` = the CPU wrote into
+GPU view rows (the other prime suspect). Reading: `gbf>0` with bit2 in `gst` =
+residual GPU writes at publish; `vbd>0` = CPU-into-view-band; either correlating
+with a white-lines run pins the mechanism.
+
+First device run (2026-06-24, **clean -- no white lines**): `gbf=0 gst=2` (ring-empty
+only, no busy/DMA) every window -> the fence fully drains on silicon when rendering
+is correct. This is the clean baseline; the probe is now permanent in PERF builds,
+so the next reproduction is captured automatically. `vbd` added the same day to widen
+the trap to the CPU-into-view-band hypothesis.
 
 To check whether a core actually *ran* (vs was merely deployed), read the card
 mtimes: `Saves/<core>/`, `System/lastcore.bin`, `recent.bin`, Browser MRU

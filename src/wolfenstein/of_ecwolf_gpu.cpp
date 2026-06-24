@@ -77,6 +77,10 @@ static uint32_t gpu_dbg_forced_swaps;
  * Read-only: it touches no framebuffer pixel, so it can't perturb the layout. */
 static uint32_t gpu_dbg_busy_after_finish;
 static uint32_t gpu_dbg_busy_after_finish_status;
+/* Count of CPU-dirty framebuffer lines that fell INSIDE the view band
+ * [viewY0,viewY1) at EndFrameStatusBar -- that band is left GPU-resident and is
+ * NOT cache-invalidated, so a CPU write there is the prime coherency hazard. */
+static uint32_t gpu_dbg_view_band_dirty;
 #endif
 
 /* Floor/ceiling backdrop diagnostic (measurement only).  Written by
@@ -349,7 +353,7 @@ void OF_WolfPerf_FrameEnd(void)
 
 	char pbuf[640];
 	snprintf(pbuf, sizeof(pbuf),
-		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u spa=%u spt=%u sbh=%u sbm=%u wls=%u wlp=%u wld=%u gbf=%u gst=%u t=%u.%u",
+		"perf %u.%u fr=%u ev=%u sim=%u sn=%u ctl=%u spn=%u th=%u fin=%u gc=%u r=%u lk=%u bg=%u cl=%u rm=%u st=%u wl=%u fl=%u pff=%u sk=%u spr=%u wp=%u ul=%u ov=%u sb=%u sbg=%u sbi=%u pr=%u aq=%u sd=%u mt=%u gw=%u rj=%u lt=%u fw=%u rw=%u dw=%u rs=%u ds=%u flg=%u fla=%u flb=%u fls=%u ftd=%u spp=%u spc=%u spk=%u spa=%u spt=%u sbh=%u sbm=%u wls=%u wlp=%u wld=%u gbf=%u gst=%u vbd=%u t=%u.%u",
 		fps_x10 / 10, fps_x10 % 10, frame_avg,
 		wolf_perf_avg(OF_WOLF_PERF_EVENTS),
 		wolf_perf_avg(OF_WOLF_PERF_SIM),
@@ -396,6 +400,7 @@ void OF_WolfPerf_FrameEnd(void)
 		(unsigned int)of_wl_dbg_draw_us,
 		(unsigned int)gpu_dbg_busy_after_finish,
 		(unsigned int)gpu_dbg_busy_after_finish_status,
+		(unsigned int)gpu_dbg_view_band_dirty,
 		tics_x10 / 10, tics_x10 % 10);
 	printf("%s\n", pbuf);
 	// Mirror the report into the bootlog save file (slot 19, ofbootlog.sav) so
@@ -420,6 +425,7 @@ void OF_WolfPerf_FrameEnd(void)
 	of_sb_dbg_misses = 0;
 	gpu_dbg_busy_after_finish = 0;
 	gpu_dbg_busy_after_finish_status = 0;
+	gpu_dbg_view_band_dirty = 0;
 }
 #endif
 
@@ -1518,6 +1524,17 @@ void OF_WolfGPU_EndFrameStatusBar(int viewY0, int viewY1)
 		}
 #endif
 	}
+#if OF_ECWOLF_PERF_ENABLED
+	/* White-lines probe #2: count CPU-dirty lines inside the view band before the
+	 * flush clears the bitmap.  Nonzero = the CPU wrote into GPU-resident view
+	 * rows that EndFrameStatusBar won't invalidate. */
+	if(gpu_cpu_dirty)
+	{
+		for(int ln = viewY0; ln < viewY1; ln++)
+			if(gpu_line_test(gpu_cpu_dirty_lines, (unsigned int)ln))
+				gpu_dbg_view_band_dirty++;
+	}
+#endif
 	gpu_flush_cpu_dirty_lines();
 	if(had_gpu_work)
 	{

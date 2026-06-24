@@ -1,5 +1,11 @@
 # CLAUDE.md — Wolfenstein / Blake Stone openFPGA port
 
+> Detailed working notes live in [`notes/blakestone/`](notes/blakestone/):
+> [white-lines](notes/blakestone/white-lines.md), [perf](notes/blakestone/perf.md),
+> [build-test](notes/blakestone/build-test.md), and the full chronological
+> [history](notes/blakestone/history.md) (incl. the resolved AI-behaviour and
+> info-area-icon work). This file is the short current-state index; the depth is there.
+
 ## ⚠ White lines — read before changing the renderer
 
 White/garbage lines across the top rows of the 3D view, on device only.
@@ -51,5 +57,8 @@ Verify the on-card ELF after `make copy` (`cmp` / `sha256sum`).
 
 ## Branches
 
-`blake-union` is the shippable Blake Stone branch; `blake-bootlog` holds
-perf-diagnostic work. Discordian opens upstream PRs himself.
+All Blake Stone work goes on **`blake-union`** — the one shippable branch. Do
+**not** spin up extra feature branches per change; the branch proliferation is
+confusing, so commit directly to `blake-union` (this overrides the generic
+gh-workspace "branch from main, PR" flow for this repo). Discordian opens upstream
+PRs himself.

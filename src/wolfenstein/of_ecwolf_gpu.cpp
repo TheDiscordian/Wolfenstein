@@ -1269,6 +1269,16 @@ static bool gpu_acquire_video_draw_buffer(int width, int height)
 				of_cache_flush_range(draw_fb + tail_off,
 					frame_bytes - tail_off);
 			}
+#if OF_ECWOLF_PERF_ENABLED
+			/* White-lines diagnostic: the view band [skip_y0,skip_y1) is left
+			 * un-copied because the renderer is assumed to fully redraw it.  Fill
+			 * it BLACK here so any row the renderer does NOT cover shows black
+			 * instead of stale buffer content.  If the white lines turn black they
+			 * are uncovered rows; if they stay white the GPU is writing them
+			 * wrong.  PERF-only, never ships. */
+			memset(draw_fb + head_bytes, 0, tail_off - head_bytes);
+			of_cache_flush_range(draw_fb + head_bytes, tail_off - head_bytes);
+#endif
 		}
 	}
 	else if(preserve && gpu_video_last_fb == NULL)

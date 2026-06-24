@@ -40,11 +40,26 @@ Danger zones: `g_blake/blake_sbar.cpp` (status-bar cache), `wl_floorceiling.cpp`
   `SetNextVideoFramePreserveExcludeRows(viewscreeny, viewscreeny+viewheight)`
   (wl_draw.cpp:1592) and `EndFrameStatusBar(viewscreeny, viewscreeny+viewheight)`
   (wl_play.cpp:1338) pass the identical view band. Head/tail ranges agree exactly.
-- **GPU write-drain race — NO** (per RTL): `CMD_FENCE` stalls until
-  `m_wr_inflight == 0`, so `of_gpu_finish()` provably commits all framebuffer
-  writes before it returns.
+- **GPU write-drain race — NO** (RTL + **device probe, during actual white
+  lines**): `CMD_FENCE` stalls until `m_wr_inflight == 0`; and the probe read
+  `gbf=0 gst=2` (ring-empty, no busy/DMA) *while the lines were on screen* — the
+  GPU is fully drained when `EndFrameStatusBar` publishes.
+- **CPU writes into the view band — NO** (device probe): `vbd=0` during the same
+  white-lines run — the CPU never wrote a line inside `[viewscreeny,viewscreeny+viewheight)`.
 - **Per-half floor/ceiling backdrop, and PERF-build alone — NO**: white lines
   appeared without either. See [history.md](history.md).
+
+## Leading hypothesis (after the device probe)
+
+Fence drained (`gbf=0`), no CPU view-band writes (`vbd=0`), CPU path valgrind-clean
+— all *during* the corruption. The remaining mechanism is the **preserve-copy
+skipping the view band**: at buffer acquire the head/tail are carried over from
+the last frame but `[viewscreeny,viewscreeny+viewheight)` is left un-copied (the
+acquire path in of_ecwolf_gpu.cpp) on the assumption the renderer fully redraws it.
+Any top row the GPU does **not** cover then shows stale content from an earlier
+buffer — layout-sensitive (geometry decides coverage), device-only. **Test
+deployed:** a PERF-gated black-fill of the skipped view band at acquire — white
+lines turning black = uncovered rows; staying white = the GPU writes them wrong.
 
 ## Known triggers (layout-sensitive)
 

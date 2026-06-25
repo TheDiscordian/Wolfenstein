@@ -478,6 +478,16 @@ void Blake_PinballReset()
 	levelPointsTotal = IWad::CheckGameFilter("Blake") ? Blake_ComputeLevelPointsTotal() : 0;
 }
 
+// Persist the per-level pinball bonus state across save/load.  A bonus is queued
+// when earned but its points are only granted when it's drained and shown
+// (DrainPinballBonus -> GivePoints), so without this a bonus queued-but-not-shown
+// at save time would be lost on reload and its points never awarded.
+// levelPointsTotal is recomputed at floor entry, so it isn't stored.
+void Blake_PinballSerialize(FArchive &arc)
+{
+	arc << pinballQueue << pinballShown << levelPointsAccum;
+}
+
 // Guardian-Alien bonus (bstone 3d_state.cpp:1216: ActivatePinballBonus in the
 // death handler for the six AoG guardian bosses, !is_ps).  Fires once per level
 // on any of those boss deaths; AoG only.  Called from AActor::Die.

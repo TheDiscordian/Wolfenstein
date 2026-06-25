@@ -74,6 +74,10 @@ void R_RenderView();
 extern byte* vbuf;
 extern unsigned vbufPitch;
 
+// Blake pinball bonus queue save/load (global, defined in blake_sbar.cpp).
+void Blake_PinballSerialize(FArchive &arc);
+void Blake_PinballReset();
+
 namespace GameSave {
 
 unsigned long long SaveVersion = GetSaveVersion();
@@ -794,6 +798,8 @@ static void Serialize(FArchive &arc)
 #define FLRD_ID MAKE_ID('f','l','R','d')
 // Blake informant census; same chunk-presence gating.
 #define INFS_ID MAKE_ID('i','n','F','s')
+// Blake per-level pinball bonus queue; same chunk-presence gating.
+#define PINB_ID MAKE_ID('p','i','N','b')
 
 bool Load(const FString &filename)
 {
@@ -900,6 +906,17 @@ bool Load(const FString &filename)
 			}
 			else
 				Blake_InformantsClear();
+		}
+
+		{
+			unsigned int chunkLength = M_FindPNGChunk(png, PINB_ID);
+			if(chunkLength > 0)
+			{
+				FPNGChunkArchive arc(fileh, PINB_ID, chunkLength);
+				Blake_PinballSerialize(arc);
+			}
+			else
+				Blake_PinballReset();
 		}
 	}
 	catch(CRecoverableError &error)
@@ -1073,6 +1090,11 @@ bool Save(const FString &filename, const FString &title)
 		}
 		FPNGChunkArchive psArc(fileh, FLRD_ID);
 		psFile.Serialize(psArc);
+	}
+
+	{
+		FPNGChunkArchive pinballArc(fileh, PINB_ID);
+		Blake_PinballSerialize(pinballArc);
 	}
 
 	M_FinishPNG(fileh);

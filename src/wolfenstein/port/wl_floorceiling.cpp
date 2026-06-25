@@ -431,7 +431,7 @@ extern uint32_t of_fl_dbg_bail;
 extern uint32_t of_fl_dbg_solid;
 extern uint32_t of_fl_dbg_texdims;
 
-bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
+int DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 {
 	const bool active = OF_WolfGPU_IsActive();
 	if(active)
@@ -439,7 +439,7 @@ bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 	if(!active || map == NULL || map->NumPlanes() == 0)
 	{
 		OF_PERF_DBG(of_fl_dbg_bail = !active ? 1u : (map == NULL ? 2u : 3u));
-		return false;
+		return 0;
 	}
 
 	byte floorColor;
@@ -467,27 +467,28 @@ bool DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 	if(horizon > viewheight)
 		horizon = viewheight;
 
-	if(!R_DrawPlaneBackdropHalfGPU(vbuf, vbufPitch, 0, horizon, horizon,
+	// Each half is attempted independently so a uniform ceiling (or floor) still
+	// gets the GPU backdrop when the other half is multi-flat and has to fall back
+	// to the CPU R_DrawPlane walk.  Returns the mask of halves drawn here; the
+	// caller CPU-draws the rest.
+	int done = 0;
+	if(R_DrawPlaneBackdropHalfGPU(vbuf, vbufPitch, 0, horizon, horizon,
 		viewz + (map->GetPlane(0).depth << FRACBITS), false,
 		ceilingColor, solidCeiling, ceilingTexture))
-	{
-		OF_PERF_DBG(of_fl_dbg_bail = 4u);
-		return false;
-	}
-	if(!R_DrawPlaneBackdropHalfGPU(vbuf, vbufPitch, horizon, viewheight,
+		done |= FC_CEILING;
+	if(R_DrawPlaneBackdropHalfGPU(vbuf, vbufPitch, horizon, viewheight,
 		horizon, viewz, true, floorColor, solidFloor, floorTexture))
-	{
-		OF_PERF_DBG(of_fl_dbg_bail = 5u);
-		return false;
-	}
-	OF_PERF_DBG(of_fl_dbg_bail = 0u);
-	OF_PERF_DBG(of_fl_dbg_gpu_true++);
-	return true;
+		done |= FC_FLOOR;
+
+	OF_PERF_DBG(of_fl_dbg_bail = (unsigned)(FC_BOTH & ~done));	// halves left to CPU
+	if(done == FC_BOTH)
+		OF_PERF_DBG(of_fl_dbg_gpu_true++);
+	return done;
 }
 #else
-bool DrawFloorAndCeilingBackdropGPU(byte *, unsigned)
+int DrawFloorAndCeilingBackdropGPU(byte *, unsigned)
 {
-	return false;
+	return 0;
 }
 #endif
 
@@ -776,18 +777,26 @@ static void R_DrawPlane(byte *vbuf, unsigned vbufPitch, int min_wallheight, int 
 // Textured Floor and Ceiling by DarkOne
 // With multi-textured floors and ceilings stored in lower and upper bytes of
 // according tile in third mapplane, respectively.
-void DrawFloorAndCeiling(byte *vbuf, unsigned vbufPitch, int min_wallheight)
+void DrawFloorAndCeiling(byte *vbuf, unsigned vbufPitch, int min_wallheight, int skipHalves)
 {
 	const int halfheight = (viewheight >> 1) - viewshift;
 
 	byte solidColor;
-	if(R_GetUniformPlaneSolidColor(true, solidColor))
-		R_DrawSolidPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz, solidColor);
-	else
-		R_DrawPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz);
+	// Floor half (planeheight viewz).  Skipped when the GPU backdrop already drew it.
+	if(!(skipHalves & FC_FLOOR))
+	{
+		if(R_GetUniformPlaneSolidColor(true, solidColor))
+			R_DrawSolidPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz, solidColor);
+		else
+			R_DrawPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz);
+	}
 
-	if(R_GetUniformPlaneSolidColor(false, solidColor))
-		R_DrawSolidPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz+(map->GetPlane(0).depth<<FRACBITS), solidColor);
-	else
-		R_DrawPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz+(map->GetPlane(0).depth<<FRACBITS));
+	// Ceiling half (planeheight viewz + plane depth).
+	if(!(skipHalves & FC_CEILING))
+	{
+		if(R_GetUniformPlaneSolidColor(false, solidColor))
+			R_DrawSolidPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz+(map->GetPlane(0).depth<<FRACBITS), solidColor);
+		else
+			R_DrawPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz+(map->GetPlane(0).depth<<FRACBITS));
+	}
 }

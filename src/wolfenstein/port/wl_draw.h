@@ -34,6 +34,16 @@ extern  fixed   viewsin,viewcos;
 void    ThreeDStartFadeIn ();
 void    ThreeDRefresh (void);
 
+// Floor/ceiling halves.  DrawFloorAndCeilingBackdropGPU returns the bits for the
+// halves it drew on the GPU; those same bits are passed to DrawFloorAndCeiling
+// as the halves it should skip (the rest fall back to the CPU R_DrawPlane walk).
+enum
+{
+	FC_CEILING = 1,
+	FC_FLOOR   = 2,
+	FC_BOTH    = FC_CEILING | FC_FLOOR,
+};
+
 typedef struct
 {
 	word leftpix,rightpix;

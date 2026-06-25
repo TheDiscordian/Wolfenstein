@@ -21,16 +21,22 @@ is 1.0 work.
 
 ## Backlog (post-1.0, unscheduled)
 
-Known limitations and polish, none of them shipping blockers:
+Known limitations and polish, none of them shipping blockers. Each is a real
+TODO/stub in the source:
 
-- **Floor/ceiling GPU offload** — the floor still renders on a per-pixel CPU
-  walk on maps with mixed flats (the common Blake case); moving it fully onto
-  the GPU span path is the next big framerate win. In progress.
-- **Sprite near-plane clipping** — sprites straddling the view plane are culled
-  whole rather than clipped (inherited from Wolf4SDL/ECWolf; matches the DOS
-  engine's behaviour).
-- **Per-column sprite shading** — sprites shade by one distance for the whole
-  sprite rather than per column.
-- **Briefing `^AN` animation / shape embedding** — the Text Presenter renders
-  the mission-briefing location pictures but not animated `^AN` pages (used
-  only by intro/showcase screens, not the shipped AOG briefings).
+- **Sprite view-plane clipping** (`r_sprites.cpp:744`, `// TODO: Clip on viewplane`)
+  — a sprite whose endpoints cross behind the view plane is culled whole (`return`)
+  instead of clipped at the plane. Inherited from the ECWolf/Wolf4SDL scaler.
+- **Per-column sprite shading** (`r_sprites.cpp:587`, `[XA] TODO`) — sprites shade
+  by one distance (the sprite's) for the whole sprite rather than per screen
+  column. An upstream ECWolf TODO.
+- **`^AN` animated text-presenter pages** (`jm_tp.cpp:1348`; `TP_AnimatePage` is a
+  no-op) — static `^SH` shapes (the per-mission briefing location pics `M_EPIS1`–`6`
+  and the Mission-6 generator icon) are drawn; the `^AN` *animation* opcode is
+  parsed-and-skipped. Per the source comment, `^AN` is used by the intro /
+  enemy-showcase pages, not the AOG mission briefings.
+- **Queued score bonus lost on save/reload** (`blake_sbar.cpp:360`) — cosmetic
+  edge case.
+
+(The floor/ceiling GPU offload that used to head this list is done — the per-half
+GPU backdrop.)

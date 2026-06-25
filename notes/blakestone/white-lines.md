@@ -44,8 +44,11 @@ Danger zones: `g_blake/blake_sbar.cpp` (status-bar cache), `wl_floorceiling.cpp`
   lines**): `CMD_FENCE` stalls until `m_wr_inflight == 0`; and the probe read
   `gbf=0 gst=2` (ring-empty, no busy/DMA) *while the lines were on screen* — the
   GPU is fully drained when `EndFrameStatusBar` publishes.
-- **CPU writes into the view band — NO** (device probe): `vbd=0` during the same
-  white-lines run — the CPU never wrote a line inside `[viewscreeny,viewscreeny+viewheight)`.
+- **A this-frame CPU write into the view band — NO**: the fix invalidates the band
+  at acquire, *before* the GPU draws and before any this-frame CPU overlay, yet it
+  eliminates the lines — so the corrupting dirty lines were stale residue from the
+  buffer's previous use, not a write made this frame. (The `vbd` probe corroborates
+  CPU view-band writes per frame; it indexes the dirty bitmap by 64-byte granule.)
 - **Per-half floor/ceiling backdrop, and PERF-build alone — NO**: white lines
   appeared without either.
 

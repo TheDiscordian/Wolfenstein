@@ -1532,13 +1532,19 @@ void OF_WolfGPU_EndFrameStatusBar(int viewY0, int viewY1)
 #endif
 	}
 #if OF_ECWOLF_PERF_ENABLED
-	/* White-lines probe #2: count CPU-dirty lines inside the view band before the
-	 * flush clears the bitmap.  Nonzero = the CPU wrote into GPU-resident view
-	 * rows that EndFrameStatusBar won't invalidate. */
+	/* White-lines probe #2: count CPU-dirty granules inside the view band before
+	 * the flush clears the bitmap.  Nonzero = the CPU wrote into GPU-resident view
+	 * rows that EndFrameStatusBar won't invalidate.  The dirty bitmap is keyed by
+	 * GPU_FB_TRACK_LINE_BYTES byte granules, NOT framebuffer rows, so index by the
+	 * band's byte range [viewY0*pitch, viewY1*pitch). */
 	if(gpu_cpu_dirty)
 	{
-		for(int ln = viewY0; ln < viewY1; ln++)
-			if(gpu_line_test(gpu_cpu_dirty_lines, (unsigned int)ln))
+		const uint32_t g0 = ((uint32_t)viewY0 * (uint32_t)gpu_pitch)
+			/ GPU_FB_TRACK_LINE_BYTES;
+		const uint32_t g1 = ((uint32_t)viewY1 * (uint32_t)gpu_pitch
+			+ GPU_FB_TRACK_LINE_BYTES - 1u) / GPU_FB_TRACK_LINE_BYTES;
+		for(uint32_t g = g0; g < g1; g++)
+			if(gpu_line_test(gpu_cpu_dirty_lines, g))
 				gpu_dbg_view_band_dirty++;
 	}
 #endif

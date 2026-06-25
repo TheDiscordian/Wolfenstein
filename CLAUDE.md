@@ -2,9 +2,8 @@
 
 > Detailed working notes live in [`notes/blakestone/`](notes/blakestone/):
 > [white-lines](notes/blakestone/white-lines.md), [perf](notes/blakestone/perf.md),
-> [build-test](notes/blakestone/build-test.md), and the full chronological
-> [history](notes/blakestone/history.md) (incl. the resolved AI-behaviour and
-> info-area-icon work). This file is the short current-state index; the depth is there.
+> [build-test](notes/blakestone/build-test.md). This file is the short current-state
+> index; the depth is there.
 
 ## ⚠ White lines — read before changing the renderer
 

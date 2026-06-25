@@ -47,7 +47,7 @@ Danger zones: `g_blake/blake_sbar.cpp` (status-bar cache), `wl_floorceiling.cpp`
 - **CPU writes into the view band — NO** (device probe): `vbd=0` during the same
   white-lines run — the CPU never wrote a line inside `[viewscreeny,viewscreeny+viewheight)`.
 - **Per-half floor/ceiling backdrop, and PERF-build alone — NO**: white lines
-  appeared without either. See [history.md](history.md).
+  appeared without either.
 
 ## Root cause (CONFIRMED 2026-06-25) + fix
 
@@ -68,7 +68,7 @@ back over it (`of_cache_inval_range`, row-pitch aligned).
 **How it was confirmed (two device tests, deterministic per build):** a PERF-gated
 black-fill of the band (memset + flush) killed the lines; then the same minus the
 memset (invalidate only, no colour change) *also* killed them — isolating the
-**cache op**, not the pixels. The lines are persistent in the 3D view (Ryan), not
+**cache op**, not the pixels. The lines are persistent in the 3D view, not
 intermittent; presence tracked the build.
 
 ## Known triggers (layout-sensitive)

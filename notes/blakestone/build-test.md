@@ -14,10 +14,9 @@ the relevant objects or `make clean` first when toggling flags.
 
 ## Repo layout
 
-One checkout, one Blake branch: work in `~/Programming/Wolfenstein` on
-**`blake-union`** (origin `TheDiscordian/Wolfenstein`, upstream
-`openfpgaOS/Wolfenstein` — never PR upstream). No `/tmp` worktrees. The Blake game
-data (`*.BS6`/`*.VSI`, `ecwolf.pk3`) is tracked on `blake-union`. Toolchain:
+One Blake branch: **`blake-union`** (origin `TheDiscordian/Wolfenstein`, upstream
+`openfpgaOS/Wolfenstein` — never PR upstream). The Blake game data
+(`*.BS6`/`*.VSI`, `ecwolf.pk3`) is tracked on `blake-union`. Toolchain:
 `riscv64-elf-gcc` 15.2.0 + binutils.
 
 ## Headless PC test harness
@@ -41,7 +40,7 @@ loader's own compiled code, not IFUNC selection). Run it inside a generic-glibc
 container instead:
 
 ```bash
-docker run --rm -v ~/Programming/Wolfenstein:/work -w /work ubuntu:24.04 bash -c '
+docker run --rm -v "$(git rev-parse --show-toplevel)":/work -w /work ubuntu:24.04 bash -c '
   set -e
   apt-get update -qq
   apt-get install -y -qq build-essential pkg-config valgrind \

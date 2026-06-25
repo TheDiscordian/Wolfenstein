@@ -1270,14 +1270,14 @@ static bool gpu_acquire_video_draw_buffer(int width, int height)
 					frame_bytes - tail_off);
 			}
 #if OF_ECWOLF_PERF_ENABLED
-			/* White-lines diagnostic: the view band [skip_y0,skip_y1) is left
-			 * un-copied because the renderer is assumed to fully redraw it.  Fill
-			 * it BLACK here so any row the renderer does NOT cover shows black
-			 * instead of stale buffer content.  If the white lines turn black they
-			 * are uncovered rows; if they stay white the GPU is writing them
-			 * wrong.  PERF-only, never ships. */
-			memset(draw_fb + head_bytes, 0, tail_off - head_bytes);
-			of_cache_flush_range(draw_fb + head_bytes, tail_off - head_bytes);
+			/* White-lines diagnostic v2: invalidate the skipped view band's CPU
+			 * cache, no black-fill.  Discards any stale dirty lines that would
+			 * write back over the GPU's pixels.  The black-fill (v1) eliminated
+			 * the lines; this isolates whether the CACHE op did it (not the black
+			 * colour): lines stay gone => dirty-cache-writeback (EndFrameStatusBar's
+			 * scoped invalidate skips this band), lines return => the SDRAM fill
+			 * mattered = uncovered rows.  Range is row-pitch aligned.  PERF-only. */
+			of_cache_inval_range(draw_fb + head_bytes, tail_off - head_bytes);
 #endif
 		}
 	}

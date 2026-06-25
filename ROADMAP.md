@@ -7,23 +7,17 @@ on the Pocket: all six episodes, the LINC info area, interrogation/informant
 system, barriers, elevators, briefings, score/pinball bonuses, save/load, and
 OPL music. This is feature-complete and is what 1.0 ships.
 
-## After 1.0
+## Out of scope for 1.0
 
 ### Multiplayer
 
-Local split-screen multiplayer (co-op and deathmatch) through the Pocket dock,
-which already drives multiple controllers (see the dock controls in the
-README). The engine carries ECWolf's netplay/split-screen scaffolding
-(`Net::`, `ClearSplitVWB`), so the remaining work is wiring it up and finishing
-the pieces that are stubbed for single-player today:
-
-- player-to-player collision response (`wl_agent.cpp` — players currently clip
-  through each other)
-- damage attribution when the attacker/target is another player
-  (`wl_state.cpp`)
-- split-screen viewport plumbing and per-player input routing
-
-**This lands after 1.0 ships, not before.**
+**Multiplayer is out of scope for 1.0 — not scheduled.** Local split-screen
+(co-op and deathmatch) through the Pocket dock is only a possible future
+direction. The engine carries ECWolf's netplay/split-screen scaffolding (`Net::`,
+`ClearSplitVWB`); if it's ever picked up, the stubbed-for-single-player pieces
+are player-to-player collision (`wl_agent.cpp`), damage attribution between
+players (`wl_state.cpp`), and split-screen viewport/input routing. None of this
+is 1.0 work.
 
 ## Backlog (post-1.0, unscheduled)
 

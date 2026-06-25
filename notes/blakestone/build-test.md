@@ -12,13 +12,13 @@ Verify the on-card ELF after `make copy` (`cmp` / `sha256sum`). `make clean` doe
 **not** remove `.obj/`; a flag-only change (e.g. `PERF=1`) isn't detected, so wipe
 the relevant objects or `make clean` first when toggling flags.
 
-## Worktree gotcha
+## Repo layout
 
-`/tmp/blake-logger` is a git worktree of `~/Programming/Wolfenstein`. A `/tmp`
-clear wipes its top-level files (`Makefile`, the `.git` pointer) but keeps
-`src/`, `build/`, `.obj/`. Restore: back up any uncommitted `src/` edits, write
-the `.git` file `gitdir: ~/Programming/Wolfenstein/.git/worktrees/blake-logger`,
-then `git checkout -- .`. Toolchain: `riscv64-elf-gcc` 15.2.0 + binutils.
+One checkout, one Blake branch: work in `~/Programming/Wolfenstein` on
+**`blake-union`** (origin `TheDiscordian/Wolfenstein`, upstream
+`openfpgaOS/Wolfenstein` — never PR upstream). No `/tmp` worktrees. The Blake game
+data (`*.BS6`/`*.VSI`, `ecwolf.pk3`) is tracked on `blake-union`. Toolchain:
+`riscv64-elf-gcc` 15.2.0 + binutils.
 
 ## Headless PC test harness
 
@@ -41,7 +41,7 @@ loader's own compiled code, not IFUNC selection). Run it inside a generic-glibc
 container instead:
 
 ```bash
-docker run --rm -v /tmp/blake-logger:/work -w /work ubuntu:24.04 bash -c '
+docker run --rm -v ~/Programming/Wolfenstein:/work -w /work ubuntu:24.04 bash -c '
   set -e
   apt-get update -qq
   apt-get install -y -qq build-essential pkg-config valgrind \

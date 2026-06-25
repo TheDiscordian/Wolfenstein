@@ -19,6 +19,18 @@ handling — without keeping the coherency protocol
 `SetNextVideoFramePreserveExcludeRows` preserve list). Mechanism detailed at the
 top of `src/wolfenstein/of_ecwolf_gpu.h`.
 
+**Root cause + fix (device-confirmed, 2026-06-25).** The lines were a
+**dirty-cache writeback over the view band**: the acquire preserve-copy leaves the
+view band `[viewscreeny,viewscreeny+viewheight)` un-copied (the GPU redraws it) and
+`EndFrameStatusBar` scopes its cache-invalidate to head/tail, skipping that band —
+so stale dirty CPU cache lines over it, left from the buffer's previous use, could
+evict and write back to SDRAM *after* the GPU rendered, clobbering its pixels. Fix:
+invalidate the skipped view band at acquire (`gpu_acquire_video_draw_buffer`),
+before the GPU draws. On-device probes nailed it — during the corruption the GPU
+was fully drained (`gbf=0`) and the CPU made no tracked view-band write (`vbd=0`),
+and both a cache-invalidate and a flush of that band killed the lines. Probe fields
++ read path: [notes/blakestone/](notes/blakestone/).
+
 Rule:
 - On PC every `OF_WolfGPU_*` is a no-op stub, so the GPU/cache path never runs —
   a clean PC render does **not** verify a renderer change, only the CPU fallback.

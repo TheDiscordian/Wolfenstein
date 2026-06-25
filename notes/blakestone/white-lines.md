@@ -49,17 +49,27 @@ Danger zones: `g_blake/blake_sbar.cpp` (status-bar cache), `wl_floorceiling.cpp`
 - **Per-half floor/ceiling backdrop, and PERF-build alone — NO**: white lines
   appeared without either. See [history.md](history.md).
 
-## Leading hypothesis (after the device probe)
+## Root cause (CONFIRMED 2026-06-25) + fix
 
-Fence drained (`gbf=0`), no CPU view-band writes (`vbd=0`), CPU path valgrind-clean
-— all *during* the corruption. The remaining mechanism is the **preserve-copy
-skipping the view band**: at buffer acquire the head/tail are carried over from
-the last frame but `[viewscreeny,viewscreeny+viewheight)` is left un-copied (the
-acquire path in of_ecwolf_gpu.cpp) on the assumption the renderer fully redraws it.
-Any top row the GPU does **not** cover then shows stale content from an earlier
-buffer — layout-sensitive (geometry decides coverage), device-only. **Test
-deployed:** a PERF-gated black-fill of the skipped view band at acquire — white
-lines turning black = uncovered rows; staying white = the GPU writes them wrong.
+**Dirty-cache writeback over the view band.** Fence drained (`gbf=0`), no tracked
+CPU view-band writes (`vbd=0`), CPU path valgrind-clean — all *during* the
+corruption — so it's not a race, a stray CPU write, or a CPU memory bug. The
+mechanism: the acquire preserve-copy leaves the view band
+`[viewscreeny,viewscreeny+viewheight)` un-copied (the GPU redraws it), and
+`EndFrameStatusBar` scopes its cache-invalidate to head/tail and **skips** the view
+band (the "~35% optimization"). So stale **dirty CPU cache lines** over that band,
+left from this buffer's previous use, evict and write back to SDRAM *after* the GPU
+rendered — clobbering its pixels = the white lines.
+
+**Fix:** invalidate the skipped view band's CPU cache at acquire
+(`gpu_acquire_video_draw_buffer`), before the GPU draws, so nothing stale can write
+back over it (`of_cache_inval_range`, row-pitch aligned).
+
+**How it was confirmed (two device tests, deterministic per build):** a PERF-gated
+black-fill of the band (memset + flush) killed the lines; then the same minus the
+memset (invalidate only, no colour change) *also* killed them — isolating the
+**cache op**, not the pixels. The lines are persistent in the 3D view (Ryan), not
+intermittent; presence tracked the build.
 
 ## Known triggers (layout-sensitive)
 
@@ -78,16 +88,16 @@ valgrind-clean CPU path.
 
 ## Current state
 
-- **Shippable-clean:** `fa49c572` (icon-decouple + HUD secret-flag fix, no hoist,
-  no per-half, non-PERF) — device-confirmed clean.
-- **Next diagnostic — BUILT, awaiting a device run.** On-device GPU write-inflight
-  probe: `OF_WolfGPU_EndFrameStatusBar` samples `GPU_STATUS` (0x14; bit0 busy,
-  bit2 DMA_BUSY) read-only right after the `of_gpu_finish()` fence drain and
-  accumulates two `OF_ECWOLF_PERF`-gated perf-line fields — `gbf=` (frames where
-  the GPU still reported busy/DMA after the fence) and `gst=` (OR of the status
-  bits seen there). There is no `0x34 WR_INFLIGHT` register; the real interface is
-  `of_gpu_debug_snapshot()` / `GPU_STATUS`. Read-only, no framebuffer write, so it
-  can't perturb the layout. To run: deploy a `PERF=1` build, play ~15 s, read the
-  slot-9 save (`strings AliensOfGold_9.sav | grep 'fr='`). `gbf>0` with bit2 in
-  `gst` = the GPU is still committing view-band pixels at publish (smoking gun);
-  `gbf=0` clears the GPU-drain hypothesis and points further down the seam.
+- **Fix landed** (acquire-time view-band cache invalidate) on `blake-union`,
+  non-PERF — see the Root cause section above. The invalidate is device-confirmed
+  (the PERF isolation build with it ran clean); the shippable non-PERF build is the
+  final check.
+- **Diagnostic probes retained** (PERF-only, never ship): `OF_WolfGPU_EndFrameStatusBar`
+  samples `GPU_STATUS` after the `of_gpu_finish()` fence drain into perf-line fields
+  `gbf=` (frames the GPU still reported busy/DMA after the fence) and `gst=` (OR of
+  the status bits — bit0 busy, bit1 ring-empty, bit2 DMA-busy); `vbd=` counts
+  CPU-dirty lines that landed inside the view band. There is no `0x34 WR_INFLIGHT`
+  register — the real interface is `of_gpu_debug_snapshot()` / `GPU_STATUS`. To use:
+  `PERF=1` build, play, read slot-9 (`strings AliensOfGold_9.sav | grep 'fr='`).
+  If the lines ever return, `gbf>0`+bit2 = GPU-drain, `vbd>0` = a CPU view-band
+  write, both `0` = back to the dirty-cache seam.

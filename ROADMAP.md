@@ -1,11 +1,13 @@
 # Roadmap
 
-## 1.0 — Blake Stone: Aliens of Gold
+## 1.0 — Blake Stone: Aliens of Gold + Planet Strike
 
-The first shipping target is a faithful, full-game Blake Stone: Aliens of Gold
-on the Pocket: all six episodes, the LINC info area, interrogation/informant
-system, barriers, elevators, briefings, score/pinball bonuses, save/load, and
-OPL music. This is feature-complete and is what 1.0 ships.
+The shipping target is a faithful, full-game Blake Stone on the Pocket — **both**
+Aliens of Gold (all six episodes) **and** Planet Strike. The core ships both as
+selectable games (`Assets/blakestone/.../Aliens of Gold.json` and
+`Planet Strike.json`, `.BS6` and `.VSI` data sets). Covered: the LINC info area,
+interrogation/informant system, barriers, elevators, briefings, score/pinball
+bonuses, save/load, and OPL music.
 
 ## Out of scope for 1.0
 
@@ -33,30 +35,31 @@ Known limitations and polish, none of them shipping blockers.
 
 ### bstone parity — remaining
 
-- **Story / Ordering / Lose text overlays — blocked on VGAGRAPH chunk naming.**
-  bstone's `LoseScreen` (`3d_game.cpp:3247`), `CP_BlakeStoneSaga` and
-  `CP_OrderingInfo` (`3d_menu.cpp:1958`) draw a full-screen art page *and* present
-  a text chunk (`LOSETEXT` / `SAGATEXT` / `ORDERTEXT`). The art pages
-  (`LOSEPIC`, `SAGAART`, `ORDERART`) are named in `bs6map.txt` and usable — the
-  Lose screen already shows `LOSEPIC` — but the matching *text* chunks are not
-  named in the VGAGRAPH map, so the overlays and the STORY/ORDERING menu entries
-  can't be wired. Unblocking needs the bstone `GrChunk` enum positions confirmed
-  against `bs6map.txt` so the names can be inserted without shifting the
-  already-working briefing chunks (`BRIEFW`/`BRIEFI`, `bs6map.txt:60`).
-- **Informant high-completion hint.** bstone gives a distinct informant hint near
-  full level completion; the exact dispatch was not located in the bstone source
-  during the parity audit. Needs the reference pinned (`3d_act1.cpp` /
-  `3d_state.cpp`) before porting — the port's per-room hint system
-  (`blake_informant.cpp`) is otherwise in place.
-- **Fluid Alien AI** (`LIQ` sprites) — the puddle alien's rise / sink / submerge
-  behaviour is simplified relative to bstone. Cosmetic.
+- **STORY / ORDERING menus + the Lose-screen text overlay.** bstone's `LoseScreen`
+  (`3d_game.cpp:3247`), `CP_BlakeStoneSaga` and `CP_OrderingInfo`
+  (`3d_menu.cpp:1958`) draw a background art page *and* present a text chunk. The
+  text is present and named: decoding `VGAGRAPH.BS6` shows the lumps `bs6map.txt`
+  calls `SAGAART` / `LOSEART` / `ORDERART` actually hold the Saga, Lose ("REBA:
+  INCOMING TRANSMISSION") and Ordering presenter scripts. So these just need
+  wiring through `TP_Presenter` (as the briefings already are) — the Lose overlay
+  over the existing `LOSEPIC`, and two new menu entries. Not blocked.
+- **Fluid Alien AI** (`LIQ` sprites, `blakemonsters.txt:1752`) — the puddle alien's
+  rise/attack/submerge cycle is present but approximated: the actor's own comments
+  flag the missing exact gating ("should rise if the player is >1 block away in
+  both directions but <6 in either", the 40/255 fall and 80/255 attack chances,
+  the 5-attack counter). bstone's `T_LiquidStand` logic; likely needs a native
+  action to match precisely.
+
+### Planet Strike
+
+Planet Strike ships in 1.0 (`.VSI` data, `planet.txt`, `a_electrosphere`,
+`a_detonator`). Remaining PS-specific parity work to audit against bstone:
+morphing enemies (`gold_morphobj`, `morphing_*obj`) and the electro-alien
+projection generators.
 
 ### Text presenter
 
 - **`^AN` animated pages** (`jm_tp.cpp:1348`; `TP_AnimatePage` is a no-op) — static
   `^SH` shapes (briefing location pics `M_EPIS1`–`6`, the Mission-6 generator icon)
   are drawn; the `^AN` *animation* opcode is parsed-and-skipped. Per the source
-  comment `^AN` drives the intro / enemy-showcase pages, not the AOG briefings.
-
-Planet Strike content (morphing enemies, electro-alien generators) is a separate
-game and not part of the AOG 1.0 target.
+  comment `^AN` drives the intro / enemy-showcase pages, not the briefings.

@@ -42,6 +42,7 @@
 #include "wl_game.h"
 #include "wl_iwad.h"
 #include "wl_net.h"
+#include "wl_play.h"
 #include "wl_state.h"
 #include "thingdef/thingdef.h"
 
@@ -196,7 +197,9 @@ ACTION_FUNCTION(A_SphereBounce)
 		if((dx > dy ? dx : dy) < TILEGLOBAL)
 		{
 			PlaySoundLocActor("electrosphere/attack", self);
-			DamageActor(p, self, 4);
+			// bstone arcs 4/tic at 70 Hz; this thinker runs once per sim step,
+			// so scale by simStepMult to keep the health-drain rate.
+			DamageActor(p, self, 4 * simStepMult);
 		}
 	}
 
@@ -208,7 +211,10 @@ ACTION_FUNCTION(A_SphereBounce)
 			return true;
 	}
 
-	int32_t move = self->speed;
+	// bstone T_OfsBounce travels speed*tics per game-tic; under the device fixed
+	// step this thinker runs once per sim step (simStepMult tics), so scale to
+	// keep the bounce speed (the native chase code does the same, wl_act2.cpp).
+	int32_t move = self->speed * simStepMult;
 	while(move)
 	{
 		if(move < self->distance)

@@ -129,6 +129,32 @@ static int EpisodeBase(int levelNum)
 void Blake_FloorLocksNewGame()
 {
 	memset(floorMeta, 0, sizeof(floorMeta));
+
+	// bstone seeds every stats floor's overall_floor to 100% at NewGame
+	// (3d_main.cpp:7952) so the OVERALL MISSION row reads against a full
+	// baseline and drops to the real average as floors are completed, rather
+	// than climbing from 0%.  A floor's overallFloor here is the sum of three
+	// 0-100 ratios, so 100% == 300.
+	if(IsBlake())
+	{
+		if(IsAOG())
+		{
+			const int episodes = EpisodeInfo::GetNumEpisodes();
+			for(int e = 0;e < episodes;++e)
+			{
+				const int base = e * FLOORS_PER_EPISODE + 1;
+				for(int f = 0;f < STATS_FLOORS;++f)
+					if(base + f < (int)countof(floorMeta))
+						floorMeta[base + f].overallFloor = 300;
+			}
+		}
+		else
+		{
+			for(int f = 1;f <= PS_FLOORS && f < (int)countof(floorMeta);++f)
+				floorMeta[f].overallFloor = 300;
+		}
+	}
+
 	Blake_PsClear();
 }
 

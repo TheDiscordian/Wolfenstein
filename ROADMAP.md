@@ -54,11 +54,13 @@ Known limitations and polish, none of them shipping blockers.
   menu now presents HELPART through `TP_Presenter` (`Blake_ShowInstructions`)
   instead of ECWolf's `ShowArticle`, which couldn't read the Blake presenter
   codes.  `TP_AnimatePage` (`jm_tp.cpp`) ports bstone's animation stepping, and
-  `anShapeTable` maps each `^AN` shape index to its port texture (all 38 AOG
-  shapes resolve; PS skips its three differently-named S.T.A.R. enemies).
-  Verified: shapes resolve to real textures and the screen renders through the
-  presenter; the live sprite animation is confirmable on-device (the headless
-  harness can't drive the presenter's input to page to those screens).
+  `anShapeTable` maps each `^AN` shape index to its port texture, with
+  `anShapeAlt` covering the three slots PS reuses for its own enemies (Sector
+  Guard / Tech Warrior / Alien Protector vs AOG's Sector Patrol / STAR Sentinel /
+  STAR Trooper).  Verified: both AOG and PS resolve every used `^AN` shape, and
+  the screen renders through the presenter; the live sprite animation is
+  confirmable on-device (the headless harness can't drive the presenter's input
+  to page to those screens).
 
 ### Planet Strike
 

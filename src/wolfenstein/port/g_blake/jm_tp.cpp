@@ -18,8 +18,9 @@
 //   * VWL_MeasureString -> VW_MeasurePropString(tpFont(fontnumber), ...).
 //   * VWB_Bar(x,y,w,h,color) -> VirtualToRealCoords + VWB_Clear, mirroring
 //       wl_inter.cpp's BlakeBar.
-//   * Shapes (^SH/^AN/^BX): TP_DrawShape / TP_AnimatePage / TP_BoxAroundShape
-//       are stubbed so they parse-and-skip; text still flows.
+//   * Shapes (^SH/^AN/^BX): TP_DrawShape draws static shapes, TP_AnimatePage
+//       cycles ^AN animations (anShapeTable / TP_GetAnimTemplate), TP_BoxAroundShape
+//       frames/measures them.
 //   * Graphics caching (CA_CacheGrChunk / grsegs / TP_CacheIn / TP_PurgeAllGfx)
 //       is a no-op: ECWolf auto-caches and fonts come from FFont.  Script text
 //       comes from a VGAGRAPH lump (Wads.ReadLump), not a DOS file.
@@ -261,6 +262,49 @@ static const char* scan_ch;
 static int16_t scan_x;
 static int16_t numanims;
 static int16_t stemp;
+
+// ^AN animations (bstone piAnimList / piAnimInfo).  An ^AN<idx> copies a template
+// out of TP_GetAnimTemplate into piAnimList, draws frame 0 at the cursor and
+// records the draw position; TP_AnimatePage then advances and redraws each frame
+// in place.  baseshape is a shape-table index into anShapeTable (TP_ShapeTexture);
+// frames are consecutive indices, so shapetable and grabscript animations both
+// draw baseshape+frame.  maxdelay is in tics; rebound bounces 0..max-1..0.
+// TP_MAX_ANIMS (10) is defined in jm_tp.h.
+struct PiAnim
+{
+	int16_t baseshape;
+	int8_t  frame;
+	int8_t  maxframes;
+	int16_t delay;
+	int16_t maxdelay;
+	int8_t  diradd;
+	bool    rebound;
+	int16_t x, y;
+};
+static PiAnim piAnimList[TP_MAX_ANIMS];
+
+// The ^AN indices used by the shipped instruction pages (chunk 201 AOG / 226 PS).
+// bstone's is_aog_full and is_ps anim tables agree on every shared index; PS adds
+// 6/7/8.  {baseshape, frame, maxframes, delay, maxdelay, diradd, rebound, x, y}.
+static bool TP_GetAnimTemplate(int idx, PiAnim* a)
+{
+	switch (idx)
+	{
+	case 4:  *a = (PiAnim){20,  0, 4,  0, 20, 1, false, 0, 0}; break; // Sector Patrol
+	case 5:  *a = (PiAnim){24,  0, 8,  0, 20, 1, false, 0, 0}; break; // Ceiling Turret
+	case 6:  *a = (PiAnim){242, 0, 8,  0, 20, 1, true,  0, 0}; break; // PS VPost (rebound)
+	case 7:  *a = (PiAnim){250, 0, 8,  0, 20, 1, true,  0, 0}; break; // PS VSpike (rebound)
+	case 8:  *a = (PiAnim){258, 0, 10, 0, 10, 1, false, 0, 0}; break; // PS Security Cube
+	case 9:  *a = (PiAnim){56,  0, 4,  0, 20, 1, false, 0, 0}; break; // Bio-Technician
+	case 13: *a = (PiAnim){71,  0, 4,  0, 20, 1, false, 0, 0}; break; // STAR Sentinel
+	case 24: *a = (PiAnim){105, 0, 4,  0, 20, 1, false, 0, 0}; break; // STAR Trooper
+	case 36: *a = (PiAnim){48,  0, 3,  0, 10, 1, false, 0, 0}; break; // Barrier Post
+	case 37: *a = (PiAnim){141, 0, 3,  0, 10, 1, false, 0, 0}; break; // Barrier Arc
+	case 38: *a = (PiAnim){208, 0, 8,  0, 10, 1, false, 0, 0}; break; // Volatile Transport (grabscript -> 8 rotations)
+	default: return false;
+	}
+	return true;
+}
 
 static PresenterInfo* pi;
 
@@ -712,8 +756,12 @@ void TP_HandleCodes()
 						break;
 
 					case TP_CNVT_CODE('A', 'N'):
+						{
+							PiAnim atmpl;
+							if (TP_GetAnimTemplate(TP_VALUE(s, 2), &atmpl))
+								length += TP_BoxAroundShape(-1, -1, atmpl.baseshape, pis_scaled);
+						}
 						s += 2;
-						length += TP_BoxAroundShape(-1, -1, 0, pis_pic);
 						break;
 
 					case TP_CNVT_CODE('Z', 'Z'):
@@ -809,9 +857,22 @@ void TP_HandleCodes()
 			break;
 
 			// INIT ANIMATION ---------------------------------------------------
-			// Shapes stubbed: consume the arg, no anim registered.
+			// Copy the ^AN<idx> template into piAnimList, draw frame 0 at the
+			// cursor and record where, then TP_AnimatePage cycles it in place
+			// (bstone TP_HandleCodes ^AN case).
 			//
 		case TP_CNVT_CODE('A', 'N'):
+			{
+				PiAnim atmpl;
+				if (numanims < TP_MAX_ANIMS && TP_GetAnimTemplate(TP_VALUE(first_ch, 2), &atmpl))
+				{
+					piAnimList[numanims] = atmpl;
+					PiAnim* anim = &piAnimList[numanims++];
+					anim->y = cur_y;
+					anim->x = TP_DrawShape(cur_x, cur_y, anim->baseshape + anim->frame, pis_scaled);
+					anim->diradd = 1;
+				}
+			}
 			first_ch += 2;
 			break;
 
@@ -1282,12 +1343,43 @@ void TP_PrintPageNumber()
 }
 
 // -------------------------------------------------------------------------
+// ^AN animated shapes: each ^AN<idx> indexes bstone's piAnimTable, whose entries
+// point at a piShapeTable slice.  ^AN appears only on the instructions /
+// character-profile page (VGAGRAPH chunk 201 in AOG, 226 in PS -- the READ THIS!
+// -> INSTRUCTIONS screen), which loops enemy walk frames and barrier/device
+// animations.  TP_ShapeTexture maps the shape-table index to a port texture; the
+// names below are the bstone shape entries cross-referenced through bs6map /
+// vsimap (the common enemies -- TURR/GSCI/ELCP/ELCK/GSCT -- share names across
+// both data sets; RENT/PROG/SWAT are AOG-only so they resolve to NULL and skip in
+// PS; 242+ are the PS-only barrier/cube sprites).  Every entry is a scaled sprite.
+struct anShapeMap { int16_t idx; const char *name; };
+static const anShapeMap anShapeTable[] = {
+	{20, "RENTB8"}, {21, "RENTC8"}, {22, "RENTD8"}, {23, "RENTE8"},          // Sector Patrol
+	{24, "TURRA1"}, {25, "TURRA2"}, {26, "TURRA3"}, {27, "TURRA4"},          // Ceiling Turret
+	{28, "TURRA5"}, {29, "TURRA6"}, {30, "TURRA7"}, {31, "TURRA8"},
+	{48, "ELCPA0"}, {49, "ELCPB0"}, {50, "ELCPC0"},                          // Barrier Post
+	{56, "GSCIB8"}, {57, "GSCIC8"}, {58, "GSCID8"}, {59, "GSCIE8"},          // Bio-Technician
+	{71, "PROGB8"}, {72, "PROGC8"}, {73, "PROGD8"}, {74, "PROGE8"},          // STAR Sentinel
+	{105, "SWATB8"}, {106, "SWATC8"}, {107, "SWATD8"}, {108, "SWATE8"},      // STAR Trooper
+	{141, "ELCKA0"}, {142, "ELCKB0"}, {143, "ELCKC0"},                       // Barrier Arc
+	{208, "GSCTA1"}, {209, "GSCTA2"}, {210, "GSCTA3"}, {211, "GSCTA4"},      // Volatile Transport (8 rotations)
+	{212, "GSCTA5"}, {213, "GSCTA6"}, {214, "GSCTA7"}, {215, "GSCTA8"},
+	{242, "VPSTA0"}, {243, "VPSTB0"}, {244, "VPSTC0"}, {245, "VPSTD0"},      // PS: VPost barrier
+	{246, "VPSTE0"}, {247, "VPSTF0"}, {248, "VPSTG0"}, {249, "VPSTH0"},
+	{250, "VSPKA0"}, {251, "VSPKB0"}, {252, "VSPKC0"}, {253, "VSPKD0"},      // PS: VSpike barrier
+	{254, "VSPKE0"}, {255, "VSPKF0"}, {256, "VSPKG0"}, {257, "VSPKH0"},
+	{258, "CUBEA0"}, {259, "CUBEB0"}, {260, "CUBEC0"}, {261, "CUBED0"},      // PS: Security Cube
+	{262, "CUBEE0"}, {263, "CUBEF0"}, {264, "CUBEG0"}, {265, "CUBEH0"},
+	{266, "CUBEI0"}, {267, "CUBEJ0"},
+};
+
+// -------------------------------------------------------------------------
 // Shapes (^SH): the briefing scripts embed the per-mission location picture as
 // ^SH<index>, where <index> is a piShapeTable entry.  For the shipped AOG (full
 // v3.0) the briefing indices are the six C_EPISODE1..6PIC pics at table indices
 // 144..149 (verified against bstone jm_tp.cpp:1404), which the port's VGAGRAPH
-// map (vsimap.txt) names M_EPIS1..6.  (^AN animations -- used by the intro /
-// enemy-showcase pages, not the mission briefings -- are still a stub below.)
+// map (vsimap.txt) names M_EPIS1..6.  The ^AN animation frames resolve through
+// anShapeTable above.
 // -------------------------------------------------------------------------
 static FTexture *TP_ShapeTexture(int shapenum, bool *scaled = NULL)
 {
@@ -1307,6 +1399,18 @@ static FTexture *TP_ShapeTexture(int shapenum, bool *scaled = NULL)
 		// Generator icon inline in the Mission 6 briefing objective.
 		name = "EXDEA0";
 		sc = true;
+	}
+	else
+	{
+		for (size_t i = 0; i < sizeof(anShapeTable) / sizeof(anShapeTable[0]); i++)
+		{
+			if (anShapeTable[i].idx == shapenum)
+			{
+				name = anShapeTable[i].name;
+				sc = true;
+				break;
+			}
+		}
 	}
 
 	if (scaled)
@@ -1341,11 +1445,40 @@ int16_t TP_DrawShape(
 	return x;
 }
 
+// bstone TP_AnimatePage: every presenter tick, age each registered animation by
+// `tics`; when it reaches maxdelay, step the frame (cycling at the end, or
+// bouncing for rebound) and redraw it in place over the previous frame.  Drawn
+// directly (no cursor advance -- the cursor moved on when the anim registered).
 void TP_AnimatePage(
 	int16_t num_anims)
 {
-	(void)num_anims;
-	// TODO(blake-shapes): port piShapeTable sprite/pic embedding (next faithful stage).
+	for (int i = 0; i < num_anims && i < TP_MAX_ANIMS; i++)
+	{
+		PiAnim* anim = &piAnimList[i];
+
+		anim->delay += (int16_t)tics;
+		if (anim->delay < anim->maxdelay)
+			continue;
+
+		anim->delay = 0;
+		anim->frame = (int8_t)(anim->frame + anim->diradd);
+		if (anim->frame == anim->maxframes || anim->frame < 0)
+		{
+			if (anim->rebound)
+			{
+				anim->diradd = (int8_t)-anim->diradd;
+				anim->frame = (int8_t)(anim->frame + anim->diradd);
+			}
+			else
+			{
+				anim->frame = 0;
+			}
+		}
+
+		FTexture* tex = TP_ShapeTexture(anim->baseshape + anim->frame);
+		if (tex)
+			VWB_DrawGraphic(tex, anim->x, anim->y, MENU_NONE);
+	}
 }
 
 int16_t TP_BoxAroundShape(

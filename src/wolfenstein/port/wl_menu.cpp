@@ -10,6 +10,7 @@
 #include "wl_def.h"
 #include "wl_menu.h"
 #include "wl_iwad.h"
+#include "g_blake/blake_briefing.h"
 #include "id_ca.h"
 #include "id_sd.h"
 #include "id_in.h"
@@ -66,6 +67,7 @@ Menu joySensitivity(20, 30, 300, 24);
 Menu playerClasses(NM_X, NM_Y, NM_W, 24);
 BlakeMenu episodes(NE_X+4, NE_Y-1, NE_W+7, 83);
 BlakeMenu skills(SKILL_X, NM_Y, NM_W, 24);
+BlakeMenu readThisMenu(MENU_X, MENU_Y, MENU_W, 24);
 Menu controls(15, 70, 310, 24);
 Menu resolutionMenu(90, 25, 150, 24);
 
@@ -268,6 +270,38 @@ MENU_LISTENER(ReadThis)
 	MenuFadeIn();
 	return true;
 }
+// Blake "READ THIS!" submenu items (bstone ReadThisMenu, 3d_menu.cpp:429).  Each
+// presents a full-screen text screen, then redraws the submenu and fades in.
+MENU_LISTENER(Instructions)
+{
+	MenuFadeOut();
+	StartCPMusic(gameinfo.FinaleMusic);
+	HelpScreens();
+	StartCPMusic(gameinfo.MenuMusic);
+	readThisMenu.draw();
+	MenuFadeIn();
+	return true;
+}
+MENU_LISTENER(StoryScreen)
+{
+	MenuFadeOut();
+	StartCPMusic(gameinfo.FinaleMusic);
+	Blake_ShowStory();
+	StartCPMusic(gameinfo.MenuMusic);
+	readThisMenu.draw();
+	MenuFadeIn();
+	return true;
+}
+MENU_LISTENER(OrderingScreen)
+{
+	MenuFadeOut();
+	StartCPMusic(gameinfo.FinaleMusic);
+	Blake_ShowOrdering();
+	StartCPMusic(gameinfo.MenuMusic);
+	readThisMenu.draw();
+	MenuFadeIn();
+	return true;
+}
 MENU_LISTENER(ToggleFullscreen)
 {
 	VL_SetFullscreen(vid_fullscreen);
@@ -415,7 +449,20 @@ void CreateMenus()
 	mainMenu.addItem(new MenuSwitcherMenuItem(language["STR_OPTIONS"], optionsMenu));
 	mainMenu.addItem(GameSave::GetLoadMenuItem());
 	mainMenu.addItem(GameSave::GetSaveMenuItem());
-	readThis = new MenuItem(language["STR_RT"], ReadThis);
+	if(IWad::CheckGameFilter("Blake"))
+	{
+		// Blake groups INSTRUCTIONS / STORY / ORDERING INFO under "READ THIS!"
+		// (bstone ReadThisMenu, 3d_menu.cpp:429).
+		readThisMenu.setHeadText(language["STR_RT"]);
+		readThisMenu.addItem(new MenuItem("INSTRUCTIONS", Instructions));
+		readThisMenu.addItem(new MenuItem("STORY", StoryScreen));
+		readThisMenu.addItem(new MenuItem("ORDERING INFO", OrderingScreen));
+		readThis = new MenuSwitcherMenuItem(language["STR_RT"], readThisMenu);
+	}
+	else
+	{
+		readThis = new MenuItem(language["STR_RT"], ReadThis);
+	}
 	readThis->setVisible(gameinfo.DrawReadThis);
 	readThis->setHighlighted(true);
 	mainMenu.addItem(readThis);

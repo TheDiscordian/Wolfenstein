@@ -22,4 +22,10 @@ void Blake_ShowWinBriefing(int cluster);
 // Mirrors bstone's LoseScreen() at ex_died.
 void Blake_ShowLoseScreen();
 
+// Present the Story (SAGAART) and Ordering (ORDERART) text screens for the Blake
+// "READ THIS!" menu.  Inert unless the current IWAD is a Blake game.  Mirror
+// bstone's CP_BlakeStoneSaga / CP_OrderingInfo.
+void Blake_ShowStory();
+void Blake_ShowOrdering();
+
 #endif // __BLAKE_BRIEFING_H__

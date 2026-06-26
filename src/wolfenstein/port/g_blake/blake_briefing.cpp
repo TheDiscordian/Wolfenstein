@@ -20,9 +20,11 @@
 #include "jm_tp.h"
 #include "blake_briefing.h"
 
-// Render a single briefing/debriefing VGAGRAPH chunk (BRIEFI/BRIEFW) through the
-// Text Presenter.  Shared by the pre-mission intro and the mission win debrief.
-static void Blake_PresentBriefingLump(const char *lumpname)
+// Render a single briefing/text VGAGRAPH chunk (BRIEFI/BRIEFW/SAGAART/ORDERART)
+// through the Text Presenter.  Shared by the briefings and the Story/Ordering
+// menu screens.  fadeOutAfter leaves a black screen on return (menu callers fade
+// the menu back in); briefings omit it because GameLoop fades before the level.
+static void Blake_PresentBriefingLump(const char *lumpname, bool fadeOutAfter = false)
 {
 	int lumpnum = Wads.CheckNumForName(lumpname);
 	if (lumpnum == -1)
@@ -71,10 +73,13 @@ static void Blake_PresentBriefingLump(const char *lumpname)
 	TP_Presenter(&pi);
 	TP_FreeScript(&pi);
 
-	// No trailing VW_FadeOut() here: GameLoop (wl_game.cpp) fades to black
-	// before SetupGameLevel, so a fade here was a duplicate, visible 30-step
-	// fade-to-black after the briefing (VW_FadeOut is unguarded) -- the janky
-	// extra out.  Matches the Wolf EnterText path, which also omits it.
+	// Briefings omit a trailing VW_FadeOut(): GameLoop (wl_game.cpp) fades to
+	// black before SetupGameLevel, so a fade here was a duplicate, visible
+	// 30-step fade-to-black (VW_FadeOut is unguarded).  Menu-driven screens pass
+	// fadeOutAfter to return on a black screen for the caller to fade the menu in.
+	if (fadeOutAfter)
+		VW_FadeOut();
+
 	IN_ClearKeysDown();
 }
 
@@ -175,4 +180,26 @@ void Blake_ShowLoseScreen()
 
 	VW_FadeOut();
 	IN_ClearKeysDown();
+}
+
+// The STORY screen: presents the Saga text (the "SAGAART" lump in this data holds
+// the saga presenter script) -- bstone CP_BlakeStoneSaga -> HelpPresenter(SAGATEXT).
+void Blake_ShowStory()
+{
+	if (!IWad::CheckGameFilter("Blake"))
+	{
+		return;
+	}
+	Blake_PresentBriefingLump("SAGAART", true);
+}
+
+// The ORDERING INFO screen: presents the ordering text ("ORDERART" lump) --
+// bstone CP_OrderingInfo -> HelpPresenter(ORDERTEXT).
+void Blake_ShowOrdering()
+{
+	if (!IWad::CheckGameFilter("Blake"))
+	{
+		return;
+	}
+	Blake_PresentBriefingLump("ORDERART", true);
 }

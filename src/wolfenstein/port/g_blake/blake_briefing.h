@@ -12,4 +12,9 @@
 // from the VGAGRAPH, fades out, presents, then fades.
 void Blake_ShowBriefing(int cluster);
 
+// Show the mission win debriefing for the given mission cluster (1..6), loading
+// BRIEFW<cluster>.  Inert unless the current IWAD is a Blake game.  Called from
+// Victory() at ex_victorious, mirroring bstone's Breifing(BT_WIN).
+void Blake_ShowWinBriefing(int cluster);
+
 #endif // __BLAKE_BRIEFING_H__

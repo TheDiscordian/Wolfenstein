@@ -21,6 +21,7 @@
 #include "colormatcher.h"
 #include "wl_iwad.h"
 #include "g_blake/blake_elevator.h"
+#include "g_blake/blake_briefing.h"
 
 LRstruct LevelRatios;
 
@@ -735,6 +736,10 @@ void Victory (bool fromIntermission)
 	VW_FadeIn ();
 
 	IN_Ack (ACK_Any);
+
+	// Blake: mission win debriefing (BRIEFW<cluster>) through the Text Presenter,
+	// mirroring bstone's Breifing(BT_WIN) at ex_victorious.  Inert for Wolf/Spear.
+	Blake_ShowWinBriefing (levelInfo->Cluster);
 
 	EndText (levelInfo->Cluster);
 

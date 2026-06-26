@@ -1,9 +1,10 @@
 // blake_briefing.cpp
 //
-// Blake Stone mission briefing entry point.  Renders the BRIEFI<cluster>
-// VGAGRAPH text chunk through the JAM Text Presenter (jm_tp.cpp), mirroring
-// the PresenterInfo setup of bstone's HelpPresenter (3d_menu.cpp:1664) and the
-// Breifing() dispatch (3d_inter.cpp:42).
+// Blake Stone mission briefing entry points.  Render the BRIEFI<cluster>
+// (pre-mission intro) and BRIEFW<cluster> (mission win debrief) VGAGRAPH text
+// chunks through the JAM Text Presenter (jm_tp.cpp), mirroring the PresenterInfo
+// setup of bstone's HelpPresenter (3d_menu.cpp:1664) and the Breifing()
+// dispatch (3d_inter.cpp:42).
 
 #include <string.h>
 #include <stdio.h>
@@ -17,24 +18,10 @@
 #include "jm_tp.h"
 #include "blake_briefing.h"
 
-void Blake_ShowBriefing(int cluster)
+// Render a single briefing/debriefing VGAGRAPH chunk (BRIEFI/BRIEFW) through the
+// Text Presenter.  Shared by the pre-mission intro and the mission win debrief.
+static void Blake_PresentBriefingLump(const char *lumpname)
 {
-	// Inert unless this is a Blake game.
-	if (!IWad::CheckGameFilter("Blake"))
-	{
-		return;
-	}
-
-	if (cluster < 1)
-	{
-		cluster = 1;
-	}
-
-	// BRIEFI<cluster> is the pre-mission ("intro") briefing chunk.  (BRIEFW<n>
-	// is the win briefing.)
-	char lumpname[16];
-	snprintf(lumpname, sizeof(lumpname), "BRIEFI%d", cluster);
-
 	int lumpnum = Wads.CheckNumForName(lumpname);
 	if (lumpnum == -1)
 	{
@@ -87,4 +74,43 @@ void Blake_ShowBriefing(int cluster)
 	// fade-to-black after the briefing (VW_FadeOut is unguarded) -- the janky
 	// extra out.  Matches the Wolf EnterText path, which also omits it.
 	IN_ClearKeysDown();
+}
+
+// BRIEFI<cluster>: the pre-mission ("intro") briefing, shown by EnterText.
+void Blake_ShowBriefing(int cluster)
+{
+	// Inert unless this is a Blake game.
+	if (!IWad::CheckGameFilter("Blake"))
+	{
+		return;
+	}
+
+	if (cluster < 1)
+	{
+		cluster = 1;
+	}
+
+	char lumpname[16];
+	snprintf(lumpname, sizeof(lumpname), "BRIEFI%d", cluster);
+	Blake_PresentBriefingLump(lumpname);
+}
+
+// BRIEFW<cluster>: the mission win debriefing, shown by Victory() when a mission
+// completes -- bstone Breifing(BT_WIN) at ex_victorious (3d_inter.cpp:42).
+void Blake_ShowWinBriefing(int cluster)
+{
+	// Inert unless this is a Blake game.
+	if (!IWad::CheckGameFilter("Blake"))
+	{
+		return;
+	}
+
+	if (cluster < 1)
+	{
+		cluster = 1;
+	}
+
+	char lumpname[16];
+	snprintf(lumpname, sizeof(lumpname), "BRIEFW%d", cluster);
+	Blake_PresentBriefingLump(lumpname);
 }

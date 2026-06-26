@@ -58,7 +58,7 @@ actor ConcessionCoin5 : ConcessionCoin
 
 // While stretching the definition of this file, we might as well include this :P
 
-actor RadarPack : Inventory
+actor RadarPack : Inventory native
 {
 	inventory.pickupsound "misc/radar_pickup"
 	inventory.amount 900

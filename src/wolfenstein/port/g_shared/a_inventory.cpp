@@ -550,6 +550,26 @@ public:
 
 IMPLEMENT_CLASS(QuizItem)
 
+// Blake radar pack: bstone leaves the pak on the floor when radar energy is
+// already within RADAR_PAK_VALUE/8 of full (rpower > MAX_RADAR_ENERGY -
+// RADAR_PAK_VALUE/8, 3d_agent.cpp:2616).  A plain Inventory would grab it and cap
+// at max in that top band; refuse the pickup there so it stays for later.
+class ARadarPack : public AInventory
+{
+	DECLARE_NATIVE_CLASS(RadarPack, Inventory)
+
+public:
+	bool TryPickup(AActor *toucher)
+	{
+		AInventory *have = toucher->FindInventory(GetClass());
+		if(have && have->amount > maxamount - amount/8)
+			return false;
+		return Super::TryPickup(toucher);
+	}
+};
+
+IMPLEMENT_CLASS(RadarPack)
+
 ////////////////////////////////////////////////////////////////////////////////
 
 IMPLEMENT_POINTY_CLASS(Weapon)

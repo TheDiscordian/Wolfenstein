@@ -437,7 +437,6 @@ actor FloatingBomb : WolfensteinMonster
 			FSCT A -1 NOP A_Look
 			stop
 		Path:
-			// TODO: Select from the following based on health
 			FSCT A 7.5 NOP A_Chase
 			wait
 			FSCT B 7.5 NOP A_Chase
@@ -478,7 +477,6 @@ actor VolatileTransport : WolfensteinMonster
 			stop
 		Path:
 		See:
-			// TODO: Select from the following based on health
 			GSCT A 7.5 NOP A_Chase("*", "*", CHF_NOSIGHTCHECK)
 			wait
 			GSCT B 7.5 NOP A_Chase("*", "*", CHF_NOSIGHTCHECK)
@@ -1409,14 +1407,16 @@ actor CeilingTurretRotate
 	attacksound "turret/attack"
 	deathsound "turret/death"
 	+SHOOTABLE
+
+	action native A_TurretSeek();
+
 	states
 	{
 		Spawn:
 			TURR A -1 A_Look(0, 0, 0, 0, 360)
 			stop
 		See:
-			// TODO: Check if player is in fov and shoot
-			TURR A 15 A_FaceTarget(45)
+			TURR A 15 A_TurretSeek
 			wait
 		Missile:
 			TURR B 5

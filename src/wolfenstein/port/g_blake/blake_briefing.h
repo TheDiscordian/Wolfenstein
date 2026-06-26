@@ -28,4 +28,10 @@ void Blake_ShowLoseScreen();
 void Blake_ShowStory();
 void Blake_ShowOrdering();
 
+// Present the Instructions (HELPART) text screen for the Blake "READ THIS!" menu.
+// HELPART carries the ^AN-animated character-profile script, so it must run
+// through TP_Presenter rather than ECWolf's ShowArticle.  Inert unless the current
+// IWAD is a Blake game.  Mirrors bstone's CP_ReadThis -> HelpScreens.
+void Blake_ShowInstructions();
+
 #endif // __BLAKE_BRIEFING_H__

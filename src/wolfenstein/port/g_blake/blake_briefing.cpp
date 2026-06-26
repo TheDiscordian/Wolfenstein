@@ -203,3 +203,17 @@ void Blake_ShowOrdering()
 	}
 	Blake_PresentBriefingLump("ORDERART", true);
 }
+
+// The INSTRUCTIONS screen: presents the help text ("HELPART" lump, which holds
+// the character-profile presenter script with the ^AN enemy/device animations) --
+// bstone CP_ReadThis -> HelpScreens -> HelpPresenter(HELPTEXT).  The port's
+// generic ECWolf HelpScreens() runs ShowArticle, which doesn't understand the
+// Blake presenter codes, so Blake routes here instead.
+void Blake_ShowInstructions()
+{
+	if (!IWad::CheckGameFilter("Blake"))
+	{
+		return;
+	}
+	Blake_PresentBriefingLump("HELPART", true);
+}

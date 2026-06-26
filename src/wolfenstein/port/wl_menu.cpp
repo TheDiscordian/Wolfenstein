@@ -276,7 +276,9 @@ MENU_LISTENER(Instructions)
 {
 	MenuFadeOut();
 	StartCPMusic(gameinfo.FinaleMusic);
-	HelpScreens();
+	// Blake's instructions are a TP_Presenter script (HELPART) with ^AN
+	// animations, not an ECWolf ShowArticle help page.
+	Blake_ShowInstructions();
 	StartCPMusic(gameinfo.MenuMusic);
 	readThisMenu.draw();
 	MenuFadeIn();

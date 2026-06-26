@@ -436,23 +436,15 @@ actor FloatingBomb : WolfensteinMonster
 		Spawn:
 			FSCT A -1 NOP A_Look
 			stop
+		// bstone draws the scout from temp1 + state->shapenum with SPR_DEMO (0)
+		// as every walk state's shapenum, so only the W1 (FSCT A) row shows, with
+		// the engine supplying the eight rotations.  The B-D damage rows exist in
+		// the sheet but bstone never selects them.
 		Path:
 			FSCT A 7.5 NOP A_Chase
 			wait
-			FSCT B 7.5 NOP A_Chase
-			wait
-			FSCT C 7.5 NOP A_Chase
-			wait
-			FSCT D 7.5 NOP A_Chase
-			wait
 		See:
 			FSCT A 5 NOP A_Chase
-			wait
-			FSCT B 5 NOP A_Chase
-			wait
-			FSCT C 5 NOP A_Chase
-			wait
-			FSCT D 5 NOP A_Chase
 			wait
 		Death:
 			FSCT E 0 bright A_Fall
@@ -475,15 +467,10 @@ actor VolatileTransport : WolfensteinMonster
 		Spawn:
 			GSCT A -1 NOP A_Look
 			stop
+		// Only the GSCT A (W1) row is ever shown -- see FloatingBomb.
 		Path:
 		See:
 			GSCT A 7.5 NOP A_Chase("*", "*", CHF_NOSIGHTCHECK)
-			wait
-			GSCT B 7.5 NOP A_Chase("*", "*", CHF_NOSIGHTCHECK)
-			wait
-			GSCT C 7.5 NOP A_Chase("*", "*", CHF_NOSIGHTCHECK)
-			wait
-			GSCT D 7.5 NOP A_Chase("*", "*", CHF_NOSIGHTCHECK)
 			wait
 		Death:
 			GSCT E 0 bright A_Fall

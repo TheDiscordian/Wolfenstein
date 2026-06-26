@@ -187,7 +187,10 @@ actor AntiPlasmaShot : SmartAnimation
 			APCS C -1 bright
 			stop
 		Death:
-			APCS E 0 bright A_Explode(random(50, 177), 128, 0)
+			// bstone BFG explosion: ExplodeRadius(BFG_DAMAGE, true), BFG_DAMAGE =
+			// (40 + rnd&0x7f) << 1 = 80..334, and it can hurt the firing player.
+			// (Was the PlasmaGrenade's 50..177 with no self-damage.)
+			APCS E 0 bright A_Explode(random(80, 334), 128, XF_HURTSOURCE)
 			APCS E 2.5 bright A_InitSmartAnim(random(1, 7))
 			APCS FGHIJKL 0.5 bright A_SmartAnimDelay
 			stop

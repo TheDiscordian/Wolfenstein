@@ -37,6 +37,7 @@
 #include "g_blake/blake_elevator.h"
 #include "g_blake/blake_floor.h"
 #include "g_blake/blake_informant.h"
+#include "wl_iwad.h"
 #include "of_ecwolf_gpu.h"
 #include "of_ecwolf_opl_music.h"
 
@@ -978,6 +979,23 @@ restartgame:
 
 				if ((players[0].lives > -1) || (gamestate.difficulty->LivesCount < 0))
 					break;                          // more lives left
+
+				// Blake: defeat screen (LOSEPIC) when out of lives, mirroring
+				// bstone's LoseScreen() at ex_died (3d_game.cpp:3247).  The
+				// LOSETEXT gloat overlay is omitted -- that text chunk is not
+				// named in the port's VGAGRAPH map.
+				if (IWad::CheckGameFilter("Blake"))
+				{
+					FTextureID loseID = TexMan.CheckForTexture("LOSEPIC", FTexture::TEX_Any);
+					if (loseID.isValid())
+					{
+						VW_FadeOut ();
+						CA_CacheScreen (TexMan(loseID));
+						VW_UpdateScreen ();
+						VW_FadeIn ();
+						IN_Ack (ACK_Any);
+					}
+				}
 
 				VW_FadeOut ();
 				if(screenHeight % 200 != 0)

@@ -53,31 +53,27 @@ Known limitations and polish, none of them shipping blockers.
 ### Planet Strike
 
 Planet Strike ships in 1.0 (`.VSI` data, `planet.txt`, `a_electrosphere`,
-`a_detonator`). A verified port-vs-bstone audit fixed the showstopper (boss
-death now wins the game) plus the anti-plasma explosion, the electrosphere device
-speed, and the morph halt sound. The remaining confirmed gaps all need native
-work and an in-game pass:
+`a_detonator`). A verified port-vs-bstone audit confirmed 11 gaps; 8 are fixed:
+the showstopper (boss death now wins the game), the anti-plasma explosion and its
+rip behaviour, the electrosphere device speed and its roam/death/pain animation
+rates, the morph halt sound, and the morphed enemy waking into the chase.
+
+The three left all need deeper infra and an in-game pass:
 
 - **Morph trigger** (`blakemonsters.txt:671` vs `3d_act2.cpp:1612`). bstone morphs
-  a post on a per-spawn timer that only counts down while the post is drawn on
-  screen (`temp2 = scan_value*60`, gated on `FL_VISIBLE`); the port morphs on the
-  post acquiring line-of-sight to the player, with no countdown, and discards the
-  map's `0xfa`-prefixed scan_value. Needs `FL_VISIBLE` tracking + the map byte + a
-  native offset-object think.
-- **Morph spawn is dormant** (`blakemonsters.txt:677` vs `3d_act2.cpp:2311`).
-  bstone converts the post in place into an actively-chasing enemy; the port
-  `A_SpawnItemEx`es a fresh enemy in its idle Look state, so it must re-sight the
-  player. Needs a native wake (set target + `s_ofs_chase1` equivalent). The morph
-  sound is already wired.
-- **Anti-Plasma Cannon rips every enemy** (`blakeweapons.txt:182` vs
-  `3d_act2.cpp:6468`). bstone's BFG shot stops and explodes on `FL2_BFGSHOT_SOLID`
-  actors (bosses, guards, mutant humans) and rips only the non-solid ones; the
-  port's `+RIPPER` pierces all. Needs the per-actor flag + a native projectile.
-- **Electrosphere animation rates** (`blakemonsters.txt:1885,1898`) — roam/death
-  frames run at half the original cadence (DECORATE tic convention). Cosmetic.
+  a post on a per-spawn timer that counts down only while the post is *drawn on
+  screen* (`temp2 = scan_value*60`, gated on `FL_VISIBLE`, 3d_draw.cpp:1181); the
+  port morphs on the post acquiring line-of-sight to the player, with no
+  countdown. Needs (a) an additive `FL_VISIBLE` flag set/cleared in `DrawScaleds`
+  (free bit `0x40000000`), and (b) the per-post `scan_value` — the
+  `0xfa`-prefixed map byte (3d_game.cpp:299) that the xlat loader currently
+  discards (placeholder args are 0); without it some posts morph and some never
+  do, so a uniform default would not be faithful. Then a native think gated on
+  `FL_VISIBLE`.
 - **Goldfire morph cutscene** (`blakemonsters.txt:1554` vs `3d_state.cpp:1524`) —
   bstone locks the player's weapon (`noShots`) through the 60-tic morph wait; the
-  port lets you keep firing. Cosmetic.
+  port lets you keep firing. The port has no `noShots`; needs a weapon-disable
+  flag threaded into the fire path (`wl_agent.cpp`). Cosmetic.
 - **Radar Pack top-band pickup** (`blakeammo.txt:61` vs `3d_agent.cpp:2616`) —
   bstone leaves the pak on the floor when radar energy is within 1/8 of full; the
   port consumes it in that ~113-unit band. Minor.

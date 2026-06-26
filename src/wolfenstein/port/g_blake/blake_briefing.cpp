@@ -11,9 +11,11 @@
 
 #include "wl_def.h"
 #include "id_in.h"
+#include "id_ca.h"
 #include "id_vh.h"
 #include "w_wad.h"
 #include "wl_iwad.h"
+#include "textures/textures.h"
 
 #include "jm_tp.h"
 #include "blake_briefing.h"
@@ -113,4 +115,64 @@ void Blake_ShowWinBriefing(int cluster)
 	char lumpname[16];
 	snprintf(lumpname, sizeof(lumpname), "BRIEFW%d", cluster);
 	Blake_PresentBriefingLump(lumpname);
+}
+
+// The defeat screen: the LOSEPIC background art with the lose message scrolled in
+// the bottom band -- bstone LoseScreen() (3d_game.cpp:3247).  In the AOG VGAGRAPH
+// the lump bs6map calls "LOSEART" holds the lose presenter script (the "REBA:
+// INCOMING TRANSMISSION" message); "LOSEPIC" is the full-screen backdrop.
+void Blake_ShowLoseScreen()
+{
+	if (!IWad::CheckGameFilter("Blake"))
+	{
+		return;
+	}
+
+	FTextureID losePic = TexMan.CheckForTexture("LOSEPIC", FTexture::TEX_Any);
+	int textLump = Wads.CheckNumForName("LOSEART");
+
+	VW_FadeOut();
+
+	if (losePic.isValid())
+	{
+		CA_CacheScreen(TexMan(losePic));
+		VW_UpdateScreen();
+	}
+
+	if (textLump != -1)
+	{
+		PresenterInfo pi;
+		memset(&pi, 0, sizeof(pi));
+
+		// bstone LoseScreen flags + region (3d_game.cpp:3249): keep the cached
+		// LOSEPIC as the backdrop (TPF_USE_CURRENT) and scroll the message in the
+		// bottom band.
+		pi.flags = TPF_USE_CURRENT | TPF_SHOW_CURSOR | TPF_SCROLL_REGION |
+			TPF_CONTINUE | TPF_TERM_SOUND | TPF_ABORTABLE;
+		pi.xl = 14;
+		pi.yl = 141;
+		pi.xh = 14 + 293;
+		pi.yh = 141 + 32;
+		pi.ltcolor = 15;
+		pi.bgcolor = 0;
+		pi.dkcolor = 1;
+		pi.shcolor = 1;
+		pi.fontnumber = 2;
+		pi.cur_x = (uint16_t)-1;
+		pi.print_delay = 2;
+
+		TP_LoadScript(textLump, &pi);
+		VW_FadeIn();
+		TP_Presenter(&pi);
+		TP_FreeScript(&pi);
+	}
+	else
+	{
+		// No text chunk -- hold the art until acknowledged.
+		VW_FadeIn();
+		IN_Ack(ACK_Any);
+	}
+
+	VW_FadeOut();
+	IN_ClearKeysDown();
 }

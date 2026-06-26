@@ -17,4 +17,9 @@ void Blake_ShowBriefing(int cluster);
 // Victory() at ex_victorious, mirroring bstone's Breifing(BT_WIN).
 void Blake_ShowWinBriefing(int cluster);
 
+// Show the defeat screen (LOSEPIC backdrop + the LOSEART lose message) when the
+// player runs out of lives.  Inert unless the current IWAD is a Blake game.
+// Mirrors bstone's LoseScreen() at ex_died.
+void Blake_ShowLoseScreen();
+
 #endif // __BLAKE_BRIEFING_H__

@@ -50,10 +50,15 @@ Known limitations and polish, none of them shipping blockers.
 - **Floating bomb / volatile transport** — collapsed to the single W1 row bstone
   actually draws (`temp1 + SPR_DEMO`, with the engine adding rotations); the B-D
   damage-tier frames are never selected.
-
-### bstone parity — remaining
-
-- **`^AN` animated presenter pages** — see *Text presenter* below.
+- **Instructions screen + `^AN` animations** — the `READ THIS!` -> INSTRUCTIONS
+  menu now presents HELPART through `TP_Presenter` (`Blake_ShowInstructions`)
+  instead of ECWolf's `ShowArticle`, which couldn't read the Blake presenter
+  codes.  `TP_AnimatePage` (`jm_tp.cpp`) ports bstone's animation stepping, and
+  `anShapeTable` maps each `^AN` shape index to its port texture (all 38 AOG
+  shapes resolve; PS skips its three differently-named S.T.A.R. enemies).
+  Verified: shapes resolve to real textures and the screen renders through the
+  presenter; the live sprite animation is confirmable on-device (the headless
+  harness can't drive the presenter's input to page to those screens).
 
 ### Planet Strike
 

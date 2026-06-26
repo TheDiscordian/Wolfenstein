@@ -1758,6 +1758,9 @@ actor LiquidAlien : WolfensteinMonster
 	-CANUSEWALLS
 	-SHOOTABLE
 	-SOLID
+
+	action native A_LiquidStand();
+
 	states
 	{
 		Spawn:
@@ -1777,12 +1780,12 @@ actor LiquidAlien : WolfensteinMonster
 			LIQA EF 6
 			LIQA F 0 A_ChangeFlag("SHOOTABLE", true)
 		Stand:
-			// Should be 40/255 chance of falling if player is more than 1 block away
-			// OR the player is not looking at the object and more than 1 block away
-			// OR after the fifth attack non-pain induced attack and more than 1 block away
-			// Attack should occur with 80/255 chance, attack counter resets if we don't fall after 5 attacks
-			LIQA G -1 NOP A_Chase("Fall", "Missile")
-			stop
+			// A_LiquidStand (a_liquid.cpp) = bstone T_LiquidStand: fire up to 5x
+			// (80/255 each), then submerge once the player is more than a tile
+			// away (40/255, or forced after the fifth shot). Runs once per tic
+			// cycle, jumping to Missile or Fall.
+			LIQA G 40 A_LiquidStand
+			loop
 		Fall:
 			LIQA F 0 A_ChangeFlag("SHOOTABLE", false)
 			LIQA F 7.5 A_ChangeFlag("SOLID", false)

@@ -2,12 +2,55 @@
 
 ## 1.0 — Blake Stone: Aliens of Gold + Planet Strike
 
-The shipping target is a faithful, full-game Blake Stone on the Pocket — **both**
-Aliens of Gold (all six episodes) **and** Planet Strike. The core ships both as
-selectable games (`Assets/blakestone/.../Aliens of Gold.json` and
-`Planet Strike.json`, `.BS6` and `.VSI` data sets). Covered: the LINC info area,
-interrogation/informant system, barriers, elevators, briefings, score/pinball
-bonuses, save/load, and OPL music.
+The shipping target is a faithful port of the **DOS original** Blake Stone on the
+Pocket — **both** Aliens of Gold (all six episodes) **and** Planet Strike. The
+core ships both as selectable games (`Assets/blakestone/.../Aliens of Gold.json`
+and `Planet Strike.json`, `.BS6` and `.VSI` data sets). Covered: the LINC info
+area, interrogation/informant system, barriers, elevators, briefings,
+score/pinball bonuses, save/load, and OPL music.
+
+**Reference vs target:** the DOS game is authoritative. `bstone` is an
+open-source reimplementation used only as a *reference* for behaviour and
+constants because it closely tracks DOS — where `bstone` diverges from DOS, DOS
+wins. "Parity" below means DOS faithfulness (bstone-referenced), not matching
+bstone for its own sake.
+
+## Audit backlog (2026-06-26)
+
+A multi-agent audit of the port vs `bstone` surfaced 26 verified gaps. These were
+confirmed against bstone; **each still needs a DOS check before fixing** (bstone
+is a reference, not the target — see above), but most are core DOS Blake Stone
+behaviour. Ordered roughly by impact.
+
+### Functional
+- **PS electro-alien spawning walls inert** — tile-24 walls never emit ElectroAliens; the `0xFA` spawn byte is discarded in `gamemap_planes.cpp`, `CheckSpawnEA` missing from `wl_play.cpp` PlayLoop.
+- **Floating Bomb never attacks/explodes** — perscan drone has no contact-kamikaze + death `A_Explode` (EXPLODE_DAMAGE 20); `blakemonsters.txt:426-456`.
+- **PS in-game radar minimap unimplemented** — overhead map + energy drain + zoom; `blake_sbar.cpp:902-912`.
+- **PS arc barrier can't be shot down with the anti-plasma cannon** (BFG shutdown); `blakebarriers.txt:161-191`.
+
+### Behavioural — enemies
+- **STAR Trooper / Alien Protector wound-knockdown** dead code — no trigger in DamageActor, `T_SwatWound` commented out; `blakemonsters.txt:261-268,318-325`.
+- **Volatile Transport** spawns no green ooze + no death explosion; `blakemonsters.txt:458-483`.
+- **PS enemy cloaking** not rendered (`FL2_CLOAKED`/`FL2_DAMAGE_CLOAK` fuzz branch); `wl_draw.cpp:768-855`, `r_sprites.cpp`.
+- **Liquid alien** drops the "submerge when not visible" condition (FL_VISIBLE now exists, comment stale); `a_liquid.cpp:78-93`.
+- **Alien SHOOTMODE move-mode firing cadence** not ported (uses ECWolf distance-random); `wl_act2.cpp:669-716` — *unsure, DOS-check*.
+
+### Behavioural — skill gating (`planet.txt`)
+- Skill-gated canister/gurney wake-ups, POD egg, and morph posts spawn **nothing** below skill instead of bstone's inert static decoration; `planet.txt:1068-1088,1136-1148,1340-1358`.
+
+### Behavioural — presenter / HUD / LINC
+- **`^AN` animations ghost/smear** — `fl_clearscback` 64×64 erase never applied (regression in the new `^AN` work); `jm_tp.cpp` TP_DrawShape/TP_AnimatePage.
+- **Lose-screen terminal typing sounds** (`^PS`/`^BE`/TERM_SOUND) are no-ops; `jm_tp.cpp`.
+- **OVERALL MISSION baseline** seeded 300 (100%) instead of 100 (33%); `blake_elevator.cpp:133-155` — *contradicts an earlier "fix"; DOS-check.*
+- **AOG elevator arrival** doesn't run AlignPlayerInElevator (player spawns on the elevator tile); `blake_elevator.cpp:1269-1292`.
+- **Informant near-100% enemy/treasure location report** unimplemented; `blake_informant.cpp:159-192`.
+- **First-time QUICK_INFO instructions** never shown on a new AoG game; `wl_play.cpp`.
+- **JAM secret cheat** missing; `wl_play.cpp` CheckKeys.
+- AoG top-bar label "AREA:" should be "FLOOR:"; secret areas omit the secret-floor index; `blake_sbar.cpp:814-816`.
+- `anim_bgcolor` snapshot/swap around `^EP` omitted; `^SH` width hardcoded 0 in centering pass; PS detonator info-area icon omitted. (minor; `jm_tp.cpp`, `a_detonator.cpp`/`blake_sbar.cpp`)
+
+### Cosmetic
+- Steam grate releases steam off-screen (should gate on-screen); elevator radar omits hidden-area shading.
 
 ## Out of scope for 1.0
 

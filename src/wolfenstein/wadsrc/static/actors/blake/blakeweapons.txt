@@ -179,7 +179,10 @@ actor AntiPlasmaShot : SmartAnimation
 	speed 14
 	damage (random(40, 167))
 	PROJECTILE
-	+RIPPER
+	// bstone's BFG shot stops and explodes on the first BFG-solid actor, which is
+	// nearly every PS enemy (FL2_BFGSHOT_SOLID, 3d_act2.cpp:1125+); only pod,
+	// genetic guard and the freed large-canister alien are ripped through. Not a
+	// blanket ripper -- it was over-piercing whole lines of enemies.
 	states
 	{
 		Spawn:

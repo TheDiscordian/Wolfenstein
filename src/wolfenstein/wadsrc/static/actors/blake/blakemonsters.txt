@@ -1610,7 +1610,9 @@ actor MorphedGoldfire : WolfensteinMonster
 			MGLD K 12.5
 			MGLD L 12.5
 			MGLD M 12.5
-			MGLD N -1
+			// bstone: gold_morphobj death is the Planet Strike win condition
+			// (ex_victorious). Fire the level's Exit_Victory specialaction.
+			MGLD N -1 A_BossDeath
 			stop
 	}
 }

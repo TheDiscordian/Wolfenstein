@@ -328,6 +328,10 @@ map "MAP20" lookup "BLAKE_AREA_20"
 {
 	next = "EndTitle"
 	victorynext = "EndTitle"
+	// Killing the morphed Goldfire is the Planet Strike win condition (bstone
+	// gold_morphobj death -> ex_victorious); MorphedGoldfire's Death calls
+	// A_BossDeath, which fires this.
+	specialaction = "MorphedGoldfire", "Exit_Victory"
 	music = "TIME"
 	cluster = 1
 	DefaultLighting = 165

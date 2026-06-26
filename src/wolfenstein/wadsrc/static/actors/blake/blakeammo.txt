@@ -11,12 +11,20 @@ actor ChargeUnit : Ammo
 	}
 }
 
-actor ChargePack : ChargeUnit
+// The CHGU "Charge Pack" gives a random 1-8 charge units per pickup (bstone
+// bo_clip2: ammo = 1 + (US_RndT() & 7), 3d_agent.cpp:2559), not the fixed 8 of
+// the Charge Unit. CustomInventory so the amount is rolled each pickup; at full
+// charge the inner give returns false, so the pack is left in place.
+actor ChargePack : CustomInventory
 {
+	inventory.pickupsound "misc/ammo_pickup"
 	states
 	{
 		Spawn:
 			CHGU A -1
+			stop
+		Pickup:
+			TNT1 A 0 A_GiveInventory("ChargeUnit", random(1, 8))
 			stop
 	}
 }

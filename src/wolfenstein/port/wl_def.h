@@ -286,6 +286,7 @@ enum ActorFlag
 	FL_OLDRANDOMCHASE	= 0x08000000,
 	FL_PLOTONAUTOMAP	= 0x10000000,
 	FL_BILLBOARD        = 0x20000000,
+	FL_VISIBLE          = 0x40000000, // Blake: set each frame while the actor is drawn (DrawScaleds); morph posts count down only while on screen
 };
 
 enum ItemFlag

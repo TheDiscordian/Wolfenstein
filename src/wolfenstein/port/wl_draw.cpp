@@ -782,6 +782,10 @@ void DrawScaleds (void)
 		AActor *obj = iter;
 		OF_PERF_DBG(++of_spr_dbg_actors);
 
+		// Cleared by default each frame; set below for actors that make it into
+		// the draw list.  Blake's morph posts count down only while FL_VISIBLE.
+		obj->flags &= ~FL_VISIBLE;
+
 		if (obj->sprite == SPR_NONE)
 			continue;
 
@@ -806,6 +810,7 @@ void DrawScaleds (void)
 			if (!obj->viewheight || (gamestate.victoryflag && obj == players[ConsolePlayer].mo))
 				continue;                                               // too close or far away
 
+			obj->flags |= FL_VISIBLE;   // on screen this frame
 			visptr->actor = obj;
 			visptr->viewheight = obj->viewheight;
 

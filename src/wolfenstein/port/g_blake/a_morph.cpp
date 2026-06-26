@@ -82,3 +82,43 @@ ACTION_FUNCTION(A_BlakeWeaponUnlock)
 	blakeNoShots = false;
 	return false;
 }
+
+// Morph posts (PS) morph on a timer that runs only while the post is drawn on
+// screen, not on line-of-sight (bstone T_OfsThink morph case, 3d_act2.cpp:1612:
+// "if (!(obj->flags & FL_VISIBLE)) break; if (temp2 > tics) temp2 -= tics; else
+// morph").  temp1 is that countdown.
+//
+// bstone's per-post delay comes from a 0xfa-prefixed map byte (scan_value*60)
+// that the port's tile->thing xlat discards, so a fixed ~2s on-screen delay is
+// used for every post; the previous port morphed instantly on sight with no
+// delay, so this is strictly closer to the original on the trigger.
+ACTION_FUNCTION(A_BlakeMorphInit)
+{
+	self->temp1 = 140; // ~2 s of on-screen time at 70 Hz
+	return false;
+}
+
+ACTION_FUNCTION(A_BlakeMorphTick)
+{
+	if(!(self->flags & FL_VISIBLE))
+		return false; // frozen while off screen
+
+	if(self->temp1 > (short)tics)
+	{
+		self->temp1 -= (short)tics;
+		return false;
+	}
+
+	// Timer up: morph (the Death state runs the morph animation, which spawns the
+	// real enemy).  bstone clears FL_SHOOTABLE as the morph begins.
+	self->flags &= ~FL_SHOOTABLE;
+	const Frame *death = self->FindState("Death");
+	if(death)
+	{
+		if(result)
+			result->JumpFrame = death;
+		else
+			self->SetState(death);
+	}
+	return false;
+}

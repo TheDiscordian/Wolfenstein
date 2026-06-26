@@ -665,11 +665,19 @@ actor SpiderMutantMorphed
 	health 1
 	+SOLID
 	+SHOOTABLE
+
+	action native A_BlakeMorphInit();
+	action native A_BlakeMorphTick();
+
 	states
 	{
 		Spawn:
-			MSUP N -1 NOP A_Look(0, 0, 0, 0, 360)
-			stop
+			// bstone morphs on an on-screen timer (FL_VISIBLE), not on the post's
+			// line-of-sight to the player.
+			MSUP N 0 A_BlakeMorphInit
+		MorphWait:
+			MSUP N 7 A_BlakeMorphTick
+			loop
 		See:
 		Death:
 			MSUP O 2 A_ChangeFlag("SHOOTABLE", false)
@@ -887,11 +895,17 @@ actor ReptilianWarriorMorphed
 	health 1
 	+SOLID
 	+SHOOTABLE
+
+	action native A_BlakeMorphInit();
+	action native A_BlakeMorphTick();
+
 	states
 	{
 		Spawn:
-			REPW N -1 NOP A_Look(0, 0, 0, 0, 360)
-			stop
+			REPW N 0 A_BlakeMorphInit
+		MorphWait:
+			REPW N 7 A_BlakeMorphTick
+			loop
 		See:
 		Death:
 			REPW O 2 A_ChangeFlag("SHOOTABLE", false)
@@ -999,11 +1013,17 @@ actor MutantHumanMorphed
 	health 1
 	+SOLID
 	+SHOOTABLE
+
+	action native A_BlakeMorphInit();
+	action native A_BlakeMorphTick();
+
 	states
 	{
 		Spawn:
-			MHUM Q -1 NOP A_Look(0, 0, 0, 0, 360)
-			stop
+			MHUM Q 0 A_BlakeMorphInit
+		MorphWait:
+			MHUM Q 7 A_BlakeMorphTick
+			loop
 		See:
 		Death:
 			MHUM R 2 A_ChangeFlag("SHOOTABLE", false)

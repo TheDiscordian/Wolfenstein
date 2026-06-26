@@ -1373,6 +1373,16 @@ static const anShapeMap anShapeTable[] = {
 	{266, "CUBEI0"}, {267, "CUBEJ0"},
 };
 
+// PS draws its own enemies at the three S.T.A.R. slots: Sector Guard (SECG),
+// Tech Warrior (TECW) and Alien Protector (PROT) where AOG has Sector Patrol,
+// STAR Sentinel and STAR Trooper.  Tried as a fallback when the AOG name above
+// is absent (i.e. the loaded data set is PS).
+static const anShapeMap anShapeAlt[] = {
+	{20, "SECGB8"}, {21, "SECGC8"}, {22, "SECGD8"}, {23, "SECGE8"},   // Sector Guard
+	{71, "TECWB8"}, {72, "TECWC8"}, {73, "TECWD8"}, {74, "TECWE8"},   // Tech Warrior
+	{105, "PROTB8"}, {106, "PROTC8"}, {107, "PROTD8"}, {108, "PROTE8"}, // Alien Protector
+};
+
 // -------------------------------------------------------------------------
 // Shapes (^SH): the briefing scripts embed the per-mission location picture as
 // ^SH<index>, where <index> is a piShapeTable entry.  For the shipped AOG (full
@@ -1418,6 +1428,18 @@ static FTexture *TP_ShapeTexture(int shapenum, bool *scaled = NULL)
 	if (!name)
 		return NULL;
 	FTextureID id = TexMan.CheckForTexture(name, FTexture::TEX_Any);
+	if (!id.isValid())
+	{
+		// AOG name absent -- in PS the three S.T.A.R. slots hold other art.
+		for (size_t i = 0; i < sizeof(anShapeAlt) / sizeof(anShapeAlt[0]); i++)
+		{
+			if (anShapeAlt[i].idx == shapenum)
+			{
+				id = TexMan.CheckForTexture(anShapeAlt[i].name, FTexture::TEX_Any);
+				break;
+			}
+		}
+	}
 	return id.isValid() ? TexMan(id) : NULL;
 }
 

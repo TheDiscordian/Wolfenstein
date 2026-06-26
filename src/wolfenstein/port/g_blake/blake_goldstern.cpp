@@ -95,6 +95,20 @@ void Goldstern_Clear()
 	bossKeyDropped = false;
 }
 
+// Persist the Goldfire (Goldstern) hunt state across save/load.  The map re-parse
+// on load runs Goldstern_Clear + Goldstern_AddSite first, resetting the hunt
+// timer/flags and bossKeyDropped; this chunk loads afterwards and restores them.
+// Without it a reload restarts the hunt and wipes bossKeyDropped, so killing
+// Goldfire again drops a SECOND gold access card (bstone saves GoldsternInfo +
+// GoldieList + gamestate.boss_key_dropped).
+void Blake_GoldsternSerialize(FArchive &arc)
+{
+	arc << gold.lastIndex << gold.spawnCnt << gold.flags << gold.waitTime
+	    << gold.goldSpawned << gold.pendingImmediate << bossKeyDropped;
+	for(int i = 0; i < GOLDIE_MAX_SPAWNS; i++)
+		arc << goldieList[i].tilex << goldieList[i].tiley;
+}
+
 void Goldstern_AddSite(unsigned int x, unsigned int y, bool immediate)
 {
 	if(gold.spawnCnt >= GOLDIE_MAX_SPAWNS)

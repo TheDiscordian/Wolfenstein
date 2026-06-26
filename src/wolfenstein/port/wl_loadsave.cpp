@@ -77,6 +77,8 @@ extern unsigned vbufPitch;
 // Blake pinball bonus queue save/load (global, defined in blake_sbar.cpp).
 void Blake_PinballSerialize(FArchive &arc);
 void Blake_PinballReset();
+// Blake Goldfire hunt state save/load (global, defined in blake_goldstern.cpp).
+void Blake_GoldsternSerialize(FArchive &arc);
 
 namespace GameSave {
 
@@ -800,6 +802,8 @@ static void Serialize(FArchive &arc)
 #define INFS_ID MAKE_ID('i','n','F','s')
 // Blake per-level pinball bonus queue; same chunk-presence gating.
 #define PINB_ID MAKE_ID('p','i','N','b')
+// Blake per-level Goldfire (Goldstern) hunt state; same chunk-presence gating.
+#define GOLD_ID MAKE_ID('g','o','L','d')
 
 bool Load(const FString &filename)
 {
@@ -917,6 +921,16 @@ bool Load(const FString &filename)
 			}
 			else
 				Blake_PinballReset();
+		}
+
+		{
+			unsigned int chunkLength = M_FindPNGChunk(png, GOLD_ID);
+			if(chunkLength > 0)
+			{
+				FPNGChunkArchive arc(fileh, GOLD_ID, chunkLength);
+				Blake_GoldsternSerialize(arc);
+			}
+			// else: the map re-parse already rebuilt the hunt sites and reset state.
 		}
 	}
 	catch(CRecoverableError &error)
@@ -1095,6 +1109,11 @@ bool Save(const FString &filename, const FString &title)
 	{
 		FPNGChunkArchive pinballArc(fileh, PINB_ID);
 		Blake_PinballSerialize(pinballArc);
+	}
+
+	{
+		FPNGChunkArchive goldArc(fileh, GOLD_ID);
+		Blake_GoldsternSerialize(goldArc);
 	}
 
 	M_FinishPNG(fileh);

@@ -58,3 +58,27 @@ ACTION_FUNCTION(A_BlakeMorphWake)
 	self->speed = self->runspeed;
 	return false;
 }
+
+// bstone locks the player's weapon (noShots = true) while Goldfire morphs on the
+// final level (3d_state.cpp:1524), so the morph cutscene can't be shot through.
+// A_WeaponReady honours this flag; cleared when the morphed boss appears and at
+// every level setup (Blake_NoShotsReset) so a death mid-morph never leaves the
+// weapon stuck.
+bool blakeNoShots = false;
+
+void Blake_NoShotsReset()
+{
+	blakeNoShots = false;
+}
+
+ACTION_FUNCTION(A_BlakeWeaponLock)
+{
+	blakeNoShots = true;
+	return false;
+}
+
+ACTION_FUNCTION(A_BlakeWeaponUnlock)
+{
+	blakeNoShots = false;
+	return false;
+}

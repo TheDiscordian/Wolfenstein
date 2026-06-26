@@ -774,6 +774,10 @@ ACTION_FUNCTION(A_ReFire)
 	return true;
 }
 
+// Blake: set true while Goldfire morphs on the PS final level so the weapon
+// can't be fired through the cutscene (bstone noShots).  Defined in a_morph.cpp.
+extern bool blakeNoShots;
+
 ACTION_FUNCTION(A_WeaponReady)
 {
 	enum
@@ -791,8 +795,8 @@ ACTION_FUNCTION(A_WeaponReady)
 	ACTION_PARAM_INT(flags, 0);
 
 	if(!(flags & WRF_NOBOB)) self->player->flags |= player_t::PF_WEAPONBOBBING;
-	if(!(flags & WRF_NOPRIMARY)) self->player->flags |= player_t::PF_WEAPONREADY;
-	if(!(flags & WRF_NOSECONDARY)) self->player->flags |= player_t::PF_WEAPONREADYALT;
+	if(!(flags & WRF_NOPRIMARY) && !blakeNoShots) self->player->flags |= player_t::PF_WEAPONREADY;
+	if(!(flags & WRF_NOSECONDARY) && !blakeNoShots) self->player->flags |= player_t::PF_WEAPONREADYALT;
 	if(!(flags & WRF_NOSWITCH)) self->player->flags |= player_t::PF_WEAPONSWITCHOK|player_t::PF_REFIRESWITCHOK;
 
 	if((flags & WRF_DISABLESWITCH)) { self->player->flags |= player_t::PF_DISABLESWITCH; self->player->flags &= ~player_t::PF_REFIRESWITCHOK; }

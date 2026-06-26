@@ -345,6 +345,11 @@ void SetupGameLevel (void)
 
 		// Reaching a floor unlocks its elevator button.
 		Blake_FloorEntered();
+
+		// Clear the Goldfire-morph weapon lock so a death mid-morph (which
+		// restarts the floor) never leaves the weapon stuck disabled.
+		extern void Blake_NoShotsReset();
+		Blake_NoShotsReset();
 	}
 
 #ifdef OF_ECWOLF_OPENFPGA

@@ -1537,6 +1537,7 @@ actor SpectorDemon : WolfensteinMonster
 actor DrGoldfire : WolfensteinMonster
 {
 	action native A_GoldfireDie();
+	action native A_BlakeWeaponLock();
 
 	points 0
 	health 90, 100, 150, 250
@@ -1593,7 +1594,8 @@ actor DrGoldfire : WolfensteinMonster
 			DGLD P 20
 			stop
 		Morph:
-			DGLD J 30
+			// bstone locks the player's weapon through the morph (noShots).
+			DGLD J 30 A_BlakeWeaponLock
 			DGLD QRSTUVWX 5
 			DGLD X 0 A_SpawnItemEx("MorphedGoldfire", 0, 0, 0, 0, 0, 0, 0, SXF_TRANSFERPOINTERS)
 			stop
@@ -1603,6 +1605,7 @@ actor DrGoldfire : WolfensteinMonster
 actor MorphedGoldfire : WolfensteinMonster
 {
 	action native A_GoldMorphDie();
+	action native A_BlakeWeaponUnlock();
 
 	points 5000
 	health 4000, 4500, 4800, 5400
@@ -1611,6 +1614,8 @@ actor MorphedGoldfire : WolfensteinMonster
 	states
 	{
 		Spawn:
+			// The morph is over: give the player their weapon back.
+			MGLD A 0 A_BlakeWeaponUnlock
 			MGLD A 2.5 NOP A_Look(0, 0, 0, 0, 360)
 			loop
 		See:

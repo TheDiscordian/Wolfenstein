@@ -53,9 +53,34 @@ Known limitations and polish, none of them shipping blockers.
 ### Planet Strike
 
 Planet Strike ships in 1.0 (`.VSI` data, `planet.txt`, `a_electrosphere`,
-`a_detonator`). Remaining PS-specific parity work to audit against bstone:
-morphing enemies (`gold_morphobj`, `morphing_*obj`) and the electro-alien
-projection generators.
+`a_detonator`). A verified port-vs-bstone audit fixed the showstopper (boss
+death now wins the game) plus the anti-plasma explosion, the electrosphere device
+speed, and the morph halt sound. The remaining confirmed gaps all need native
+work and an in-game pass:
+
+- **Morph trigger** (`blakemonsters.txt:671` vs `3d_act2.cpp:1612`). bstone morphs
+  a post on a per-spawn timer that only counts down while the post is drawn on
+  screen (`temp2 = scan_value*60`, gated on `FL_VISIBLE`); the port morphs on the
+  post acquiring line-of-sight to the player, with no countdown, and discards the
+  map's `0xfa`-prefixed scan_value. Needs `FL_VISIBLE` tracking + the map byte + a
+  native offset-object think.
+- **Morph spawn is dormant** (`blakemonsters.txt:677` vs `3d_act2.cpp:2311`).
+  bstone converts the post in place into an actively-chasing enemy; the port
+  `A_SpawnItemEx`es a fresh enemy in its idle Look state, so it must re-sight the
+  player. Needs a native wake (set target + `s_ofs_chase1` equivalent). The morph
+  sound is already wired.
+- **Anti-Plasma Cannon rips every enemy** (`blakeweapons.txt:182` vs
+  `3d_act2.cpp:6468`). bstone's BFG shot stops and explodes on `FL2_BFGSHOT_SOLID`
+  actors (bosses, guards, mutant humans) and rips only the non-solid ones; the
+  port's `+RIPPER` pierces all. Needs the per-actor flag + a native projectile.
+- **Electrosphere animation rates** (`blakemonsters.txt:1885,1898`) — roam/death
+  frames run at half the original cadence (DECORATE tic convention). Cosmetic.
+- **Goldfire morph cutscene** (`blakemonsters.txt:1554` vs `3d_state.cpp:1524`) —
+  bstone locks the player's weapon (`noShots`) through the 60-tic morph wait; the
+  port lets you keep firing. Cosmetic.
+- **Radar Pack top-band pickup** (`blakeammo.txt:61` vs `3d_agent.cpp:2616`) —
+  bstone leaves the pak on the floor when radar energy is within 1/8 of full; the
+  port consumes it in that ~113-unit band. Minor.
 
 ### Text presenter
 

@@ -1076,11 +1076,13 @@ actor ActiveSteamPipe
 
 actor SecurityLight
 {
+	action native A_SecurityLook();
+
 	states
 	{
 		Spawn:
-			//TODO: LOF_NOSIGHTCHECK
-			SECL A -1 NOP A_Look(0, 1, 0.1)
+			SECL A 10 A_SecurityLook
+			loop
 		See:
 			SECL B 10 bright A_AlertMonsters
 			SECL A 10 A_AlertMonsters

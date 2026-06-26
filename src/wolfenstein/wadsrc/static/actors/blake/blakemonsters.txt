@@ -1954,7 +1954,7 @@ actor ElectroSphereVert : ElectroSphere
 			ESPR E 0 A_SphereRoamFrame
 			goto RoamA
 		Pain:
-			ESPR E 15 bright NOP A_SphereBounce(0)
+			ESPR E 7.5 bright NOP A_SphereBounce(0)
 			goto RoamA
 	}
 }
@@ -1981,7 +1981,7 @@ actor ElectroSphereHorz : ElectroSphere
 			ESPR E 0 A_SphereRoamFrame
 			goto RoamA
 		Pain:
-			ESPR E 15 bright NOP A_SphereBounce(1)
+			ESPR E 7.5 bright NOP A_SphereBounce(1)
 			goto RoamA
 	}
 }
@@ -2008,7 +2008,7 @@ actor ElectroSphereDiag : ElectroSphere
 			ESPR E 0 A_SphereRoamFrame
 			goto RoamA
 		Pain:
-			ESPR E 15 bright NOP A_SphereBounce(2)
+			ESPR E 7.5 bright NOP A_SphereBounce(2)
 			goto RoamA
 	}
 }

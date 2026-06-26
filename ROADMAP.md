@@ -33,22 +33,27 @@ Known limitations and polish, none of them shipping blockers.
 - **Per-column sprite shading** (`r_sprites.cpp:587`, `[XA] TODO`) — sprites shade
   by one distance (the sprite's) for the whole sprite rather than per screen column.
 
+### bstone parity — done
+
+- **STORY / ORDERING menus + the Lose-screen text overlay** wired through
+  `TP_Presenter` (`Blake_ShowStory` / `Blake_ShowOrdering` / `Blake_ShowLoseScreen`,
+  `READ THIS!` submenu).
+- **Fluid Alien AI** — `A_LiquidStand` (`a_liquid.cpp`) ports `T_LiquidStand`: rise
+  solid/shootable, fire up to five times (80/255 each), submerge on the 40/255 roll
+  or after the fifth shot.
+- **Ceiling turret** — `A_TurretSeek` (`a_turret.cpp`) ports `T_Seek`: tracks the
+  player in line of sight within fifteen tiles and opens fire on a distance-weighted
+  chance (was facing forever without shooting).
+- **Security light** — `A_SecurityLook` (`a_security.cpp`) ports `T_Security`'s
+  area-presence trip (`map->CheckLink` over sound zones); the old `A_Look` had an
+  empty sight window.
+- **Floating bomb / volatile transport** — collapsed to the single W1 row bstone
+  actually draws (`temp1 + SPR_DEMO`, with the engine adding rotations); the B-D
+  damage-tier frames are never selected.
+
 ### bstone parity — remaining
 
-- **STORY / ORDERING menus + the Lose-screen text overlay.** bstone's `LoseScreen`
-  (`3d_game.cpp:3247`), `CP_BlakeStoneSaga` and `CP_OrderingInfo`
-  (`3d_menu.cpp:1958`) draw a background art page *and* present a text chunk. The
-  text is present and named: decoding `VGAGRAPH.BS6` shows the lumps `bs6map.txt`
-  calls `SAGAART` / `LOSEART` / `ORDERART` actually hold the Saga, Lose ("REBA:
-  INCOMING TRANSMISSION") and Ordering presenter scripts. So these just need
-  wiring through `TP_Presenter` (as the briefings already are) — the Lose overlay
-  over the existing `LOSEPIC`, and two new menu entries. Not blocked.
-- **Fluid Alien AI** (`LIQ` sprites, `blakemonsters.txt:1752`) — the puddle alien's
-  rise/attack/submerge cycle is present but approximated: the actor's own comments
-  flag the missing exact gating ("should rise if the player is >1 block away in
-  both directions but <6 in either", the 40/255 fall and 80/255 attack chances,
-  the 5-attack counter). bstone's `T_LiquidStand` logic; likely needs a native
-  action to match precisely.
+- **`^AN` animated presenter pages** — see *Text presenter* below.
 
 ### Planet Strike
 
@@ -69,7 +74,15 @@ previous port was not.
 
 ### Text presenter
 
-- **`^AN` animated pages** (`jm_tp.cpp:1348`; `TP_AnimatePage` is a no-op) — static
+- **`^AN` animated pages** (`jm_tp.cpp`; `TP_AnimatePage` is a no-op) — static
   `^SH` shapes (briefing location pics `M_EPIS1`–`6`, the Mission-6 generator icon)
-  are drawn; the `^AN` *animation* opcode is parsed-and-skipped. Per the source
-  comment `^AN` drives the intro / enemy-showcase pages, not the briefings.
+  are drawn; the `^AN` *animation* opcode is parsed-and-skipped. `^AN` appears only
+  on the instructions / character-profile page (`VGAGRAPH` chunk 201 in AOG, 226 in
+  PS — the `READ THIS!` → INSTRUCTIONS screen), which showcases enemy walk loops and
+  control diagrams. Porting it means the runtime stepping (`TP_AnimatePage`: advance
+  frame with cycle/rebound, redraw via `TP_DrawShape`) plus `piAnimTable` and a
+  `piShapeTable` slice — both of which differ between AOG and PS, and whose sprite
+  entries map to port textures by VSWAP-sprite identity, not by bstone's `SPR_`
+  index (the port's `bs6map`/`vsimap` order does not match bstone's enum). Each
+  shape needs cross-referencing per version; getting an index wrong draws the wrong
+  sprite, so it wants visual verification on both games.

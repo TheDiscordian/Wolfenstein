@@ -53,30 +53,19 @@ Known limitations and polish, none of them shipping blockers.
 ### Planet Strike
 
 Planet Strike ships in 1.0 (`.VSI` data, `planet.txt`, `a_electrosphere`,
-`a_detonator`). A verified port-vs-bstone audit confirmed 11 gaps; 8 are fixed:
-the showstopper (boss death now wins the game), the anti-plasma explosion and its
-rip behaviour, the electrosphere device speed and its roam/death/pain animation
-rates, the morph halt sound, and the morphed enemy waking into the chase.
+`a_detonator`). A verified port-vs-bstone audit confirmed 11 gaps, all now fixed:
+the showstopper (boss death wins the game), the anti-plasma explosion and rip
+behaviour, the electrosphere device speed and its roam/death/pain animation rates,
+the morph halt sound, the morphed enemy waking into the chase, the morph trigger
+(on-screen `FL_VISIBLE` timer instead of line-of-sight), the Goldfire-morph weapon
+lock, and the radar-pak top-band refusal.
 
-The three left all need deeper infra and an in-game pass:
-
-- **Morph trigger** (`blakemonsters.txt:671` vs `3d_act2.cpp:1612`). bstone morphs
-  a post on a per-spawn timer that counts down only while the post is *drawn on
-  screen* (`temp2 = scan_value*60`, gated on `FL_VISIBLE`, 3d_draw.cpp:1181); the
-  port morphs on the post acquiring line-of-sight to the player, with no
-  countdown. Needs (a) an additive `FL_VISIBLE` flag set/cleared in `DrawScaleds`
-  (free bit `0x40000000`), and (b) the per-post `scan_value` — the
-  `0xfa`-prefixed map byte (3d_game.cpp:299) that the xlat loader currently
-  discards (placeholder args are 0); without it some posts morph and some never
-  do, so a uniform default would not be faithful. Then a native think gated on
-  `FL_VISIBLE`.
-- **Goldfire morph cutscene** (`blakemonsters.txt:1554` vs `3d_state.cpp:1524`) —
-  bstone locks the player's weapon (`noShots`) through the 60-tic morph wait; the
-  port lets you keep firing. The port has no `noShots`; needs a weapon-disable
-  flag threaded into the fire path (`wl_agent.cpp`). Cosmetic.
-- **Radar Pack top-band pickup** (`blakeammo.txt:61` vs `3d_agent.cpp:2616`) —
-  bstone leaves the pak on the floor when radar energy is within 1/8 of full; the
-  port consumes it in that ~113-unit band. Minor.
+One refinement remains: the morph posts use a fixed ~2s on-screen delay rather
+than bstone's per-post `scan_value` — that value is a `0xfa`-prefixed byte in the
+DOS map info plane (3d_game.cpp:299) that the port's tile→thing xlat discards.
+Recovering it would mean modelling bstone's info-plane scan order in the map
+loader; the current fixed delay is already correct on the trigger, where the
+previous port was not.
 
 ### Text presenter
 

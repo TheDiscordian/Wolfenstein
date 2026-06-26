@@ -307,10 +307,17 @@ void player_t::GivePoints (int32_t points, bool addToStats)
 	int32_t scoreBefore = score;
 	int livesBefore = lives;
 	score += FixedMul(points, gamestate.difficulty->ScoreMultiplier);
+	// Blake (bstone GivePoints) grants at most ONE extra life per scoring event;
+	// the remaining thresholds are crossed on later score gains.  A single big
+	// award (e.g. the million-point pinball bonus) otherwise hands out several
+	// lives at once.  Other games keep the original multi-life loop.
+	const bool blakeOneLifePerEvent = IWad::CheckGameFilter("Blake");
 	while (score >= nextextra)
 	{
 		nextextra += gameinfo.ExtraPoints;
 		GiveExtraMan (1);
+		if (blakeOneLifePerEvent)
+			break;
 	}
 	// Blake pinball score bonuses (no-op for other games).  addToStats=false for
 	// bonus / electro / Goldstern awards keeps them out of the per-level total.

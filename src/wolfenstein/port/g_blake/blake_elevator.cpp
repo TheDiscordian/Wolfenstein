@@ -1271,6 +1271,10 @@ static int PsInputFloor()
 // Panel entry
 // =============================================================================
 
+// One-shot armed by ElevatorCheckAOG on an AOG floor-to-floor elevator ride,
+// consumed by Blake_AlignPlayerInElevator on the destination floor's entry.
+static bool aogElevatorArrival = false;
+
 static void ElevatorCheckAOG()
 {
 	const int lvl = levelInfo->LevelNumber;
@@ -1289,11 +1293,110 @@ static void ElevatorCheckAOG()
 		NewMap.x = playermo->x;
 		NewMap.y = playermo->y;
 		NewMap.angle = playermo->angle;
+		aogElevatorArrival = true;	// step the player out on the next floor's entry
 	}
 	else
 	{
 		DrawPlayScreen();
 	}
+}
+
+// bstone tilemap probes, in ECWolf terms: the elevator-car wall is tile 21,
+// which carries an Elevator_SelectFloor trigger; a door cell carries a
+// Door_Open / Door_Elevator trigger.
+static bool SpotHasTrigger(int x, int y, int action)
+{
+	if(x < 0 || y < 0 ||
+		(unsigned)x >= map->GetHeader().width || (unsigned)y >= map->GetHeader().height)
+		return false;
+	MapSpot spot = map->GetSpot(x, y, 0);
+	for(unsigned int i = 0;i < spot->triggers.Size();++i)
+		if(spot->triggers[i].action == action)
+			return true;
+	return false;
+}
+static bool IsElevatorTile(int x, int y) { return SpotHasTrigger(x, y, Specials::Elevator_SelectFloor); }
+static bool IsElevatorDoor(int x, int y) { return SpotHasTrigger(x, y, Specials::Door_Open) || SpotHasTrigger(x, y, Specials::Door_Elevator); }
+
+// Step the player out of the elevator car on AOG floor arrival (bstone
+// AlignPlayerInElevator, 3d_main.cpp).  Finds the elevator column near where the
+// player boarded (NewMap.x/y, captured at departure) and the adjacent door, then
+// places them on the step-out tile facing out.  One-shot, AOG only; if no
+// elevator/door is found it leaves the default Player1Start placement.
+void Blake_AlignPlayerInElevator()
+{
+	if(!aogElevatorArrival)
+		return;
+	aogElevatorArrival = false;
+	if(!IsAOG())
+		return;
+
+	AActor *plr = players[ConsolePlayer].mo;
+	if(!plr)
+		return;
+
+	const int origtilex = NewMap.x >> TILESHIFT;	// bstone last_map_tile_x
+	int origtiley = NewMap.y >> TILESHIFT;			// bstone last_map_tile_y
+	if(origtilex < 0 || origtiley < 0)
+		return;
+
+	const int W = (int)map->GetHeader().width;
+	int tilex = 0;
+
+	// Locate the elevator column on the boarding row.
+	if(!IsElevatorTile(origtilex + 1, origtiley) && !IsElevatorTile(origtilex - 1, origtiley))
+	{
+		if(!IsElevatorTile(origtilex - 2, origtiley))
+		{
+			for(tilex = origtilex - 1;tilex != 0;--tilex)
+			{
+				if(!IsElevatorTile(tilex, origtiley))
+					continue;
+				if(IsElevatorTile(tilex - 1, origtiley - 1) || IsElevatorTile(tilex - 1, origtiley + 1))
+					tilex -= 1;
+				else
+					tilex += 1;
+				break;
+			}
+		}
+		if(!IsElevatorTile(origtilex + 2, origtiley) && tilex == 0)
+		{
+			for(tilex = origtilex + 1;tilex < W;++tilex)
+			{
+				if(!IsElevatorTile(tilex, origtiley))
+					continue;
+				if(IsElevatorTile(tilex + 1, origtiley - 1) || IsElevatorTile(tilex + 1, origtiley + 1))
+					tilex += 1;
+				else
+					tilex -= 1;
+				break;
+			}
+		}
+	}
+	if(tilex == 0)
+		tilex = origtilex;
+
+	// Pick the step-out tile + facing from the adjacent door. With no door there
+	// is nowhere to step out, so leave the default placement.
+	dirtype dir = nodir;
+	if(tilex < W)
+	{
+		if(IsElevatorDoor(tilex + 1, origtiley + 1))      { origtiley += 1; tilex -= 1; dir = northeast; }
+		else if(IsElevatorDoor(tilex + 1, origtiley - 1)) { origtiley -= 1; tilex -= 1; dir = northeast; }
+		else if(IsElevatorDoor(tilex - 1, origtiley + 1)) { origtiley += 1; tilex += 1; dir = northwest; }
+		else if(IsElevatorDoor(tilex - 1, origtiley - 1)) { origtiley -= 1; tilex += 1; dir = northwest; }
+	}
+	if(dir == nodir)
+		return;
+
+	// bstone player->angle = (1 - dir) * 90 degrees (CCW, 0 = east).
+	int deg = (1 - (int)dir) * 90;
+	while(deg < 0)
+		deg += 360;
+	const angle_t ang = (angle_t)deg * ANGLE_1;
+
+	plr->Teleport(((fixed)tilex << TILESHIFT) + TILEGLOBAL/2,
+		((fixed)origtiley << TILESHIFT) + TILEGLOBAL/2, ang, true);
 }
 
 static void ElevatorCheckPS()

@@ -785,6 +785,10 @@ restartgame:
 						if(NewMap.flags & NEWMAP_KEEPFACING)
 							players[i].mo->angle = NewMap.angle;
 					}
+					// AOG: step the player out of the elevator car on arrival
+					// (bstone AlignPlayerInElevator) rather than leaving them on
+					// the pad. Self-gated; a no-op unless an AOG elevator ride armed it.
+					Blake_AlignPlayerInElevator();
 				}
 			}
 

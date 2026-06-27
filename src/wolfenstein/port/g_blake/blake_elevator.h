@@ -51,6 +51,9 @@ void Blake_PsClear();
 // Set by Elevator_SelectFloor; PlayLoop runs the panel between frames.
 extern bool Blake_ElevatorRequested;
 void Blake_ElevatorCheck();
+// Step the player out of the elevator car on AOG floor arrival. Self-gated:
+// a no-op unless an AOG elevator ride armed it.
+void Blake_AlignPlayerInElevator();
 
 // Overall mission ratio for the high-score table (bstone ss_justcalc).
 int Blake_MissionRatio();

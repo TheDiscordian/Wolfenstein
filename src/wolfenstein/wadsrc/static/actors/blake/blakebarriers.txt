@@ -177,6 +177,20 @@ actor ElectricArcBarrier : SmartAnimation
 		Inactive:
 			ELCK D -1 A_ChangeFlag("SOLID", false)
 			stop
+		// Anti-plasma cannon shutdown: flicker lit<->dark ~15 times, then die.
+		// A_BarrierShutdown drives the toggles and jumps between these states.
+		Shutdown:
+			ELCK A 1 bright A_BarrierShutdown
+			loop
+		ShutdownLit:
+			ELCK ABC 1 bright A_BarrierShutdown
+			loop
+		ShutdownDark:
+			ELCK D 1 A_BarrierShutdown
+			loop
+		Disabled:
+			ELCK D -1
+			stop
 	}
 }
 

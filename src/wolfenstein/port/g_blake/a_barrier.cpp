@@ -39,6 +39,7 @@
 #include "wl_agent.h"
 #include "wl_game.h"
 #include "wl_net.h"
+#include "wl_play.h"
 #include "wl_state.h"
 #include "thingdef/thingdef.h"
 
@@ -71,6 +72,60 @@ ACTION_FUNCTION(A_BarrierDamage)
 		DamageActorsOnTile(self, self->tilex, self->tiley, 500);
 
 	return true;
+}
+
+// Anti-plasma cannon shutdown for an electric arc barrier (bstone
+// T_BarrierShutdown). The hit seeds health = the number of flickers remaining
+// (15) and temp1 = the inter-flicker countdown. Each pass toggles the barrier
+// lit<->dark on a random interval, fading it out over ~15 flashes, then kills it
+// for good. hidden marks it permanently disabled so the wall-switch table
+// (ConvergeActor) never re-enables a barrier the player shot down.
+ACTION_FUNCTION(A_BarrierShutdown)
+{
+	if(self->health > 0)
+	{
+		if(self->temp1 > (short)tics)
+		{
+			self->temp1 -= (short)tics;
+			return true; // hold the current flicker frame
+		}
+
+		const Frame *f;
+		if(!(self->flags & FL_SOLID)) // currently dark -> flash lit
+		{
+			self->flags |= FL_SOLID;
+			PlaySoundLocActor("barrier/zap", self);
+			self->temp1 = (short)(pr_barrier() & 0x7);
+			f = self->FindState("ShutdownLit");
+		}
+		else // currently lit -> go dark
+		{
+			self->flags &= ~FL_SOLID;
+			self->temp1 = (short)(5 + (pr_barrier() & 0xf));
+			f = self->FindState("ShutdownDark");
+		}
+		self->health--;
+		if(f)
+		{
+			if(result)
+				result->JumpFrame = f;
+			else
+				self->SetState(f);
+		}
+		return false;
+	}
+
+	// Flickers exhausted: the barrier is dead. Mark it so it stays down.
+	self->hidden = 1;
+	self->flags &= ~FL_SOLID;
+	if(const Frame *f = self->FindState("Disabled"))
+	{
+		if(result)
+			result->JumpFrame = f;
+		else
+			self->SetState(f);
+	}
+	return false;
 }
 
 // Per-tic thinker for closing spike/post frames: the animation holds while a

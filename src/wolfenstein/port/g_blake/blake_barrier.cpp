@@ -82,6 +82,11 @@ static bool IsBarrier(AActor *actor)
 // Sends a barrier actor to the given state if it isn't there already.
 static void ConvergeActor(AActor *actor, bool on)
 {
+	// An arc barrier the player shot down with the anti-plasma cannon stays dead
+	// (A_BarrierShutdown sets hidden). The wall-switch table must never re-enable
+	// it -- it has FL_SOLID cleared, so without this it would read as merely "off".
+	if(actor->hidden)
+		return;
 	if(!!(actor->flags & FL_SOLID) == on)
 		return;
 	if(const Frame *state = actor->FindState(on ? "Active" : "Inactive"))

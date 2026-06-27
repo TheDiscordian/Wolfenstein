@@ -379,6 +379,24 @@ void T_Projectile (AActor *self)
 					// Eventually this will need an actual height check.
 					else if(check->projectilepassheight != 0)
 					{
+						// PS: the anti-plasma cannon (the DOS "BFG") shorts out an
+						// active electric arc barrier it hits -- it flickers and dies
+						// (bstone DamageActor arc_barrierobj case). Normal weapons
+						// can't, and AOG has no anti-plasma shot, so AOG barriers stay
+						// un-disablable. Seed the flicker counters bstone sets, then
+						// let the shot explode as usual.
+						static const ClassDef * const arcCls  = ClassDef::FindClass("ElectricArcBarrier");
+						static const ClassDef * const shotCls = ClassDef::FindClass("AntiPlasmaShot");
+						if(arcCls && shotCls && self->IsKindOf(shotCls) &&
+							check->IsKindOf(arcCls) && (check->flags & FL_SOLID) && !check->hidden)
+						{
+							if(const Frame *sd = check->FindState("Shutdown"))
+							{
+								check->health = 15;
+								check->temp1 = 0;
+								check->SetState(sd);
+							}
+						}
 						T_ExplodeProjectile(self, check);
 						return;
 					}

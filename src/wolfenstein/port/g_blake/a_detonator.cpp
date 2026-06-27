@@ -103,6 +103,21 @@ static int CubeTileDistance(AActor *a, AActor *b)
 	return MAX(dx, dy);
 }
 
+// bstone's plasma-detonator prompts carry a ^SH icon (the Security Cube, or the
+// detonator itself for "no fission detonators") the info area can't draw inline,
+// so set it through the pickup-icon path after the message.
+extern void Blake_SetInfoMessageIcon(const ClassDef *);
+static void DetCubeIcon()
+{
+	static const ClassDef * const cls = ClassDef::FindClass("SecurityCube");
+	Blake_SetInfoMessageIcon(cls);
+}
+static void DetBombIcon()
+{
+	static const ClassDef * const cls = ClassDef::FindClass("PlasmaDetonator");
+	Blake_SetInfoMessageIcon(cls);
+}
+
 // bstone TryDropPlasmaDetonator: gates run in order, then the armed bomb
 // spawns at the player's feet.
 ACTION_FUNCTION(A_BlakeDropDetonator)
@@ -116,12 +131,14 @@ ACTION_FUNCTION(A_BlakeDropDetonator)
 	if(Blake_PsFloorUnlocked(lvl + 1))
 	{
 		StatusBar->DisplayInfoMessage(pd_floornotlocked, 0x200, 300);
+		DetCubeIcon();
 		return true;
 	}
 
 	if(lvl > 20)
 	{
 		StatusBar->DisplayInfoMessage(pd_no_computer, 0x200, 300);
+		DetCubeIcon();
 		return true;
 	}
 
@@ -130,6 +147,7 @@ ACTION_FUNCTION(A_BlakeDropDetonator)
 	if(!ammo || ammo->amount == 0)
 	{
 		StatusBar->DisplayInfoMessage(pd_donthaveany, 0x200, 300);
+		DetBombIcon();
 		return true;
 	}
 
@@ -137,18 +155,21 @@ ACTION_FUNCTION(A_BlakeDropDetonator)
 	if(!cube)
 	{
 		StatusBar->DisplayInfoMessage(pd_no_computer, 0x200, 300);
+		DetCubeIcon();
 		return true;
 	}
 
 	if(cube->GetZone() != self->GetZone())
 	{
 		StatusBar->DisplayInfoMessage(pd_notnear, 0x200, 300);
+		DetCubeIcon();
 		return true;
 	}
 
 	if(CubeTileDistance(self, cube) > 2)
 	{
 		StatusBar->DisplayInfoMessage(pd_getcloser, 0x200, 300);
+		DetCubeIcon();
 		return true;
 	}
 

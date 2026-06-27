@@ -339,6 +339,16 @@ void Blake_PickupInfoMsg(AActor *toucher, const ClassDef *itemClass)
 	}
 }
 
+// Set the info-area icon for a message that carries a bstone ^SH code the info
+// area can't render inline (e.g. the plasma-detonator prompts).  Free function so
+// callers outside this file need only the class, not BlakeStatusBar.
+void Blake_SetInfoMessageIcon(const ClassDef *cls)
+{
+	extern DBaseStatusBar *StatusBar;
+	if (cls && StatusBar && IWad::CheckGameFilter("Blake"))
+		static_cast<BlakeStatusBar *>(StatusBar)->SetInfoMessageIcon(cls);
+}
+
 // LINC weapon-select feedback (bstone CheckWeaponChange, 3d_agent.cpp:466).
 // available -> "ACTIVATED AND READY", else "NOT CURRENTLY AVAILABLE".  The DOS
 // game fires this on number-key selection; the Pocket has no number keys, so

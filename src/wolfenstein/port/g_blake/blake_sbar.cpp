@@ -627,6 +627,59 @@ void BlakeStatusBar::DrawLed(double percent, double x, double y) const
 		TAG_DONE);
 }
 
+// Radar dot colour for a live enemy: bstone tints by 0x10 + obclass, so map each
+// Blake actor class to its bstone classtype index (3d_def.h).  Checked
+// most-derived first so the PS guard variants and morph/awake forms win over the
+// AoG/base class they inherit.  0 = not a radar enemy.
+static uint8_t RadarEnemyColor(const AActor *ob)
+{
+	struct Entry { const char *cls; uint8_t obclass; };
+	static const Entry table[] = {
+		{ "SectorGuard", 5 }, { "RentACop", 5 },
+		{ "CeilingTurretStatic", 6 }, { "CeilingTurretRotate", 6 },
+		{ "InformantScientist", 7 }, { "GeneralScientist", 7 },
+		{ "PODAlien", 8 },
+		{ "ElectroAlien", 9 },
+		{ "ElectroSphereVert", 10 }, { "ElectroSphereHorz", 10 }, { "ElectroSphereDiag", 10 }, { "ElectroSphere", 10 },
+		{ "TechWarrior", 11 }, { "ProGuard", 11 },
+		{ "GeneticGuard", 12 },
+		{ "MechSentinel", 13 },
+		{ "MutantHumanMorphAwake", 49 }, { "MutantHumanMorphed", 49 }, { "MutantHuman", 14 },
+		{ "LargeAlienCanister", 15 }, { "LargeCanisterAlien", 16 },
+		{ "SmallAlienCanister", 17 }, { "SmallCanisterAlien", 18 },
+		{ "GurneyMutantSleep", 19 }, { "GurneyMutant", 20 },
+		{ "LiquidAlien", 21 },
+		{ "AlienProtector", 22 }, { "STARTrooper", 22 },
+		{ "DrGoldfire", 23 },
+		{ "MorphedGoldfire", 24 },
+		{ "VolatileTransport", 25 },
+		{ "FloatingBomb", 26 },
+		{ "SpiderMutantMorphAwake", 47 }, { "SpiderMutantMorphed", 47 }, { "SpiderMutant", 28 },
+		{ "BreatherBeast", 29 },
+		{ "CyborgWarrior", 30 },
+		{ "ReptilianWarriorMorphAwake", 48 }, { "ReptilianWarriorMorphed", 48 }, { "ReptilianWarrior", 31 },
+		{ "AcidDragon", 32 },
+		{ "BioMechGuardian", 33 },
+		{ "GiantStalker", 34 },
+		{ "SpectorDemon", 35 },
+		{ "ArmoredStalker", 36 },
+		{ "CrawlerBeast", 37 },
+	};
+	static const unsigned int N = sizeof(table) / sizeof(table[0]);
+	static const ClassDef *cls[N];
+	static bool inited = false;
+	if(!inited)
+	{
+		for(unsigned int i = 0;i < N;++i)
+			cls[i] = ClassDef::FindClass(table[i].cls);
+		inited = true;
+	}
+	for(unsigned int i = 0;i < N;++i)
+		if(cls[i] && ob->IsKindOf(cls[i]))
+			return (uint8_t)(0x10 + table[i].obclass);
+	return 0;
+}
+
 // PS in-game radar: the rotated overhead blip map (bstone ShowOverhead, called as
 // ShowOverhead(192,156,16, rzoom, OV_KEYS|OV_PUSHWALLS|OV_ACTORS)).  Samples a
 // player-rotated window of the map into the status bar: floor 0x55, unmapped/wall
@@ -654,9 +707,9 @@ void BlakeStatusBar::DrawRadarOverhead(int rzoom)
 	// stays O(1) per cell (Blake maps are 64x64).
 	static const ClassDef * const keyCls = ClassDef::FindClass("Key");
 	static uint8_t hasKey[64][64];
-	static uint8_t hasEnemy[64][64];
+	static uint8_t enemyColor[64][64];	// 0 = none, else the 0x10+obclass tint
 	memset(hasKey, 0, sizeof(hasKey));
-	memset(hasEnemy, 0, sizeof(hasEnemy));
+	memset(enemyColor, 0, sizeof(enemyColor));
 	for(AActor::Iterator it = AActor::GetIterator();it.Next();)
 	{
 		AActor *ob = it;
@@ -666,7 +719,10 @@ void BlakeStatusBar::DrawRadarOverhead(int rzoom)
 		if(keyCls && ob->IsKindOf(keyCls))
 			hasKey[tx][ty] = 1;
 		else if(!ob->player && (ob->flags & FL_SHOOTABLE) && ob->health > 0)
-			hasEnemy[tx][ty] = 1;
+		{
+			if(uint8_t ec = RadarEnemyColor(ob))
+				enemyColor[tx][ty] = ec;
+		}
 	}
 
 	const angle_t a = pl->angle;
@@ -724,12 +780,21 @@ void BlakeStatusBar::DrawRadarOverhead(int rzoom)
 						}
 						// else: solid wall stays UNMAPPED, like bstone
 
-						if(color == 0x55)
+						// Overlays, in bstone order, each overriding the last:
+						// keys, then enemies (>=2x), then secret pushwalls (4x).
+						if(hasKey[mx][my])
+							color = 0xF3;
+						if(zoomActors && enemyColor[mx][my])
+							color = enemyColor[mx][my];
+						if(z == 4 && sp->tile)
 						{
-							if(hasKey[mx][my])
-								color = 0xF3;
-							else if(zoomActors && hasEnemy[mx][my])
-								color = 0x15;	// enemy (bstone tints by obclass)
+							for(unsigned int t = 0;t < sp->triggers.Size();++t)
+								if(sp->triggers[t].action == Specials::Pushwall_Move ||
+									sp->triggers[t].action == Specials::Pushwall_MoveNoStop)
+								{
+									color = 0x79;	// secret pushwall
+									break;
+								}
 						}
 					}
 				}

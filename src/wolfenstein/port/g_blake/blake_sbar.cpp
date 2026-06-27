@@ -37,6 +37,7 @@
 #include "a_keys.h"
 #include "colormatcher.h"
 #include "id_ca.h"
+#include "id_in.h"
 #include "id_sd.h"
 #include "id_us.h"
 #include "id_vh.h"
@@ -63,7 +64,8 @@ class BlakeStatusBar : public DBaseStatusBar
 {
 public:
 	BlakeStatusBar() : CurrentScore(0), ScoreRollWait(0), InfoMessagePriority(0), InfoMessageTics(0),
-		StartupMsgPending(false), EcgScrollTics(0), HeartTics(0), HeartBright(false)
+		StartupMsgPending(false), EcgScrollTics(0), HeartTics(0), HeartBright(false),
+		RadarZoom(0), RadarPlusUp(true), RadarMinusUp(true), RadarDrainPhase(false)
 	{
 		memset(EcgLegend, 0, sizeof(EcgLegend));
 		memset(EcgSegments, 0, sizeof(EcgSegments));
@@ -90,6 +92,9 @@ public:
 		EcgScrollTics = 0;
 		HeartTics = 0;
 		HeartBright = false;
+		RadarZoom = 0;
+		RadarPlusUp = RadarMinusUp = true;
+		RadarDrainPhase = false;
 
 		// Blake's start-of-game info-area greeting (bstone DrawPlayScreen's
 		// InitInfoMsg path): armed by NewGameMessage() when a game is (re)started
@@ -152,6 +157,11 @@ private:
 	FString InfoMessage;
 	int InfoMessagePriority;
 	int InfoMessageTics;
+	// PS radar magnification (bstone rzoom 0=1x/1=2x/2=4x) + key edge state +
+	// the per-Tick drain phase (a device-safe replacement for bstone's frameon&1,
+	// whose parity freezes under the Pocket's even fixed step).
+	int RadarZoom;
+	bool RadarPlusUp, RadarMinusUp, RadarDrainPhase;
 	// Info-area icon (bstone ^SH/^AN): the item/enemy sprite drawn in a black box
 	// at the info area's left, baked from the sprite into plain paletted buffers at
 	// set-time (during the tick) so the per-frame draw never touches a sprite
@@ -938,7 +948,8 @@ void BlakeStatusBar::DrawStatusBar()
 			DrawLed(static_cast<double>(radarPack->amount)/static_cast<double>(radarPack->maxamount), 235, 155);
 		else
 			DrawLed(0, 235, 155);
-		VWB_DrawGraphic(TexMan("STMAG1X"), 176, 152);
+		const char *magPic = RadarZoom == 2 ? "STMAG4X" : RadarZoom == 1 ? "STMAG2X" : "STMAG1X";
+		VWB_DrawGraphic(TexMan(magPic), 176, 152);
 	}
 
 	// Find keys in inventory. AoG's VGAGRAPH has no key pics; the original
@@ -1473,5 +1484,41 @@ void BlakeStatusBar::Tick()
 	{
 		HeartTics = 0;
 		HeartBright = !HeartBright;
+	}
+
+	// PS radar magnification: +/- change the zoom level and drain the radar
+	// energy store (the RadarPack item) while magnified (bstone DrawRadar +
+	// CheckKeys zoom). 1x never drains; energy runs out -> back to 1x.
+	if(IWad::GetGame().Name.CompareNoCase("Planet Strike") == 0 && players[ConsolePlayer].mo)
+	{
+		static const ClassDef * const radarPackCls = ClassDef::FindClass("RadarPack");
+		AInventory *rp = players[ConsolePlayer].mo->FindInventory(radarPackCls);
+		int energy = rp ? rp->amount : 0;
+
+		if(energy > 0)
+		{
+			if(Keyboard[sc_Equals]) { if(RadarPlusUp && RadarZoom < 2) { ++RadarZoom; RadarPlusUp = false; } }
+			else RadarPlusUp = true;
+			if(Keyboard[sc_Minus]) { if(RadarMinusUp && RadarZoom > 0) { --RadarZoom; RadarMinusUp = false; } }
+			else RadarMinusUp = true;
+		}
+		else
+			RadarZoom = 0;
+
+		// The per-Tick phase toggle stands in for bstone's frameon&1, whose parity
+		// freezes under the device's even fixed step.
+		RadarDrainPhase = !RadarDrainPhase;
+		if(energy > 0 && RadarZoom != 0 && !godmode && RadarDrainPhase)
+		{
+			energy -= (int)(tics << RadarZoom);
+			if(energy <= 0)
+			{
+				energy = 0;
+				RadarZoom = 0;
+				DisplayInfoMessage("\r\r  RADAR MAGNIFICATION\r    ENERGY DEPLETED.", 0x200, 300);
+			}
+			if(rp)
+				rp->amount = energy;
+		}
 	}
 }

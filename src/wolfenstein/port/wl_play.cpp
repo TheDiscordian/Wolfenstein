@@ -1033,7 +1033,8 @@ void CheckKeys (void)
 	}
 
 	// [BL] Allow changing the screen size with the -/= keys a la Doom.
-	if(automap != AMA_Normal && changeSize)
+	// PS owns -/= for the radar magnification, so don't let them resize there.
+	if(IWad::GetGame().Name.CompareNoCase("Planet Strike") != 0 && automap != AMA_Normal && changeSize)
 	{
 		if(Keyboard[sc_Equals] && !Keyboard[sc_Minus])
 			NewViewSize(viewsize+1);

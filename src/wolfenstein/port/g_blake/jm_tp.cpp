@@ -751,9 +751,10 @@ void TP_HandleCodes()
 						break;
 
 					case TP_CNVT_CODE('S', 'H'):
-						// Shapes stubbed: width 0 so centering ignores them.
+						// Measure the real shape so a ^SH inside a ^CE line centres
+						// correctly (bstone counts the shape width here too).
+						length += TP_BoxAroundShape(-1, -1, TP_VALUE(s, 3), pis_scaled);
 						s += 3;
-						length += TP_BoxAroundShape(-1, -1, 0, pis_pic);
 						break;
 
 					case TP_CNVT_CODE('A', 'N'):

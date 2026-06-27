@@ -31,6 +31,7 @@
 #include "g_blake/blake_elevator.h"
 #include "g_blake/blake_goldstern.h"
 #include "g_blake/blake_electrowall.h"
+#include "wl_iwad.h"
 #include "of_ecwolf_gpu.h"
 
 /*
@@ -995,6 +996,39 @@ void CheckKeys (void)
 		return;
 
 	scan = LastScan;
+
+	// SECRET CHEAT CODE: 'JAM' -> full Blake arsenal (DOS Blake Stone; 3d_play.cpp).
+	// Type J, A, M then Enter. Blake-only so it never fires in Wolf/Noah/ROTT.
+	if(IWad::CheckGameFilter("Blake"))
+	{
+		extern void Blake_GiveJamArsenal();
+		static ScanCode jam_buff[3] = { sc_None, sc_None, sc_None };
+		static bool jam_enterReleased = true;
+
+		if(Keyboard[sc_J] || Keyboard[sc_A] || Keyboard[sc_M])
+		{
+			if(jam_buff[2] != LastScan)	// edge-dedup, like the original
+			{
+				jam_buff[0] = jam_buff[1];
+				jam_buff[1] = jam_buff[2];
+				jam_buff[2] = LastScan;
+			}
+		}
+
+		if(Keyboard[sc_Enter])
+		{
+			if(jam_enterReleased &&
+				jam_buff[0] == sc_J && jam_buff[1] == sc_A && jam_buff[2] == sc_M)
+			{
+				jam_buff[0] = sc_None;
+				Blake_GiveJamArsenal();
+				IN_ClearKeysDown();
+			}
+			jam_enterReleased = false;
+		}
+		else
+			jam_enterReleased = true;
+	}
 
 	// [BL] Allow changing the screen size with the -/= keys a la Doom.
 	if(automap != AMA_Normal && changeSize)

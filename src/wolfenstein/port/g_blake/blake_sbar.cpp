@@ -805,15 +805,28 @@ void BlakeStatusBar::DrawStatusBar()
 		VWB_Clear(colors[0], screenWidth-scaleFactorX, topy, screenWidth, static_cast<int>(boty-scaleFactorY));
 	}
 
-	// Draw the top information.  "SECRET" comes from the map's mapinfo `secret`
-	// flag, not a LevelNumber range -- the AOG maps are numbered globally
-	// (MAP01..MAP90 -> LevelNumber 1..90), so the old `> 20` test mislabelled
-	// every area past 20 as secret.
+	// Top-bar location label, derived from the per-episode floor slot to match
+	// bstone ShadowPrintLocationText (3d_game.cpp:2951): AOG names floors "FLOOR:",
+	// PS "AREA:", and secret floors show "SECRET <index>".  No Blake map sets the
+	// mapinfo `secret` flag, so the label must be derived (same slot maths as
+	// blake_barrier.cpp).
 	FString lives, area;
-	if(levelInfo->Secret)
-		area = "SECRET";
+	if(isPS)
+	{
+		const int slot = levelInfo->LevelNumber - 1;        // PS: 0-based floor (== bstone mapon)
+		if(slot > 19)
+			area.Format("SECRET %d", (slot - 20) + 1);
+		else
+			area.Format("AREA: %d", slot + 1);
+	}
 	else
-		area.Format("AREA: %d", levelInfo->LevelNumber);
+	{
+		const int slot = (levelInfo->LevelNumber - 1) % 15; // AOG: floor within episode
+		if(slot <= 0 || slot >= 10)
+			area.Format("SECRET %d", (slot <= 0 ? 0 : slot - 10 + 1) + 1);
+		else
+			area.Format("FLOOR: %d", slot);
+	}
 	lives.Format("LIVES: %d", players[ConsolePlayer].lives);
 	DrawString(IndexFont, area, 18, 5, true, CR_WHITE);
 	DrawString(IndexFont, levelInfo->GetName(map), 160, 5, true, CR_WHITE, true);

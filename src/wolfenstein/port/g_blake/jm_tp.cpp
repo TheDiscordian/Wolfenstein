@@ -1459,6 +1459,12 @@ int16_t TP_DrawShape(
 	if (!scaled)
 		x = static_cast<int16_t>((x + 7) & ~7);
 
+	// bstone TP_DrawShape clears a scaled shape's 64x64 cell to the background
+	// before drawing when fl_clearscback is set, so animated (^AN) frames erase
+	// the previous frame instead of ghosting through the masked transparency.
+	if (scaled && (flags & fl_clearscback))
+		VWB_Bar(x, y, 64, 64, static_cast<uint8_t>(bgcolor));
+
 	// Draw the ^BX/^SP frame (if set) behind the shape and get the framed
 	// width, then the shape, then advance the cursor (bstone TP_DrawShape).
 	int16_t width = TP_BoxAroundShape(x, y, shapenum, shapetype);
@@ -1496,6 +1502,12 @@ void TP_AnimatePage(
 				anim->frame = 0;
 			}
 		}
+
+		// Erase the previous frame's cell first (bstone draws each ^AN frame via
+		// TP_DrawShape, which clears the 64x64 scaled cell when fl_clearscback is
+		// set) -- otherwise masked sprites ghost over each other.
+		if (flags & fl_clearscback)
+			VWB_Bar(anim->x, anim->y, 64, 64, static_cast<uint8_t>(bgcolor));
 
 		FTexture* tex = TP_ShapeTexture(anim->baseshape + anim->frame);
 		if (tex)

@@ -130,11 +130,11 @@ void Blake_FloorLocksNewGame()
 {
 	memset(floorMeta, 0, sizeof(floorMeta));
 
-	// bstone seeds every stats floor's overall_floor to 100% at NewGame
-	// (3d_main.cpp:7952) so the OVERALL MISSION row reads against a full
-	// baseline and drops to the real average as floors are completed, rather
-	// than climbing from 0%.  A floor's overallFloor here is the sum of three
-	// 0-100 ratios, so 100% == 300.
+	// bstone seeds every stats floor's overall_floor to the raw value 100 at
+	// NewGame (3d_main.cpp:7952).  overallFloor is the sum of three 0-100 ratios
+	// on a 0-300 scale (300 == 100%), so the seed is 33%, not 100% -- the OVERALL
+	// MISSION row reads 33% on a fresh game and tracks the real average as floors
+	// are completed.
 	if(IsBlake())
 	{
 		if(IsAOG())
@@ -145,13 +145,13 @@ void Blake_FloorLocksNewGame()
 				const int base = e * FLOORS_PER_EPISODE + 1;
 				for(int f = 0;f < STATS_FLOORS;++f)
 					if(base + f < (int)countof(floorMeta))
-						floorMeta[base + f].overallFloor = 300;
+						floorMeta[base + f].overallFloor = 100;
 			}
 		}
 		else
 		{
 			for(int f = 1;f <= PS_FLOORS && f < (int)countof(floorMeta);++f)
-				floorMeta[f].overallFloor = 300;
+				floorMeta[f].overallFloor = 100;
 		}
 	}
 

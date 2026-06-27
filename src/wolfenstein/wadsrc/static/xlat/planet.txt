@@ -1065,8 +1065,8 @@ things
 	{126, TechWarrior,              4, 0, 0}
 	{130, TechWarrior,              4, PATHING, 0}
 	{134, SmallAlienCanister,       0, 0, 0}
-	{135, SmallAlienCanister,       0, 0, 2} // TODO: Replace with SmallAlienCanisterStatic when below skill
-	{136, SmallAlienCanister,       0, 0, 3} // TODO: Replace with SmallAlienCanisterStatic when below skill
+	{135, SmallAlienCanister,       0, 0, 2, SmallAlienCanisterStatic}
+	{136, SmallAlienCanister,       0, 0, 3, SmallAlienCanisterStatic}
 	{137, SmallAlienCanisterEmpty,  0, 0, 0}
 	{138, ElectricArcBarrierOff,    0, 0, 0}
 	{139, ElectricArcBarrier,       0, 0, 0}
@@ -1079,13 +1079,13 @@ things
 	{152, ScientistSpawner,         4, 0, 2}
 	{156, ScientistSpawner,         4, PATHING, 2}
 	{160, SecurityLight,            0, 0, 0}
-	{161, GurneyMutantSleep,        0, 0, 3} // TODO: Replace with GurneyMutantStatic when below skill
+	{161, GurneyMutantSleep,        0, 0, 3, GurneyMutantStatic}
 	{162, TechWarrior,              4, 0, 2}
 	{166, TechWarrior,              4, PATHING, 2}
 	{170, LargeAlienCanister,       0, 0, 0}
-	{171, LargeAlienCanister,       0, 0, 2} // TODO: Replace with LargeAlienCanisterStatic when below skill
-	{172, LargeAlienCanister,       0, 0, 3} // TODO: Replace with LargeAlienCanisterStatic when below skill
-	{173, GurneyMutantSleep,        0, 0, 2} // TODO: Replace with GurneyMutantStatic when below skill
+	{171, LargeAlienCanister,       0, 0, 2, LargeAlienCanisterStatic}
+	{172, LargeAlienCanister,       0, 0, 3, LargeAlienCanisterStatic}
+	{173, GurneyMutantSleep,        0, 0, 2, GurneyMutantStatic}
 	{174, ElectricPostBarrierOff,   0, 0, 0}
 	{175, ElectricPostBarrier,      0, 0, 0}
 	// No 176
@@ -1133,7 +1133,7 @@ things
 	{273, LargeAlienCanisterEmpty,  0, 0, 0}
 	{274, LargeAlienCanisterEmpty,  0, 0, 2}
 	{275, LargeAlienCanisterEmpty,  0, 0, 3}
-	{276, PODAlienEgg,              0, 0, 2} // TODO: Replace with PODAlienEggDead when below skill
+	{276, PODAlienEgg,              0, 0, 2, PODAlienEggDead}
 	{277, BlackOoze,                0, 0, 0}
 	{278, FloatingBomb,             4, 0, 2}
 	{282, FloatingBomb,             4, PATHING, 2}
@@ -1145,7 +1145,7 @@ things
 	{291, LiquidAlien,              0, 0, 0}
 	{292, LiquidAlien,              0, 0, 2}
 	{293, LiquidAlien,              0, 0, 3}
-	{294, PODAlienEgg,              0, 0, 3} // TODO: Replace with PODAlienEggDead when below skill
+	{294, PODAlienEgg,              0, 0, 3, PODAlienEggDead}
 	{295, BlackOoze,                0, 0, 2}
 	{296, FloatingBomb,             4, 0, 3}
 	{300, FloatingBomb,             4, PATHING, 3}
@@ -1337,8 +1337,8 @@ things
 	{588, BioMechGuardian,          0, 0, 2}
 	// No 589
 	{590, ReptilianWarriorMorphed,  0, 0, 0}
-	{591, ReptilianWarriorMorphed,  0, 0, 2} // TODO: Replace with GreekPost2 when below skill
-	{592, ReptilianWarriorMorphed,  0, 0, 3} // TODO: Replace with GreekPost2 when below skill
+	{591, ReptilianWarriorMorphed,  0, 0, 2, GreekPost2}
+	{592, ReptilianWarriorMorphed,  0, 0, 3, GreekPost2}
 	// No 593
 	{594, TechWarrior,              4, PATHING, 3}
 	// No 598-600
@@ -1350,12 +1350,12 @@ things
 	{606, BioMechGuardian,          0, 0, 3}
 	// No 607
 	{608, SpiderMutantMorphed,      0, 0, 0}
-	{609, SpiderMutantMorphed,      0, 0, 2} // TODO: Replace with BlueRedPost when below skill
-	{610, SpiderMutantMorphed,      0, 0, 3} // TODO: Replace with BlueRedPost when below skill
+	{609, SpiderMutantMorphed,      0, 0, 2, BlueRedPost}
+	{610, SpiderMutantMorphed,      0, 0, 3, BlueRedPost}
 	// No 611-625
 	{626, MutantHumanMorphed,       0, 0, 0}
-	{627, MutantHumanMorphed,       0, 0, 2} // TODO: Replace with MutantStatue when below skill
-	{628, MutantHumanMorphed,       0, 0, 3} // TODO: Replace with MutantStatue when below skill
+	{627, MutantHumanMorphed,       0, 0, 2, MutantStatue}
+	{628, MutantHumanMorphed,       0, 0, 3, MutantStatue}
 	// No 629
 	{630, GiantStalker,             0, 0, 0}
 	{631, SpectorDemon,             0, 0, 0}

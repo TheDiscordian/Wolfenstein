@@ -103,6 +103,7 @@ public:
 		}
 
 		FName			type;
+		FName			staticType;	// Blake: inert decoration spawned below minskill (NAME_None = none)
 		uint32_t		flags;
 		unsigned short	oldnum;
 		unsigned char	angles;
@@ -293,9 +294,10 @@ public:
 		return false;
 	}
 
-	uint32_t TranslateThing(MapThing &thing, MapTrigger &trigger, uint32_t &flags, unsigned short oldnum) const
+	uint32_t TranslateThing(MapThing &thing, MapTrigger &trigger, uint32_t &flags, unsigned short oldnum, FName &staticType) const
 	{
 		uint32_t tsFlags = 0;
+		staticType = NAME_None;
 
 		// Add special (i.e. trigger, elevator)
 		const ThingSpecialXlat *ts;
@@ -316,6 +318,7 @@ public:
 		tsFlags |= TSF_ISTHING;
 		flags = type.flags;
 		thing.type = type.type;
+		staticType = type.staticType;
 
 		// The player has a weird rotation pattern. It's 450-angle.
 		bool playerRotation = false;
@@ -608,6 +611,18 @@ protected:
 				sc.MustGetToken(',');
 				sc.MustGetToken(TK_IntConst);
 				thing.minskill = sc->number;
+				// Blake: optional 6th field names an inert decoration spawned in
+				// place of this thing below its minskill (e.g. a disguised alien
+				// canister becomes empty scenery on the easy skills).
+				thing.staticType = NAME_None;
+				if(sc.CheckToken(','))
+				{
+					bool sigil = sc.CheckToken('$');
+					sc.MustGetToken(TK_Identifier);
+					thing.staticType = FName(sigil ? FString("$") + sc->str : sc->str, true);
+					if(!sigil && ClassDef::FindClass(thing.staticType) == NULL)
+						sc.ScriptMessage(Scanner::ERROR, "Could not find static class '%s'.", sc->str.GetChars());
+				}
 				sc.MustGetToken('}');
 
 				if(oldTableSize &&
@@ -881,8 +896,9 @@ void GameMap::ReadMacData()
 		Trigger trigger;
 		uint32_t flags = 0;
 		uint32_t tsFlags = 0;
+		FName staticType = NAME_None;
 
-		if((tsFlags = xlat.TranslateThing(thing, trigger, flags, type)) == 0)
+		if((tsFlags = xlat.TranslateThing(thing, trigger, flags, type, staticType)) == 0)
 			printf("Unknown old type %d @ (%d,%d)\n", type, x, y);
 		else
 		{
@@ -914,6 +930,22 @@ void GameMap::ReadMacData()
 				int thingnum = things.Push(thing);
 				if(flags & Xlat::TF_HOLOWALL)
 					holowallThings.Push(HolowallProducer(&mapPlane.map[y*64+x], thing, thingnum, flags));
+
+				// Blake: inert decoration on the skills the gated thing skips.
+				if(staticType != NAME_None &&
+					!(thing.skill[0] && thing.skill[1] && thing.skill[2] && thing.skill[3]))
+				{
+					Thing st;
+					st.type = staticType;
+					st.x = thing.x;
+					st.y = thing.y;
+					st.z = thing.z;
+					st.skill[0] = !thing.skill[0];
+					st.skill[1] = !thing.skill[1];
+					st.skill[2] = !thing.skill[2];
+					st.skill[3] = !thing.skill[3];
+					things.Push(st);
+				}
 			}
 		}
 	}
@@ -1516,8 +1548,9 @@ void GameMap::ReadPlanesData()
 					Trigger trigger;
 					uint32_t flags = 0;
 					uint32_t tsFlags = 0;
+					FName staticType = NAME_None;
 
-					if((tsFlags = xlat.TranslateThing(thing, trigger, flags, oldplane[i])) == 0)
+					if((tsFlags = xlat.TranslateThing(thing, trigger, flags, oldplane[i], staticType)) == 0)
 					{
 						// Blake Stone maps carry inert editor leftovers in the
 						// objects plane; the original scan skips them silently.
@@ -1556,6 +1589,25 @@ void GameMap::ReadPlanesData()
 							int thingnum = things.Push(thing);
 							if(flags & Xlat::TF_HOLOWALL)
 								holowallThings.Push(HolowallProducer(&mapPlane.map[i], thing, thingnum, flags));
+
+							// Blake: a skill-gated thing leaves an inert decoration in
+							// its place on the skills it does not spawn (complementary
+							// skill mask), so the area still looks dressed instead of
+							// going empty below the threshold.
+							if(staticType != NAME_None &&
+								!(thing.skill[0] && thing.skill[1] && thing.skill[2] && thing.skill[3]))
+							{
+								Thing st;
+								st.type = staticType;
+								st.x = thing.x;
+								st.y = thing.y;
+								st.z = thing.z;
+								st.skill[0] = !thing.skill[0];
+								st.skill[1] = !thing.skill[1];
+								st.skill[2] = !thing.skill[2];
+								st.skill[3] = !thing.skill[3];
+								things.Push(st);
+							}
 						}
 					}
 

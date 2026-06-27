@@ -17,6 +17,7 @@
 #include "language.h"
 #include "thingdef/thingdef.h"
 #include "thingdef/thingdef_expression.h"
+#include "wl_iwad.h"
 #include "wl_agent.h"
 #include "wl_draw.h"
 #include "wl_game.h"
@@ -586,6 +587,32 @@ void SelectPathDir (AActor *ob)
 }
 
 FRandom pr_chase("Chase");
+
+// bstone alien shoot/move cadence (ChangeShootMode, 3d_act2.cpp:4850): a
+// +SHOOTMODEAI actor alternates between shoot mode (always fire when it has line
+// of sight) and move mode (chase without firing), giving Blake's "fire a burst,
+// then roam" rhythm instead of Wolf's distance-weighted random.  temp1 counts the
+// current mode down -- shots while shooting, chase tics while moving.
+static void Blake_ChangeShootMode(AActor *ob)
+{
+	if(ob->flags & FL_SHOOTMODE)
+	{
+		ob->flags &= ~FL_SHOOTMODE;
+		ob->temp1 = (short)(60 + (pr_chase() % 60));
+	}
+	else
+	{
+		ob->flags |= FL_SHOOTMODE;
+		ob->temp1 = (short)(1 + (pr_chase() % 2));
+
+		// PS: the morphed Dr. Goldfire fires a longer burst (3d_act2.cpp:4863).
+		static const ClassDef * const morphCls = ClassDef::FindClass("MorphedGoldfire");
+		static const bool isPS = IWad::GetGame().Name.CompareNoCase("Planet Strike") == 0;
+		if(isPS && morphCls && ob->IsKindOf(morphCls))
+			ob->temp1 += (short)(3 + (pr_chase() % 5));
+	}
+}
+
 ACTION_FUNCTION(A_Chase)
 {
 	enum
@@ -669,6 +696,28 @@ ACTION_FUNCTION(A_Chase)
 			if ((self->IsFast() || self->movecount == 0) && CheckLine(self, self->target)) // got a shot at player?
 			{
 				self->hidden = false;
+				if(self->flags & FL_SHOOTMODEAI)
+				{
+					// bstone alien cadence (T_Chase, 3d_act2.cpp:4685): count the
+					// current mode down by this frame's tics; when it expires flip
+					// mode (halving the move window after a near attack), then always
+					// fire while in shoot mode and never while moving.
+					if(self->temp1 > (short)tics)
+						self->temp1 -= (short)tics;
+					else
+					{
+						Blake_ChangeShootMode(self);
+						if(!(self->flags & FL_SHOOTMODE))
+							self->temp1 = (short)(self->temp1 >> 1);
+					}
+					if((self->flags & FL_SHOOTMODE) && self->temp1 != 0 && !(self->flags & FL_INTERROGATED))
+					{
+						self->SetState(missile);
+						return true;
+					}
+				}
+				else
+				{
 				dx = abs(self->tilex + dirdeltax[self->dir] - self->target->tilex);
 				dy = abs(self->tiley + dirdeltay[self->dir] - self->target->tiley);
 				dist = dx>dy ? dx : dy;
@@ -714,10 +763,15 @@ ACTION_FUNCTION(A_Chase)
 					self->SetState(missile);
 					return true;
 				}
+				}
 				dodge = !(flags & CHF_DONTDODGE);
 			}
 			else
+			{
 				self->hidden = true;
+				if(self->flags & FL_SHOOTMODEAI)
+					Blake_ChangeShootMode(self); // bstone resets cadence with no line of sight
+			}
 		}
 		else
 			self->hidden = !inMeleeRange;

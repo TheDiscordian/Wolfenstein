@@ -287,6 +287,8 @@ enum ActorFlag
 	FL_PLOTONAUTOMAP	= 0x10000000,
 	FL_BILLBOARD        = 0x20000000,
 	FL_VISIBLE          = 0x40000000, // Blake: set each frame while the actor is drawn (DrawScaleds); morph posts count down only while on screen
+	FL_SHOOTMODEAI      = 0x00000800, // Blake: alien-class shoot/move-mode firing cadence (set via DECORATE +SHOOTMODEAI)
+	FL_SHOOTMODE        = 0x80000000, // Blake: alien is currently in shoot mode (toggled at runtime by Blake_ChangeShootMode)
 };
 
 enum ItemFlag

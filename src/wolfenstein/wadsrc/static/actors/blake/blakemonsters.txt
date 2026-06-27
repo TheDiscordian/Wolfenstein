@@ -497,6 +497,7 @@ actor VolatileTransport : WolfensteinMonster
 
 actor GeneticGuard : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 10000
 	health 20, 60, 180, 240
 	speed 1, 3
@@ -546,6 +547,7 @@ actor GeneticGuard : WolfensteinMonster
 
 actor CyborgWarrior : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 7000
 	health 70, 100, 150, 200
 	speed 1, 2
@@ -617,6 +619,7 @@ actor SpiderMutantShot : SmartAnimation
 
 actor SpiderMutant : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 5000
 	health 60, 100, 150, 200
 	speed 1, 3
@@ -716,6 +719,7 @@ actor AcidDragonShot : SmartAnimation
 
 actor AcidDragon : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 9000
 	health 60, 100, 150, 200
 	speed 1, 2
@@ -758,6 +762,7 @@ actor AcidDragon : WolfensteinMonster
 
 actor BreatherBeast : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 6000
 	health 65, 115, 165, 225
 	speed 1, 3
@@ -801,6 +806,7 @@ actor BreatherBeast : WolfensteinMonster
 
 actor BioMechGuardian : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 9000
 	health 65, 115, 165, 225
 	speed 1, 2
@@ -845,6 +851,7 @@ actor BioMechGuardian : WolfensteinMonster
 
 actor ReptilianWarrior : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 8000
 	health 65, 115, 165, 225
 	speed 1, 3
@@ -961,6 +968,7 @@ actor MechSentinel : WolfensteinMonster
 
 actor MutantHuman : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 6055
 	health 24, 50, 155, 210
 	speed 1, 2
@@ -1095,6 +1103,7 @@ actor SmallCanisterShot : SmartAnimation
 
 actor SmallCanisterAlien : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 3750
 	health 25, 60, 100, 240
 	speed 1, 3
@@ -1191,6 +1200,7 @@ actor LargeCanisterShot : SmartAnimation
 
 actor LargeCanisterAlien : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 6050
 	health 34, 75, 225, 300
 	speed 1, 3
@@ -1258,6 +1268,7 @@ actor LargeAlienCanister
 
 actor GurneyMutant : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 3750
 	health 27, 37, 150, 200
 	speed 1, 3
@@ -1324,6 +1335,7 @@ actor GurneyMutantSleep
 
 actor PODAlien : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 5075
 	health 22, 60, 160, 210
 	speed 1, 2
@@ -1444,6 +1456,7 @@ actor CeilingTurretStatic : CeilingTurretRotate
 
 actor GiantStalker : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 30000
 	health 1600, 1700, 1800, 1900
 	speed 1, 2
@@ -1513,6 +1526,7 @@ actor GoldfireMonsterShot : SmartAnimation
 
 actor SpectorDemon : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 40000
 	health 1700, 1800, 1900, 2000
 	speed 1, 3
@@ -1622,6 +1636,7 @@ actor DrGoldfire : WolfensteinMonster
 
 actor MorphedGoldfire : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	action native A_GoldMorphDie();
 	action native A_BlakeWeaponUnlock();
 
@@ -1685,6 +1700,7 @@ actor MorphedGoldfire : WolfensteinMonster
 
 actor ArmoredStalker : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 50000
 	health 1800, 1900, 2000, 2100
 	speed 1, 2
@@ -1751,6 +1767,7 @@ actor CrawlerBeastShot : SmartAnimation
 
 actor CrawlerBeast : WolfensteinMonster
 {
+	+SHOOTMODEAI
 	points 60000
 	health 1900, 2000, 2100, 2200
 	speed 1, 3

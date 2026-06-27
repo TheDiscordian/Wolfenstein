@@ -22,43 +22,34 @@ confirmed against bstone; **each still needs a DOS check before fixing** (bstone
 is a reference, not the target — see above), but most are core DOS Blake Stone
 behaviour. Ordered roughly by impact.
 
-**Fixed so far (10):** `^AN` ghost/smear, liquid-alien submerge-when-unseen,
+**Fixed (11):** `^AN` ghost/smear, liquid-alien submerge-when-unseen,
 OVERALL MISSION baseline (300→100), FLOOR:/AREA: + secret-floor labels,
 floating-bomb detonation, volatile-transport explosion + ooze, steam-grate
-on-screen gating, lose-screen terminal sounds, plasma-detonator info-area icons.
-Remaining items below — these are the larger/riskier ones (core AI, renderer,
-spawn system, xlat, DamageActor); the SHOOTMODE item is **confirmed** (a
-system-wide alien shoot/move-mode state machine, not a deliberate simplification).
+on-screen gating, lose-screen terminal sounds, plasma-detonator info-area icons,
+alien shoot/move-mode firing cadence (`+SHOOTMODEAI`). Remaining items below are
+the larger/riskier ones (renderer, spawn system, xlat, DamageActor).
 
 ### Functional
 - **PS electro-alien spawning walls inert** — tile-24 walls never emit ElectroAliens; the `0xFA` spawn byte is discarded in `gamemap_planes.cpp`, `CheckSpawnEA` missing from `wl_play.cpp` PlayLoop.
-- **Floating Bomb never attacks/explodes** — perscan drone has no contact-kamikaze + death `A_Explode` (EXPLODE_DAMAGE 20); `blakemonsters.txt:426-456`.
 - **PS in-game radar minimap unimplemented** — overhead map + energy drain + zoom; `blake_sbar.cpp:902-912`.
 - **PS arc barrier can't be shot down with the anti-plasma cannon** (BFG shutdown); `blakebarriers.txt:161-191`.
 
 ### Behavioural — enemies
 - **STAR Trooper / Alien Protector wound-knockdown** dead code — no trigger in DamageActor, `T_SwatWound` commented out; `blakemonsters.txt:261-268,318-325`.
-- **Volatile Transport** spawns no green ooze + no death explosion; `blakemonsters.txt:458-483`.
 - **PS enemy cloaking** not rendered (`FL2_CLOAKED`/`FL2_DAMAGE_CLOAK` fuzz branch); `wl_draw.cpp:768-855`, `r_sprites.cpp`.
-- **Liquid alien** drops the "submerge when not visible" condition (FL_VISIBLE now exists, comment stale); `a_liquid.cpp:78-93`.
-- **Alien SHOOTMODE move-mode firing cadence** not ported (uses ECWolf distance-random); `wl_act2.cpp:669-716` — *unsure, DOS-check*.
 
 ### Behavioural — skill gating (`planet.txt`)
 - Skill-gated canister/gurney wake-ups, POD egg, and morph posts spawn **nothing** below skill instead of bstone's inert static decoration; `planet.txt:1068-1088,1136-1148,1340-1358`.
 
 ### Behavioural — presenter / HUD / LINC
-- **`^AN` animations ghost/smear** — `fl_clearscback` 64×64 erase never applied (regression in the new `^AN` work); `jm_tp.cpp` TP_DrawShape/TP_AnimatePage.
-- **Lose-screen terminal typing sounds** (`^PS`/`^BE`/TERM_SOUND) are no-ops; `jm_tp.cpp`.
-- **OVERALL MISSION baseline** seeded 300 (100%) instead of 100 (33%); `blake_elevator.cpp:133-155` — *contradicts an earlier "fix"; DOS-check.*
 - **AOG elevator arrival** doesn't run AlignPlayerInElevator (player spawns on the elevator tile); `blake_elevator.cpp:1269-1292`.
 - **Informant near-100% enemy/treasure location report** unimplemented; `blake_informant.cpp:159-192`.
 - **First-time QUICK_INFO instructions** never shown on a new AoG game; `wl_play.cpp`.
 - **JAM secret cheat** missing; `wl_play.cpp` CheckKeys.
-- AoG top-bar label "AREA:" should be "FLOOR:"; secret areas omit the secret-floor index; `blake_sbar.cpp:814-816`.
-- `anim_bgcolor` snapshot/swap around `^EP` omitted; `^SH` width hardcoded 0 in centering pass; PS detonator info-area icon omitted. (minor; `jm_tp.cpp`, `a_detonator.cpp`/`blake_sbar.cpp`)
+- `anim_bgcolor` snapshot/swap around `^EP` omitted; `^SH` width hardcoded 0 in centering pass. (minor; `jm_tp.cpp`)
 
 ### Cosmetic
-- Steam grate releases steam off-screen (should gate on-screen); elevator radar omits hidden-area shading.
+- Elevator radar omits hidden-area shading.
 
 ## Out of scope for 1.0
 

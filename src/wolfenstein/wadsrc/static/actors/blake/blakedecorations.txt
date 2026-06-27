@@ -1046,31 +1046,35 @@ actor FlickerLight
 
 actor SteamGrate
 {
+	action native A_SteamWait();
 	states
 	{
+		// Only release steam while on screen (bstone T_SteamObj gates on
+		// FL_VISIBLE); A_SteamWait counts down and jumps to Release.
 		Spawn:
-			GRAT A 120
+			GRAT A 1 A_SteamWait
+			loop
 		Release:
 			GRAT B 0.5 A_Scream
 			GRAT CDCD 7
 			GRAT E 8
-			GRAT A 0.5 A_SetTics(random(0, 255)<<2)
-			loop
+			goto Spawn
 	}
 }
 
 actor ActiveSteamPipe
 {
+	action native A_SteamWait();
 	states
 	{
 		Spawn:
-			PIPE A 120
+			PIPE A 1 A_SteamWait
+			loop
 		Release:
 			PIPE B 0.5 A_Scream
 			PIPE CDCD 7
 			PIPE E 8
-			PIPE A 0.5 A_SetTics(random(0, 255)<<2)
-			loop
+			goto Spawn
 	}
 }
 

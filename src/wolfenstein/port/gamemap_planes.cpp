@@ -1141,7 +1141,14 @@ void GameMap::ReadPlanesData()
 
 					int zoneIndex;
 					if((zoneIndex = xlat.TranslateZone(oldplane[i])) != -1)
+					{
 						mapPlane.map[i].zone = &zonePalette[zoneIndex];
+						// AOG hidden-area floor tiles (DOS HIDDENAREATILE 162..206)
+						// flatten into plain zones here; keep the hidden bit so the
+						// elevator overhead can shade revealed hidden areas.
+						if(oldplane[i] >= 162 && oldplane[i] <= 206)
+							zonePalette[zoneIndex].hidden = true;
+					}
 					else
 						mapPlane.map[i].zone = NULL;
 				}

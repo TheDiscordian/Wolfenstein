@@ -356,9 +356,9 @@ static void ElevDrawBottomBox(const FString &text)
 
 // 64x64 radar replica of bstone ShowOverhead(14, 71, 32, 0,
 // OV_KEYS|OV_WHOLE_MAP): floors 0x55, doors by state, player 0xF0, keys
-// 0xF3; walls and unrevealed tiles keep the unmapped colour.  Hidden-area
-// shading is not tracked here.  The grid render is split out so the PS
-// panel can snapshot it per floor (bstone SaveOverheadChunk).
+// 0xF3; walls and unrevealed tiles keep the unmapped colour.  Revealed AOG
+// hidden-area floor cells (MapZone::hidden) shade darker (0x52).  The grid render
+// is split out so the PS panel can snapshot it per floor (bstone SaveOverheadChunk).
 static void ElevOverheadGrid(BYTE *grid, bool playerDot, BYTE unmappedColor)
 {
 	const BYTE MAPPED_COLOR = 0x55;
@@ -441,6 +441,11 @@ static void ElevOverheadGrid(BYTE *grid, bool playerDot, BYTE unmappedColor)
 						}
 					}
 				}
+
+				// AOG: shade revealed hidden-area floor cells darker (bstone
+				// HIDDEN_COLOR 0x52). After the key check so a key still wins.
+				if(color == MAPPED_COLOR && IsAOG() && spot->zone && spot->zone->hidden)
+					color = 0x52;
 			}
 
 			grid[my*64 + mx] = color;

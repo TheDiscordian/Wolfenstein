@@ -149,6 +149,9 @@ class GameMap
 		struct Zone
 		{
 			unsigned short	index;
+			bool			hidden;	// AOG hidden-area (DOS area tile >=162); elevator overhead shading only
+
+			Zone() : index(0), hidden(false) {}
 		};
 		struct Plane
 			{

@@ -34,6 +34,7 @@
 #include "thingdef/thingdef.h"
 #include "doomerrors.h"
 #include "g_blake/blake_drops.h"
+#include "g_blake/blake_cloak.h"
 #include "g_blake/blake_elevator.h"
 #include "g_blake/blake_floor.h"
 #include "g_blake/blake_informant.h"
@@ -340,6 +341,8 @@ void SetupGameLevel (void)
 			map->SpawnThings();
 			// Fresh spawn only: restored actors carry temp1 already.
 			Blake_ReservedDropAttach();
+			// Fresh spawn only: a loaded game restores flags2 from the save.
+			Blake_CloakAttach();
 		}
 		CheckSpawnPlayer(true);
 

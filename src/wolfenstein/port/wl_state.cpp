@@ -15,6 +15,7 @@
 #include "wl_play.h"
 #include "wl_state.h"
 #include "templates.h"
+#include "g_blake/blake_cloak.h"
 
 /*
 =============================================================================
@@ -768,6 +769,10 @@ void DamageActor (AActor *ob, AActor *attacker, unsigned damage)
 	// Ensure that we're targetting a player for now.
 	if(attacker && attacker->player)
 		ob->target = attacker;
+
+	// PS: hitting a cloaked enemy reveals it for the next rendered frame.
+	if((ob->flags2 & FL2_CLOAKED) && Blake_IsPSCloak())
+		ob->flags2 |= FL2_DAMAGECLOAK;
 
 	if (ob->health<=0)
 	{

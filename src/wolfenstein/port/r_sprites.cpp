@@ -456,6 +456,11 @@ extern unsigned vbufPitch;
 extern int viewshift;
 extern fixed viewz;
 
+// PS cloak: when set, ScaleSprite draws the sprite silhouette as a dark fuzz over
+// the background instead of the real pixels.  DrawScaleds sets it per cloaked
+// actor and clears it after.
+bool of_cloaked_shape = false;
+
 void ScaleSprite(AActor *actor, int xcenter, const Frame *frame, unsigned height)
 {
 	// height is a 13.3 fixed point number indicating the number of screen
@@ -538,23 +543,42 @@ void ScaleSprite(AActor *actor, int xcenter, const Frame *frame, unsigned height
 		{
 			const fixed yStart = startY*yStep;
 			const int count = yRun > yStart ? int((yRun - yStart + yStep - 1) / yStep) : 0;
-			if(count > 0 && OF_WolfGPU_DrawMaskedColumn(dest, count, src, tex->GetHeight(),
+			// Cloak fuzz reads/writes the background dest, so it can't use the GPU
+			// masked-column draw -- fall through to the CPU loop (after syncing the
+			// dest cache below) when of_cloaked_shape.
+			if(!of_cloaked_shape && count > 0 && OF_WolfGPU_DrawMaskedColumn(dest, count, src, tex->GetHeight(),
 				yStart, yStep, shadeIndex))
 			{
 				continue;
 			}
-			// GPU rejected the column: sync the destination cache lines and
-			// draw it on the CPU below so nothing is silently dropped.
+			// GPU rejected the column (or cloak needs the CPU): sync the dest cache
+			// lines and draw it on the CPU below so nothing is silently dropped.
 			if(count > 0)
 				OF_WolfGPU_PrepareForCPUAccessColumn(dest, count, (int)vbufPitch);
 		}
 #endif
 
-		for(y = startY*yStep;y < yRun;y += yStep)
+		if(of_cloaked_shape)
 		{
-			if(src[y>>FRACBITS])
-				*dest = colormap[src[y>>FRACBITS]];
-			dest += vbufPitch;
+			// PS cloak: where the sprite is opaque, darken the background pixel
+			// instead of drawing the sprite -- a dark fuzz silhouette. The shade
+			// row is tunable on-device against the DOS look.
+			const BYTE *fuzz = &NormalLight.Maps[(NUMCOLORMAPS*3/4)<<8];
+			for(y = startY*yStep;y < yRun;y += yStep)
+			{
+				if(src[y>>FRACBITS])
+					*dest = fuzz[*dest];
+				dest += vbufPitch;
+			}
+		}
+		else
+		{
+			for(y = startY*yStep;y < yRun;y += yStep)
+			{
+				if(src[y>>FRACBITS])
+					*dest = colormap[src[y>>FRACBITS]];
+				dest += vbufPitch;
+			}
 		}
 	}
 }

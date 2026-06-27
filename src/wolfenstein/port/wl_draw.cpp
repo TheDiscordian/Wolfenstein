@@ -30,6 +30,7 @@
 #include "wl_state.h"
 #include "a_inventory.h"
 #include "thingdef/thingdef.h"
+#include "g_blake/blake_cloak.h"
 #include "of_ecwolf_gpu.h"
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 #define OF_ECWOLF_WALL_GPU_ENABLED 1
@@ -845,10 +846,21 @@ void DrawScaleds (void)
 		//
 		// draw farthest
 		//
-		if(farthest->actor->flags & FL_BILLBOARD)
-			Scale3DSprite(farthest->actor, farthest->actor->state, farthest->viewheight);
+		AActor *fa = farthest->actor;
+		// PS cloak: a cloaked enemy draws as dark fuzz unless it was just hit
+		// (FL2_DAMAGECLOAK), which reveals the real sprite for one frame. Clear the
+		// reveal flag here so a still-alive enemy re-cloaks next frame.
+		extern bool of_cloaked_shape;
+		of_cloaked_shape = Blake_IsPSCloak() &&
+			((fa->flags2 & (FL2_CLOAKED|FL2_DAMAGECLOAK)) == FL2_CLOAKED);
+		if(Blake_IsPSCloak() && (fa->flags & FL_SHOOTABLE))
+			fa->flags2 &= ~FL2_DAMAGECLOAK;
+
+		if(fa->flags & FL_BILLBOARD)
+			Scale3DSprite(fa, fa->state, farthest->viewheight);
 		else
-			ScaleSprite(farthest->actor, farthest->actor->viewx, farthest->actor->state, farthest->viewheight);
+			ScaleSprite(fa, fa->viewx, fa->state, farthest->viewheight);
+		of_cloaked_shape = false;
 
 		farthest->viewheight = 32000;
 	}

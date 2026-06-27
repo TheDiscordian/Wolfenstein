@@ -38,6 +38,7 @@
 #include "id_ca.h"
 #include "g_blake/blake_barrier.h"
 #include "g_blake/blake_drops.h"
+#include "g_blake/blake_cloak.h"
 #include "g_blake/blake_goldstern.h"
 #include "g_blake/blake_electrowall.h"
 #include "g_blake/blake_informant.h"
@@ -1083,6 +1084,7 @@ void GameMap::ReadPlanesData()
 				TArray<WORD> fillSpots;
 				TMap<WORD, Xlat::ModZone> changeTriggerSpots;
 				Blake_ReservedDropClear();
+				Blake_CloakCellClear();
 				ElectroWall_Clear();
 
 
@@ -1108,6 +1110,7 @@ void GameMap::ReadPlanesData()
 					}
 
 					Blake_ReservedDropCell(i%header.width, i/header.width, oldplane[i]);
+					Blake_CloakCell(i%header.width, i/header.width, oldplane[i]);
 
 					Xlat::ModZone zone;
 					if(xlat.GetModZone(oldplane[i], zone))

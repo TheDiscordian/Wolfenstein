@@ -22,13 +22,17 @@ confirmed against bstone; **each still needs a DOS check before fixing** (bstone
 is a reference, not the target — see above), but most are core DOS Blake Stone
 behaviour. Ordered roughly by impact.
 
-**Fixed (12):** `^AN` ghost/smear, liquid-alien submerge-when-unseen,
+**Fixed (13):** `^AN` ghost/smear, liquid-alien submerge-when-unseen,
 OVERALL MISSION baseline (300→100), FLOOR:/AREA: + secret-floor labels,
 floating-bomb detonation, volatile-transport explosion + ooze, steam-grate
 on-screen gating, lose-screen terminal sounds, plasma-detonator info-area icons,
 alien shoot/move-mode firing cadence (`+SHOOTMODEAI`), STAR Trooper / Alien
-Protector wound knockdown. Remaining items below are the larger/riskier ones
-(renderer, spawn system, xlat).
+Protector wound knockdown, informant near-100% location report. Remaining items
+below are the larger/riskier ones (renderer, spawn system, xlat).
+
+Several remaining PS items (arc-barrier BFG shutdown, enemy cloaking) need a
+per-actor `flags2`/FL2_ field the port does not have yet — the FL_ bits are
+fully used — so they carry a core-field prerequisite on top of their own work.
 
 ### Functional
 - **PS electro-alien spawning walls inert** — tile-24 walls never emit ElectroAliens; the `0xFA` spawn byte is discarded in `gamemap_planes.cpp`, `CheckSpawnEA` missing from `wl_play.cpp` PlayLoop.
@@ -43,7 +47,6 @@ Protector wound knockdown. Remaining items below are the larger/riskier ones
 
 ### Behavioural — presenter / HUD / LINC
 - **AOG elevator arrival** doesn't run AlignPlayerInElevator (player spawns on the elevator tile); `blake_elevator.cpp:1269-1292`.
-- **Informant near-100% enemy/treasure location report** unimplemented; `blake_informant.cpp:159-192`.
 - **First-time QUICK_INFO instructions** never shown on a new AoG game; `wl_play.cpp`.
 - **JAM secret cheat** missing; `wl_play.cpp` CheckKeys.
 - `anim_bgcolor` snapshot/swap around `^EP` omitted; `^SH` width hardcoded 0 in centering pass. (minor; `jm_tp.cpp`)

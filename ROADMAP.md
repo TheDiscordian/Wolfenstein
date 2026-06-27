@@ -22,10 +22,13 @@ confirmed against bstone; **each still needs a DOS check before fixing** (bstone
 is a reference, not the target — see above), but most are core DOS Blake Stone
 behaviour. Ordered roughly by impact.
 
-**Fixed so far:** `^AN` ghost/smear, liquid-alien submerge-when-unseen, OVERALL
-MISSION baseline (300→100), FLOOR:/AREA: + secret-floor labels, floating-bomb
-detonation, volatile-transport explosion + ooze, steam-grate on-screen gating.
-Remaining items below.
+**Fixed so far (10):** `^AN` ghost/smear, liquid-alien submerge-when-unseen,
+OVERALL MISSION baseline (300→100), FLOOR:/AREA: + secret-floor labels,
+floating-bomb detonation, volatile-transport explosion + ooze, steam-grate
+on-screen gating, lose-screen terminal sounds, plasma-detonator info-area icons.
+Remaining items below — these are the larger/riskier ones (core AI, renderer,
+spawn system, xlat, DamageActor); the SHOOTMODE item is **confirmed** (a
+system-wide alien shoot/move-mode state machine, not a deliberate simplification).
 
 ### Functional
 - **PS electro-alien spawning walls inert** — tile-24 walls never emit ElectroAliens; the `0xFA` spawn byte is discarded in `gamemap_planes.cpp`, `CheckSpawnEA` missing from `wl_play.cpp` PlayLoop.

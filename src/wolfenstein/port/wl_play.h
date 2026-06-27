@@ -67,6 +67,8 @@ struct TicCmd_t
 };
 extern unsigned int ConsolePlayer;
 extern TicCmd_t control[MAXPLAYERS];
+// Blake: one-shot, set in NewGame, consumed once in PlayLoop to pop QUICK_INFO.
+extern bool g_showQuickInfo;
 extern  exit_t      playstate;
 extern  bool        madenoise;
 extern  int         godmode;

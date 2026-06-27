@@ -654,6 +654,10 @@ void NewGame (int difficulty, FString map, bool displayBriefing, FName playerCla
 
 	Dialog::ClearConversations();
 
+	// Blake: pop the first-time QUICK_INFO box on this new game's first floor.
+	// Only NewGame sets it, so floor travel and loaded games never re-show it.
+	g_showQuickInfo = true;
+
 	startgame = true;
 }
 

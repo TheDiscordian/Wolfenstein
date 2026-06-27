@@ -12,9 +12,14 @@
 #include "wl_def.h"
 #include "id_in.h"
 #include "id_ca.h"
+#include "id_us.h"
 #include "id_vh.h"
 #include "w_wad.h"
 #include "wl_iwad.h"
+#include "wl_menu.h"
+#include "wl_game.h"
+#include "wl_play.h"
+#include "g_mapinfo.h"
 #include "textures/textures.h"
 
 #include "jm_tp.h"
@@ -216,4 +221,55 @@ void Blake_ShowInstructions()
 		return;
 	}
 	Blake_PresentBriefingLump("HELPART", true);
+}
+
+// bstone TerminateStr: trim at the "^XX" end marker.
+static bool Blake_LoadQuickInfoLump(const char *name, FString &out)
+{
+	int ln = Wads.CheckNumForName(name, ns_global);
+	if(ln == -1)
+		return false;
+	FMemLump lump = Wads.ReadLump(ln);
+	out = FString((const char*)lump.GetMem(), Wads.LumpLength(ln));
+	long term = out.IndexOf("^XX");
+	if(term >= 0)
+		out.Truncate(term);
+	return true;
+}
+
+// First-time QUICK_INFO instructions (bstone ShowQuickInstructions, 3d_play.cpp).
+// On a brand-new game's first floor, two text pages (QUIKINF1/QUIKINF2) pop over
+// the live view; page 1 auto-advances after ~120 tics if the player is idle, and
+// any key dismisses.  One-shot per new game (g_showQuickInfo); inert outside
+// Blake, never in a demo, and on PS only the first floor.
+void Blake_ShowQuickInfo()
+{
+	if(!IWad::CheckGameFilter("Blake"))
+		return;
+	if(demoplayback)
+		return;
+	// bstone (is_ps() && mapon>0) gate. AOG (>1 episode) always shows because the
+	// one-shot flag is only ever set on the first floor anyway.
+	if(EpisodeInfo::GetNumEpisodes() == 1 && ((int)levelInfo->LevelNumber - 1) > 0)
+		return;
+
+	FString s1;
+	if(!Blake_LoadQuickInfoLump("QUIKINF1", s1))
+		return;
+
+	WindowH = 168;	// Message() centres on WindowH
+	Message(s1);
+
+	if(!IN_UserInput(120, ACK_Local))	// ~120 tics, or a key
+	{
+		FString s2;
+		if(Blake_LoadQuickInfoLump("QUIKINF2", s2))
+		{
+			Message(s2);
+			IN_Ack(ACK_Local);
+		}
+	}
+
+	IN_ClearKeysDown();
+	DrawPlayScreen();	// wipe the box (bstone CleanDrawPlayBorder)
 }

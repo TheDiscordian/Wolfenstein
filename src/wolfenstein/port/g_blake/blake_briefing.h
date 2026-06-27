@@ -34,4 +34,8 @@ void Blake_ShowOrdering();
 // IWAD is a Blake game.  Mirrors bstone's CP_ReadThis -> HelpScreens.
 void Blake_ShowInstructions();
 
+// First-time QUICK_INFO instructions box (QUIKINF1/QUIKINF2) on a brand-new
+// game's first floor.  Inert outside Blake; PS only on its first floor.
+void Blake_ShowQuickInfo();
+
 #endif // __BLAKE_BRIEFING_H__

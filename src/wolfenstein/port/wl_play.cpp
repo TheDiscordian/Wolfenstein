@@ -31,6 +31,7 @@
 #include "g_blake/blake_elevator.h"
 #include "g_blake/blake_goldstern.h"
 #include "g_blake/blake_electrowall.h"
+#include "g_blake/blake_briefing.h"
 #include "wl_iwad.h"
 #include "of_ecwolf_gpu.h"
 
@@ -186,6 +187,7 @@ memptr demobuffer;
 // current user input
 //
 unsigned int ConsolePlayer = 0;
+bool g_showQuickInfo = false;
 TicCmd_t control[MAXPLAYERS];
 
 //===========================================================================
@@ -1672,6 +1674,16 @@ void PlayLoop (void)
 		}
 
 		PlayFrame();
+
+		if(g_showQuickInfo)
+		{
+			g_showQuickInfo = false;
+#if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
+			// Composite the CPU-drawn message box over the GPU-rendered view.
+			OF_WolfGPU_FallbackToCPU();
+#endif
+			Blake_ShowQuickInfo();
+		}
 
 		Blake_ElevatorCheck();
 

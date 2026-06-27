@@ -42,6 +42,8 @@
 #include "id_us.h"
 #include "id_vh.h"
 #include "g_mapinfo.h"
+#include "gamemap.h"
+#include "lnspec.h"
 #include "v_font.h"
 #include "v_video.h"
 #include "wl_agent.h"
@@ -138,6 +140,7 @@ protected:
 	void DrawInfoArea();
 	void drawInfoIcon();	// the box+animated sprite, drawn live every frame
 	void DrawLed(double percent, double x, double y) const;
+	void DrawRadarOverhead(int rzoom);	// PS radar rotated overhead blip map
 	void DrawString(FFont *font, const char* string, double x, double y, bool shadow, EColorRange color=CR_UNTRANSLATED, bool center=false) const;
 
 	// A negative tic count means the message persists until a higher- or
@@ -624,6 +627,125 @@ void BlakeStatusBar::DrawLed(double percent, double x, double y) const
 		TAG_DONE);
 }
 
+// PS in-game radar: the rotated overhead blip map (bstone ShowOverhead, called as
+// ShowOverhead(192,156,16, rzoom, OV_KEYS|OV_PUSHWALLS|OV_ACTORS)).  Samples a
+// player-rotated window of the map into the status bar: floor 0x55, unmapped/wall
+// 0x52, player 0xF0, locked door 0x18, closed door 0x58, keys 0xF3, and (at >=2x)
+// live enemies.  Solid walls read as unmapped, exactly as the original.
+void BlakeStatusBar::DrawRadarOverhead(int rzoom)
+{
+	AActor *pl = players[ConsolePlayer].mo;
+	if(!pl || !map)
+		return;
+
+	extern fixed finesine[];
+	extern fixed *finecosine;
+
+	const int z = 1 << rzoom;			// 1, 2 or 4
+	const double radius = 16.0 / z;		// bstone radius 16 / zoom
+	const int diameter = (int)(radius * 2.0);
+	if(diameter <= 0)
+		return;
+
+	const int W = (int)map->GetHeader().width;
+	const int H = (int)map->GetHeader().height;
+
+	// One pass over actors -> per-tile key/enemy lookups so the rotated cell scan
+	// stays O(1) per cell (Blake maps are 64x64).
+	static const ClassDef * const keyCls = ClassDef::FindClass("Key");
+	static uint8_t hasKey[64][64];
+	static uint8_t hasEnemy[64][64];
+	memset(hasKey, 0, sizeof(hasKey));
+	memset(hasEnemy, 0, sizeof(hasEnemy));
+	for(AActor::Iterator it = AActor::GetIterator();it.Next();)
+	{
+		AActor *ob = it;
+		const int tx = ob->tilex, ty = ob->tiley;
+		if(tx < 0 || tx > 63 || ty < 0 || ty > 63)
+			continue;
+		if(keyCls && ob->IsKindOf(keyCls))
+			hasKey[tx][ty] = 1;
+		else if(!ob->player && (ob->flags & FL_SHOOTABLE) && ob->health > 0)
+			hasEnemy[tx][ty] = 1;
+	}
+
+	const angle_t a = pl->angle;
+	const double psin = FIXED2FLOAT(finesine[a>>ANGLETOFINESHIFT]);
+	const double pcos = FIXED2FLOAT(finecosine[a>>ANGLETOFINESHIFT]);
+	const double px = FIXED2FLOAT(pl->x);
+	const double py = FIXED2FLOAT(pl->y);
+
+	double baselmx = px + (radius*pcos - radius*psin);
+	double baselmy = py - (radius*psin + radius*pcos);
+	const double xinc = -pcos, yinc = psin;
+
+	// The overhead is always a 32x32 virtual-px square at (192,156); map it once.
+	double rx = 192, ry = 156, rw = 32, rh = 32;
+	screen->VirtualToRealCoords(rx, ry, rw, rh, 320, 200, true, true);
+	const double cellW = rw / diameter, cellH = rh / diameter;
+
+	const bool zoomActors = z > 1;	// PS: enemies appear at >=2x
+
+	bool drawPlayer = true;
+	for(int x = 0;x < diameter;++x)
+	{
+		double lmx = baselmx, lmy = baselmy;
+		for(int y = 0;y < diameter;++y)
+		{
+			uint8_t color = 0x52;	// UNMAPPED (PS)
+			const int mx = (int)lmx, my = (int)lmy;
+			if(mx >= 0 && mx < W && my >= 0 && my < H && mx < 64 && my < 64)
+			{
+				if(drawPlayer && mx == (int)pl->tilex && my == (int)pl->tiley)
+				{
+					color = 0xF0;	// player
+					drawPlayer = false;
+				}
+				else
+				{
+					MapSpot sp = map->GetSpot(mx, my, 0);
+					if((sp->amFlags & AM_Visible) || gamestate.fullmap)
+					{
+						if(!sp->tile)
+							color = 0x55;	// floor
+						else if(sp->tile->offsetVertical || sp->tile->offsetHorizontal)
+						{
+							// door: locked / closed / open(=floor)
+							bool locked = false, open = false;
+							for(unsigned int t = 0;t < sp->triggers.Size();++t)
+								if((sp->triggers[t].action == Specials::Door_Open ||
+									sp->triggers[t].action == Specials::Door_Elevator) &&
+									sp->triggers[t].arg[3] != 0)
+									locked = true;
+							for(unsigned int s = 0;s < 4;++s)
+								if(sp->slideAmount[s] > 0)
+									open = true;
+							color = locked ? 0x18 : (open ? 0x55 : 0x58);
+						}
+						// else: solid wall stays UNMAPPED, like bstone
+
+						if(color == 0x55)
+						{
+							if(hasKey[mx][my])
+								color = 0xF3;
+							else if(zoomActors && hasEnemy[mx][my])
+								color = 0x15;	// enemy (bstone tints by obclass)
+						}
+					}
+				}
+			}
+
+			screen->Clear((int)(rx + x*cellW), (int)(ry + y*cellH),
+				(int)(rx + (x+1)*cellW), (int)(ry + (y+1)*cellH), color, 0);
+
+			lmx += xinc;
+			lmy += yinc;
+		}
+		baselmx += yinc;
+		baselmy -= xinc;
+	}
+}
+
 void BlakeStatusBar::DrawStatusBar()
 {
 	if(viewsize == 21 && ingame)
@@ -950,6 +1072,8 @@ void BlakeStatusBar::DrawStatusBar()
 			DrawLed(0, 235, 155);
 		const char *magPic = RadarZoom == 2 ? "STMAG4X" : RadarZoom == 1 ? "STMAG2X" : "STMAG1X";
 		VWB_DrawGraphic(TexMan(magPic), 176, 152);
+		// With no energy the map still draws, frozen at 1x (bstone DrawRadar).
+		DrawRadarOverhead((radarPack && radarPack->amount > 0) ? RadarZoom : 0);
 	}
 
 	// Find keys in inventory. AoG's VGAGRAPH has no key pics; the original

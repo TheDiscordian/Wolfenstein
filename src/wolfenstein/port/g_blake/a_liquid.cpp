@@ -47,10 +47,9 @@ static FRandom pr_liquid("LiquidAlien");
 // the player is more than a tile away it submerges (40/255 per check, or forced
 // after the fifth shot), resetting the counter.  Standing adjacent resets the
 // counter so it keeps firing.  temp1 is the shot counter (bstone's temp2).
-//
-// The port has no FL_VISIBLE, so bstone's extra "submerge when the player can't
-// see me" condition is omitted; the roll and the five-shot cap still drive it
-// under.
+// While the player is more than a tile away the alien also submerges immediately
+// if it has left the player's view (FL_VISIBLE clear), on top of the 40/255 roll
+// and the five-shot cap -- matching bstone T_LiquidStand (3d_act2.cpp:4008).
 ACTION_FUNCTION(A_LiquidStand)
 {
 	self->flags |= FL_SHOOTABLE | FL_SOLID;
@@ -77,7 +76,7 @@ ACTION_FUNCTION(A_LiquidStand)
 	const int dy = abs((int)self->tiley - (int)p->tiley);
 	if(dx > 1 || dy > 1)
 	{
-		if(pr_liquid() < 40 || self->temp1 == 5)
+		if(!(self->flags & FL_VISIBLE) || pr_liquid() < 40 || self->temp1 == 5)
 		{
 			self->temp1 = 0;
 			self->flags &= ~(FL_SOLID | FL_SHOOTABLE);

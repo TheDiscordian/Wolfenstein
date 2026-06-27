@@ -15,44 +15,32 @@ constants because it closely tracks DOS — where `bstone` diverges from DOS, DO
 wins. "Parity" below means DOS faithfulness (bstone-referenced), not matching
 bstone for its own sake.
 
-## Audit backlog (2026-06-26)
+## Audit backlog (2026-06-26) — cleared
 
-A multi-agent audit of the port vs `bstone` surfaced 26 verified gaps. These were
-confirmed against bstone; **each still needs a DOS check before fixing** (bstone
-is a reference, not the target — see above), but most are core DOS Blake Stone
-behaviour. Ordered roughly by impact.
+A multi-agent audit of the port vs `bstone` surfaced 26 verified gaps (bstone is a
+reference, not the target — see above). All are now fixed, each as its own commit
+on `blake-union`, built for PC + riscv32 device and offscreen-parse-checked on
+both data sets. The gameplay-visible, combat, render and presenter behaviours are
+flagged for an on-device play-through.
 
-**Fixed (13):** `^AN` ghost/smear, liquid-alien submerge-when-unseen,
+**Fixed (24):** `^AN` ghost/smear, liquid-alien submerge-when-unseen,
 OVERALL MISSION baseline (300→100), FLOOR:/AREA: + secret-floor labels,
 floating-bomb detonation, volatile-transport explosion + ooze, steam-grate
 on-screen gating, lose-screen terminal sounds, plasma-detonator info-area icons,
 alien shoot/move-mode firing cadence (`+SHOOTMODEAI`), STAR Trooper / Alien
-Protector wound knockdown, informant near-100% location report. Remaining items
-below are the larger/riskier ones (renderer, spawn system, xlat).
+Protector wound knockdown, informant near-100% location report, per-actor
+`flags2` word, PS skill-gated static decorations, presenter `anim_bgcolor`
+restore around `^EP`, PS anti-plasma arc-barrier shutdown, PS electro-alien
+spawning walls, PS enemy cloaking, JAM full-arsenal cheat, first-time QUICK_INFO
+instructions, AOG elevator hidden-area overhead shading, AOG elevator step-out
+alignment, PS radar energy gauge + magnification + drain (phase 1).
 
-Several remaining PS items (arc-barrier BFG shutdown, enemy cloaking) need a
-per-actor `flags2`/FL2_ field the port does not have yet — the FL_ bits are
-fully used — so they carry a core-field prerequisite on top of their own work.
-
-### Functional
-- **PS electro-alien spawning walls inert** — tile-24 walls never emit ElectroAliens; the `0xFA` spawn byte is discarded in `gamemap_planes.cpp`, `CheckSpawnEA` missing from `wl_play.cpp` PlayLoop.
-- **PS in-game radar minimap unimplemented** — overhead map + energy drain + zoom; `blake_sbar.cpp:902-912`.
-- **PS arc barrier can't be shot down with the anti-plasma cannon** (BFG shutdown); `blakebarriers.txt:161-191`.
-
-### Behavioural — enemies
-- **PS enemy cloaking** not rendered (`FL2_CLOAKED`/`FL2_DAMAGE_CLOAK` fuzz branch); `wl_draw.cpp:768-855`, `r_sprites.cpp`.
-
-### Behavioural — skill gating (`planet.txt`)
-- Skill-gated canister/gurney wake-ups, POD egg, and morph posts spawn **nothing** below skill instead of bstone's inert static decoration; `planet.txt:1068-1088,1136-1148,1340-1358`.
-
-### Behavioural — presenter / HUD / LINC
-- **AOG elevator arrival** doesn't run AlignPlayerInElevator (player spawns on the elevator tile); `blake_elevator.cpp:1269-1292`.
-- **First-time QUICK_INFO instructions** never shown on a new AoG game; `wl_play.cpp`.
-- **JAM secret cheat** missing; `wl_play.cpp` CheckKeys.
-- `anim_bgcolor` snapshot/swap around `^EP` omitted; `^SH` width hardcoded 0 in centering pass. (minor; `jm_tp.cpp`)
-
-### Cosmetic
-- Elevator radar omits hidden-area shading.
+### Remaining (one piece, on-device-blocked)
+- **PS radar overhead blip map (phase 2)** — the rotated overhead minimap itself.
+  The energy gauge, magnification pic and drain ship (phase 1). The blip map's
+  screen rectangle, rotation and per-tile/actor colours can only be locked against
+  a real Planet Strike screenshot on the device, so it is deferred rather than
+  guessed. `blake_sbar.cpp` `DrawRadarOverhead` (bstone `ShowOverhead`).
 
 ## Out of scope for 1.0
 

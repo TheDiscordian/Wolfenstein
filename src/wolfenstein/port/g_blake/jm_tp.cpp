@@ -31,6 +31,7 @@
 
 #include "wl_def.h"
 #include "id_in.h"
+#include "id_sd.h"
 #include "id_vh.h"
 #include "id_vl.h"
 #include "v_font.h"
@@ -1113,9 +1114,12 @@ void TP_HandleCodes()
 			break;
 
 			// BELL -------------------------------------------------------------
-			// No terminal beep sound wired up for briefings; ignore.
+			// Terminal beep (bstone ^BE: TERM_BEEPSND then wait for it to finish);
+			// used by the lose-screen transmission.
 			//
 		case TP_CNVT_CODE('B', 'E'):
+			SD_PlaySound("blake/termbeep");
+			SD_WaitSoundDone();
 			break;
 
 			// HIDE CURSOR ------------------------------------------------------
@@ -1185,9 +1189,12 @@ void TP_HandleCodes()
 			break;
 
 			// PLAY SOUND -------------------------------------------------------
-			// No presenter sound wired up; consume the arg.
+			// bstone ^PS<nn>: play sound nn.  The only value the shipped scripts
+			// use is 41 (EXTRA_MANSND = the 1-up jingle), in the lose transmission.
 			//
 		case TP_CNVT_CODE('P', 'S'):
+			if (TP_VALUE(first_ch, 2) == 41)
+				SD_PlaySound("misc/1up");
 			first_ch += 2;
 			break;
 
@@ -1698,6 +1705,12 @@ bool TP_SlowPrint(
 		}
 
 		VW_UpdateScreen();
+
+		// Terminal typing click per non-space character on the lose screen
+		// (bstone TP_SlowPrint, TPF_TERM_SOUND).  string was already advanced, so
+		// this tests the next character, as bstone does.
+		if (!aborted && (pi->flags & TPF_TERM_SOUND) && *string && *string != ' ')
+			SD_PlaySound("blake/termtype");
 
 		// Break out on abort!
 		//

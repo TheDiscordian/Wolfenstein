@@ -679,6 +679,7 @@ void TP_HandleCodes()
 	int16_t length;
 	const char* s;
 	int8_t c;
+	int16_t old_bgcolor = 0;   // saved real backdrop across the ^EP animate loop
 
 	if (tp_handle_codes_can_peek_prev_2 &&
 		(first_ch[-2] == TP_RETURN_CHAR) && (first_ch[-1] == '\n'))
@@ -873,6 +874,12 @@ void TP_HandleCodes()
 					anim->y = cur_y;
 					anim->x = TP_DrawShape(cur_x, cur_y, anim->baseshape + anim->frame, pis_scaled);
 					anim->diradd = 1;
+
+					// Snapshot the page backdrop the first time an animation
+					// registers, so the ^EP animate loop erases each frame to
+					// it (bstone TP_HandleCodes ^AN case).
+					if (anim_bgcolor == -1)
+						anim_bgcolor = bgcolor;
 				}
 			}
 			first_ch += 2;
@@ -1214,6 +1221,15 @@ void TP_HandleCodes()
 			// accepting a press so the page isn't dismissed on the same tap.
 			ackReleased = false;
 
+			// While the page animates, ^AN frame cells erase to the backdrop
+			// captured at ^AN time, not the live font background (bstone
+			// jm_tp.cpp ^EP case).
+			if (anim_bgcolor != -1)
+			{
+				old_bgcolor = bgcolor;
+				bgcolor = anim_bgcolor;
+			}
+
 			while (true)
 			{
 				CycleColors();
@@ -1269,6 +1285,13 @@ void TP_HandleCodes()
 				}
 
 				VW_WaitVBL(1);
+			}
+
+			// Restore the real backdrop and clear the snapshot (bstone ^EP case).
+			if (anim_bgcolor != -1)
+			{
+				bgcolor = old_bgcolor;
+				anim_bgcolor = -1;
 			}
 
 			cur_x = xl;

@@ -217,6 +217,9 @@ actor STARTrooper : WolfensteinMonster
 	dropitem "ChargePack"
 	dropitem "ConcessionCoin", 64
 	+DROPBASEDONTARGET
+
+	action native A_SwatWound();
+
 	states
 	{
 		Spawn:
@@ -260,11 +263,12 @@ actor STARTrooper : WolfensteinMonster
 			stop
 		KnockedDown:
 			SWAT KLM 5
-			SWAT N 5 // T_SwatWound
-			wait
+		Wounded:
+			SWAT N 5 A_SwatWound
+			loop
 		GetUp:
 			SWAT NML 5
-			SWAT K 5 // T_SwatWound
+			SWAT K 5
 			goto See
 	}
 }
@@ -317,11 +321,12 @@ actor AlienProtector : STARTrooper
 			stop
 		KnockedDown:
 			PROT KLM 5
-			PROT N 5 // T_SwatWound
-			wait
+		Wounded:
+			PROT N 5 A_SwatWound
+			loop
 		GetUp:
 			PROT NML 5
-			PROT K 5 // T_SwatWound
+			PROT K 5
 			goto See
 	}
 }

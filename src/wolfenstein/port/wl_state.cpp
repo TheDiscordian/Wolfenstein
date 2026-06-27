@@ -737,6 +737,10 @@ bool MoveObj (AActor *ob, int32_t move)
 */
 
 static FRandom pr_damagemobj("ActorTakeDamage");
+
+// g_blake/a_swat.cpp -- STAR Trooper / Alien Protector wound knockdown.
+extern bool Blake_CheckSwatWound(AActor *ob, int oldHealth);
+
 void DamageActor (AActor *ob, AActor *attacker, unsigned damage)
 {
 	if (ob->player)
@@ -759,6 +763,7 @@ void DamageActor (AActor *ob, AActor *attacker, unsigned damage)
 		damage <<= 1;
 
 	NetDPrintf("%s %d points\n", __FUNCTION__, FixedMul(damage, gamestate.difficulty->PlayerDamageFactor));
+	const int oldHealth = ob->health;
 	ob->health -= FixedMul(damage, gamestate.difficulty->PlayerDamageFactor);
 	// Ensure that we're targetting a player for now.
 	if(attacker && attacker->player)
@@ -777,6 +782,11 @@ void DamageActor (AActor *ob, AActor *attacker, unsigned damage)
 	{
 		if (! (ob->flags & FL_ATTACKMODE) )
 			FirstSighting (ob, ob->SeeState);             // put into combat mode
+
+		// Blake: a STAR Trooper / Alien Protector hit across a wound boundary is
+		// knocked down instead of flinching (bstone DamageActor swat case).
+		if (Blake_CheckSwatWound(ob, oldHealth))
+			return;
 
 		if(ob->PainState && pr_damagemobj() < ob->painchance)
 			ob->SetState(ob->PainState);

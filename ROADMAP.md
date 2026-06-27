@@ -22,6 +22,11 @@ confirmed against bstone; **each still needs a DOS check before fixing** (bstone
 is a reference, not the target — see above), but most are core DOS Blake Stone
 behaviour. Ordered roughly by impact.
 
+**Fixed so far:** `^AN` ghost/smear, liquid-alien submerge-when-unseen, OVERALL
+MISSION baseline (300→100), FLOOR:/AREA: + secret-floor labels, floating-bomb
+detonation, volatile-transport explosion + ooze, steam-grate on-screen gating.
+Remaining items below.
+
 ### Functional
 - **PS electro-alien spawning walls inert** — tile-24 walls never emit ElectroAliens; the `0xFA` spawn byte is discarded in `gamemap_planes.cpp`, `CheckSpawnEA` missing from `wl_play.cpp` PlayLoop.
 - **Floating Bomb never attacks/explodes** — perscan drone has no contact-kamikaze + death `A_Explode` (EXPLODE_DAMAGE 20); `blakemonsters.txt:426-456`.

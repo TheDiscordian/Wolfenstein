@@ -6,6 +6,6 @@
 #define GAME_DIR "ecwolf"
 
 #define DOTVERSIONSTR_NOREV "1.5.0pre"
-#define SAVEPRODVER 0x00100500
+#define SAVEPRODVER 0x00100501
 
 #define RCGAMENAME ECWolf

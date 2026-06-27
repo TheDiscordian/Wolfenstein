@@ -291,6 +291,14 @@ enum ActorFlag
 	FL_SHOOTMODE        = 0x80000000, // Blake: alien is currently in shoot mode (toggled at runtime by Blake_ChangeShootMode)
 };
 
+// Blake/PS second actor flag word -- the FL_ (ActorFlag) word above is fully used.
+enum ActorFlag2
+{
+	FL2_BFGSHOOTABLE = 0x00000001, // PS: shootable/solid to the anti-plasma (BFG) shot, independent of FL_SHOOTABLE
+	FL2_CLOAKED      = 0x00000002, // PS: cloaked alien, renders invisibly while DAMAGECLOAK is clear
+	FL2_DAMAGECLOAK  = 0x00000004, // PS: cloaked actor was just hit -> show one lit frame (runtime toggle)
+};
+
 enum ItemFlag
 {
 	IF_AUTOACTIVATE		= 0x00000001,

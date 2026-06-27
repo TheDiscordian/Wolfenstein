@@ -143,6 +143,7 @@ class AActor : public Thinker,
 
 		// Basic properties from objtype
 		ActorFlags flags;
+		uint32_t   flags2;   // Blake/PS second flag word (the FL_ word is full); see enum ActorFlag2
 
 		int32_t	distance; // if negative, wait for that door to open
 		dirtype	dir;

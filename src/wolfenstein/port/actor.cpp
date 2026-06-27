@@ -555,6 +555,12 @@ void AActor::Serialize(FArchive &arc)
 		<< distance
 		<< x
 		<< y;
+	// flags2 is appended after the original field block so existing saves stay
+	// byte-compatible. This Serialize is SHARED with the released Wolfenstein core,
+	// whose saves predate flags2 (SaveProdVersion 0x00100500) -- they skip the read
+	// and flags2 keeps its zeroed default, re-applied from DECORATE on next spawn.
+	if(GameSave::SaveProdVersion >= 0x00100501)
+		arc << flags2;
 	if(GameSave::SaveProdVersion >= 0x001003FF && GameSave::SaveVersion >= 1507591295)
 		arc << z;
 	arc << velx

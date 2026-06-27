@@ -425,6 +425,13 @@ void Blake_FullAmmoHealth()
 }
 }
 
+// Floor completion by points (bstone accum_points/total_points), 0-100, for the
+// informant's near-100% location hint.  100 when the floor has no countable points.
+int Blake_LevelPointsPercent()
+{
+	return levelPointsTotal > 0 ? (int)(levelPointsAccum * 100 / levelPointsTotal) : 100;
+}
+
 // bstone keeps these out of BOTH total_points and accum_points: electro-spheres
 // and the electro alien are dynamically/specially spawned (3d_game.cpp:1099 sets
 // new_actor=nullptr so they never hit the load-time total), and Goldstern/Goldfire

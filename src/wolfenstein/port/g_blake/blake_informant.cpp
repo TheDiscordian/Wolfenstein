@@ -200,6 +200,159 @@ static FString PickScientistReply(unsigned int type)
 	return HintText(type, word.msgnum);
 }
 
+// bstone level point tally (blake_sbar.cpp): drives the near-100% location hint.
+extern int Blake_LevelPointsPercent();
+
+// Enemy display names for the near-100% location report (bstone
+// get_enemy_actor_name, 3d_debug.cpp).  Pre-uppercased like bstone's report.
+// Checked most-derived first so the PS guard variants win over the AoG base they
+// inherit.  Bosses and hazards bstone keeps out of the countable set (Dr.
+// Goldfire, the electro alien, the projection cube) are simply absent here, so
+// they match no name and are skipped.  "\r" is the presenter's line break.
+static const char *EnemyReportName(const AActor *ob)
+{
+	struct Entry { const char *cls; const char *name; };
+	static const Entry table[] = {
+		{ "SectorGuard",        "SECTOR GUARD" },
+		{ "RentACop",           "SECTOR PATROL" },
+		{ "TechWarrior",        "TECH WARRIOR" },
+		{ "ProGuard",           "STAR SENTINEL" },
+		{ "AlienProtector",     "ALIEN PROTECTOR" },
+		{ "STARTrooper",        "STAR TROOPER" },
+		{ "GeneticGuard",       "HIGH SECURITY\r GENETIC GUARD" },
+		{ "MechSentinel",       "EXPERIMENTAL\r MECH SENTINEL" },
+		{ "MutantHuman",        "EXPERIMENTAL\r MUTANT HUMAN" },
+		{ "CyborgWarrior",      "CYBORG WARRIOR" },
+		{ "SpiderMutant",       "SPIDER MUTANT" },
+		{ "ReptilianWarrior",   "REPTILIAN WARRIOR" },
+		{ "AcidDragon",         "ACID DRAGON" },
+		{ "BreatherBeast",      "BREATHER BEAST" },
+		{ "BioMechGuardian",    "BIO-MECH GUARDIAN" },
+		{ "GiantStalker",       "THE GIANT STALKER" },
+		{ "SpectorDemon",       "THE SPECTOR DEMON" },
+		{ "ArmoredStalker",     "THE ARMORED STALKER" },
+		{ "CrawlerBeast",       "THE CRAWLER BEAST" },
+		{ "MorphedGoldfire",    "MORPHED DR. GOLDFIRE" },
+		{ "LiquidAlien",        "FLUID ALIEN" },
+		{ "PODAlien",           "POD ALIEN" },
+		{ "FloatingBomb",       "PERSCAN DRONE" },
+		{ "VolatileTransport",  "VOLATILE\r MATERIAL TRANSPORT" },
+		{ "GurneyMutant",       "MUTATED GUARD" },
+		{ "SmallCanisterAlien", "SMALL EXPERIMENTAL\r GENETIC ALIEN" },
+		{ "LargeCanisterAlien", "LARGE EXPERIMENTAL\r GENETIC ALIEN" },
+		{ "ElectroSphere",      "PLASMA SPHERE" },
+	};
+	static const unsigned int N = sizeof(table) / sizeof(table[0]);
+	static const ClassDef *cls[N];
+	static bool inited = false;
+	if(!inited)
+	{
+		for(unsigned int i = 0;i < N;++i)
+			cls[i] = ClassDef::FindClass(table[i].cls);
+		inited = true;
+	}
+	for(unsigned int i = 0;i < N;++i)
+		if(cls[i] && ob->IsKindOf(cls[i]))
+			return table[i].name;
+	return NULL;
+}
+
+// Treasure display names (bstone get_bonus_item_name).  Plural for the multi-bar
+// gold piles so the report reads "There are ...".
+static const char *TreasureReportName(const AActor *ob, bool &plural)
+{
+	struct Entry { const char *cls; const char *name; bool plural; };
+	static const Entry table[] = {
+		{ "MoneyBag",  "MONEY BAG",       false },
+		{ "Loot",      "LOOT",            false },
+		{ "Gold1Bar",  "GOLD BAR",        false },
+		{ "Gold2Bars", "TWO GOLD BARS",   true },
+		{ "Gold3Bars", "THREE GOLD BARS", true },
+		{ "Gold5Bars", "FIVE GOLD BARS",  true },
+		{ "XylanOrb",  "XYLAN ORB",       false },
+	};
+	static const unsigned int N = sizeof(table) / sizeof(table[0]);
+	static const ClassDef *cls[N];
+	static bool inited = false;
+	if(!inited)
+	{
+		for(unsigned int i = 0;i < N;++i)
+			cls[i] = ClassDef::FindClass(table[i].cls);
+		inited = true;
+	}
+	for(unsigned int i = 0;i < N;++i)
+		if(cls[i] && ob->IsKindOf(cls[i]))
+		{
+			plural = table[i].plural;
+			return table[i].name;
+		}
+	return NULL;
+}
+
+// bstone find_countable_enemy: the first live enemy still worth points.  The name
+// table omits the skipped classes, so an empty name stands in for bstone's skip
+// list.
+static AActor *FindCountableEnemy()
+{
+	for(AActor::Iterator iter = AActor::GetIterator();iter.Next();)
+	{
+		AActor *ob = iter;
+		if(ob->health <= 0 || !(ob->flags & FL_COUNTKILL))
+			continue;
+		if(EnemyReportName(ob))
+			return ob;
+	}
+	return NULL;
+}
+
+// bstone find_bonus_item: the first uncollected treasure (picked-up items are
+// already gone from the actor list).
+static AActor *FindBonusItem(bool &plural)
+{
+	for(AActor::Iterator iter = AActor::GetIterator();iter.Next();)
+	{
+		AActor *ob = iter;
+		if(TreasureReportName(ob, plural))
+			return ob;
+	}
+	return NULL;
+}
+
+// bstone Interrogate near-100% branch (3d_agent.cpp:3470): once the floor is
+// 97-99% cleared by points, the informant stops giving general hints and instead
+// calls out where a remaining enemy -- or, failing that, treasure -- is, so the
+// player can chase down the last percent.  Empty result means "not in the window,
+// fall back to the normal hint".
+static FString Blake_InformantLocationReport(AActor *playerMo)
+{
+	const int pct = Blake_LevelPointsPercent();
+	if(pct <= 96 || pct >= 100)
+		return FString();
+
+	FString msg;
+	if(AActor *enemy = FindCountableEnemy())
+	{
+		msg.Format(" THERE IS\r%s\r AT %d,%d  (%d,%d)", EnemyReportName(enemy),
+			enemy->tilex, enemy->tiley, playerMo->tilex, playerMo->tiley);
+		return msg;
+	}
+
+	bool plural = false;
+	if(AActor *item = FindBonusItem(plural))
+	{
+		const char *name = TreasureReportName(item, plural);
+		if(plural)
+			msg.Format(" THERE ARE %s\r AT %d,%d  (%d,%d)", name,
+				item->tilex, item->tiley, playerMo->tilex, playerMo->tiley);
+		else
+			msg.Format(" THERE IS A\r%s\r AT %d,%d  (%d,%d)", name,
+				item->tilex, item->tiley, playerMo->tilex, playerMo->tiley);
+		return msg;
+	}
+
+	return FString(" YOU HAVE COLLECTED\r ALL TREASURES");
+}
+
 // FirstSighting equivalent (wl_state.cpp keeps it static). bstone only
 // clears FL_FRIENDLY and lets the next SightPlayer call aggro the mean
 // scientist; the port provokes him directly.
@@ -307,7 +460,10 @@ bool Blake_TryInterrogate(AActor *playerMo)
 
 		if(reply.IsEmpty())
 		{
-			reply = PickInformantHint(best);
+			// Near 100%: point Blake at the last enemy/treasure instead of a hint.
+			reply = Blake_InformantLocationReport(playerMo);
+			if(reply.IsEmpty())
+				reply = PickInformantHint(best);
 			best->flags |= FL_INTERROGATED;
 		}
 	}

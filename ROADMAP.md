@@ -23,24 +23,22 @@ on `blake-union`, built for PC + riscv32 device and offscreen-parse-checked on
 both data sets. The gameplay-visible, combat, render and presenter behaviours are
 flagged for an on-device play-through.
 
-**Fixed (24):** `^AN` ghost/smear, liquid-alien submerge-when-unseen,
-OVERALL MISSION baseline (300→100), FLOOR:/AREA: + secret-floor labels,
-floating-bomb detonation, volatile-transport explosion + ooze, steam-grate
-on-screen gating, lose-screen terminal sounds, plasma-detonator info-area icons,
-alien shoot/move-mode firing cadence (`+SHOOTMODEAI`), STAR Trooper / Alien
-Protector wound knockdown, informant near-100% location report, per-actor
-`flags2` word, PS skill-gated static decorations, presenter `anim_bgcolor`
-restore around `^EP`, PS anti-plasma arc-barrier shutdown, PS electro-alien
-spawning walls, PS enemy cloaking, JAM full-arsenal cheat, first-time QUICK_INFO
-instructions, AOG elevator hidden-area overhead shading, AOG elevator step-out
-alignment, PS radar energy gauge + magnification + drain (phase 1).
+**Fixed (25 — backlog complete):** `^AN` ghost/smear, liquid-alien
+submerge-when-unseen, OVERALL MISSION baseline (300→100), FLOOR:/AREA: +
+secret-floor labels, floating-bomb detonation, volatile-transport explosion +
+ooze, steam-grate on-screen gating, lose-screen terminal sounds, plasma-detonator
+info-area icons, alien shoot/move-mode firing cadence (`+SHOOTMODEAI`), STAR
+Trooper / Alien Protector wound knockdown, informant near-100% location report,
+per-actor `flags2` word, PS skill-gated static decorations, presenter
+`anim_bgcolor` restore around `^EP`, PS anti-plasma arc-barrier shutdown, PS
+electro-alien spawning walls, PS enemy cloaking, JAM full-arsenal cheat,
+first-time QUICK_INFO instructions, AOG elevator hidden-area overhead shading, AOG
+elevator step-out alignment, PS radar gauge/magnification/drain, PS radar overhead
+blip map (`DrawRadarOverhead`, bstone `ShowOverhead`).
 
-### Remaining (one piece, on-device-blocked)
-- **PS radar overhead blip map (phase 2)** — the rotated overhead minimap itself.
-  The energy gauge, magnification pic and drain ship (phase 1). The blip map's
-  screen rectangle, rotation and per-tile/actor colours can only be locked against
-  a real Planet Strike screenshot on the device, so it is deferred rather than
-  guessed. `blake_sbar.cpp` `DrawRadarOverhead` (bstone `ShowOverhead`).
+On-device play-test still confirms the combat/render/presenter behaviours and any
+pixel-level tuning (e.g. the radar overhead rect/rotation, the cloak fuzz shade) —
+those are constant tweaks, not open design questions.
 
 ## Out of scope for 1.0
 

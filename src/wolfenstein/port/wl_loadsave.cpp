@@ -79,6 +79,8 @@ void Blake_PinballSerialize(FArchive &arc);
 void Blake_PinballReset();
 // Blake Goldfire hunt state save/load (global, defined in blake_goldstern.cpp).
 void Blake_GoldsternSerialize(FArchive &arc);
+// Blake PS electro-alien wall state (global, defined in blake_electrowall.cpp).
+void Blake_ElectroWallSerialize(FArchive &arc);
 
 namespace GameSave {
 
@@ -804,6 +806,8 @@ static void Serialize(FArchive &arc)
 #define PINB_ID MAKE_ID('p','i','N','b')
 // Blake per-level Goldfire (Goldstern) hunt state; same chunk-presence gating.
 #define GOLD_ID MAKE_ID('g','o','L','d')
+// Blake PS electro-alien wall spawn state; same chunk-presence gating.
+#define EAWL_ID MAKE_ID('e','a','W','l')
 
 bool Load(const FString &filename)
 {
@@ -931,6 +935,16 @@ bool Load(const FString &filename)
 				Blake_GoldsternSerialize(arc);
 			}
 			// else: the map re-parse already rebuilt the hunt sites and reset state.
+		}
+
+		{
+			unsigned int chunkLength = M_FindPNGChunk(png, EAWL_ID);
+			if(chunkLength > 0)
+			{
+				FPNGChunkArchive arc(fileh, EAWL_ID, chunkLength);
+				Blake_ElectroWallSerialize(arc);
+			}
+			// else: the map re-parse already rebuilt the walls; aliensOut/delay reset.
 		}
 	}
 	catch(CRecoverableError &error)
@@ -1114,6 +1128,11 @@ bool Save(const FString &filename, const FString &title)
 	{
 		FPNGChunkArchive goldArc(fileh, GOLD_ID);
 		Blake_GoldsternSerialize(goldArc);
+	}
+
+	{
+		FPNGChunkArchive eaArc(fileh, EAWL_ID);
+		Blake_ElectroWallSerialize(eaArc);
 	}
 
 	M_FinishPNG(fileh);

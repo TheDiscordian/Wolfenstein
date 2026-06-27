@@ -30,6 +30,7 @@
 #include "g_blake/blake_barrier.h"
 #include "g_blake/blake_elevator.h"
 #include "g_blake/blake_goldstern.h"
+#include "g_blake/blake_electrowall.h"
 #include "of_ecwolf_gpu.h"
 
 /*
@@ -1487,6 +1488,7 @@ static void RunSimStep(int mult)
 	Blake_BarrierApply();
 
 	Goldstern_Tick();
+	ElectroWall_Tick();
 
 	simStepMult = 1;
 

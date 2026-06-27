@@ -39,6 +39,7 @@
 #include "g_blake/blake_barrier.h"
 #include "g_blake/blake_drops.h"
 #include "g_blake/blake_goldstern.h"
+#include "g_blake/blake_electrowall.h"
 #include "g_blake/blake_informant.h"
 #include "g_mapinfo.h"
 #include "gamemap.h"
@@ -1082,6 +1083,7 @@ void GameMap::ReadPlanesData()
 				TArray<WORD> fillSpots;
 				TMap<WORD, Xlat::ModZone> changeTriggerSpots;
 				Blake_ReservedDropClear();
+				ElectroWall_Clear();
 
 
 				for(unsigned int i = 0;i < size;++i)
@@ -1099,6 +1101,10 @@ void GameMap::ReadPlanesData()
 							switchCells[i] = oldplane[i];
 						else if(oldplane[i] == 32)
 							transportCells[i] = oldplane[i];
+						else if(oldplane[i] == 24 && EpisodeInfo::GetNumEpisodes() == 1)
+							// PS electro-alien emitter wall (PLASMSP). The 0xFA
+							// object-plane byte at the same cell pins its interval.
+							ElectroWall_AddWall(i%header.width, i/header.width);
 					}
 
 					Blake_ReservedDropCell(i%header.width, i/header.width, oldplane[i]);
@@ -1361,7 +1367,8 @@ void GameMap::ReadPlanesData()
 								Blake_AddHint((oldplane[i]>>8) - 0xF1,
 									i%header.width, i/header.width, oldplane[i]&0xFF);
 								continue;
-							case 0xFA: // Quantity modifier
+							case 0xFA: // Quantity modifier (PS electro-wall interval)
+								ElectroWall_SetDelay(i%header.width, i/header.width, oldplane[i]&0xFF);
 								continue;
 							case 0xFC: // Concession machine credits: patch the
 							           // vend count into the machine trigger

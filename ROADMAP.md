@@ -22,12 +22,13 @@ confirmed against bstone; **each still needs a DOS check before fixing** (bstone
 is a reference, not the target — see above), but most are core DOS Blake Stone
 behaviour. Ordered roughly by impact.
 
-**Fixed (11):** `^AN` ghost/smear, liquid-alien submerge-when-unseen,
+**Fixed (12):** `^AN` ghost/smear, liquid-alien submerge-when-unseen,
 OVERALL MISSION baseline (300→100), FLOOR:/AREA: + secret-floor labels,
 floating-bomb detonation, volatile-transport explosion + ooze, steam-grate
 on-screen gating, lose-screen terminal sounds, plasma-detonator info-area icons,
-alien shoot/move-mode firing cadence (`+SHOOTMODEAI`). Remaining items below are
-the larger/riskier ones (renderer, spawn system, xlat, DamageActor).
+alien shoot/move-mode firing cadence (`+SHOOTMODEAI`), STAR Trooper / Alien
+Protector wound knockdown. Remaining items below are the larger/riskier ones
+(renderer, spawn system, xlat).
 
 ### Functional
 - **PS electro-alien spawning walls inert** — tile-24 walls never emit ElectroAliens; the `0xFA` spawn byte is discarded in `gamemap_planes.cpp`, `CheckSpawnEA` missing from `wl_play.cpp` PlayLoop.
@@ -35,7 +36,6 @@ the larger/riskier ones (renderer, spawn system, xlat, DamageActor).
 - **PS arc barrier can't be shot down with the anti-plasma cannon** (BFG shutdown); `blakebarriers.txt:161-191`.
 
 ### Behavioural — enemies
-- **STAR Trooper / Alien Protector wound-knockdown** dead code — no trigger in DamageActor, `T_SwatWound` commented out; `blakemonsters.txt:261-268,318-325`.
 - **PS enemy cloaking** not rendered (`FL2_CLOAKED`/`FL2_DAMAGE_CLOAK` fuzz branch); `wl_draw.cpp:768-855`, `r_sprites.cpp`.
 
 ### Behavioural — skill gating (`planet.txt`)

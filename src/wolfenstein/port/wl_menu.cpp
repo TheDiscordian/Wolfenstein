@@ -280,7 +280,7 @@ MENU_LISTENER(Instructions)
 	// animations, not an ECWolf ShowArticle help page.
 	Blake_ShowInstructions();
 	StartCPMusic(gameinfo.MenuMusic);
-	readThisMenu.draw();
+	mainMenu.draw();
 	MenuFadeIn();
 	return true;
 }
@@ -290,7 +290,7 @@ MENU_LISTENER(StoryScreen)
 	StartCPMusic(gameinfo.FinaleMusic);
 	Blake_ShowStory();
 	StartCPMusic(gameinfo.MenuMusic);
-	readThisMenu.draw();
+	mainMenu.draw();
 	MenuFadeIn();
 	return true;
 }
@@ -300,7 +300,7 @@ MENU_LISTENER(OrderingScreen)
 	StartCPMusic(gameinfo.FinaleMusic);
 	Blake_ShowOrdering();
 	StartCPMusic(gameinfo.MenuMusic);
-	readThisMenu.draw();
+	mainMenu.draw();
 	MenuFadeIn();
 	return true;
 }
@@ -436,42 +436,70 @@ void CreateMenus()
 	// Actually initialize the menus
 	GameSave::InitMenus();
 
-	mainMenu.setHeadPicture("M_OPTION");
+	const bool blakeMainMenu = IWad::CheckGameFilter("Blake");
+
+	// Blake draws a text title; M_OPTION is a Wolf graphic absent from the Blake
+	// data (bstone DrawMenuTitle "MAIN OPTIONS", 3d_menu.cpp:519).
+	if(blakeMainMenu)
+		mainMenu.setHeadText("MAIN OPTIONS");
+	else
+		mainMenu.setHeadPicture("M_OPTION");
 
 	const bool useEpisodeMenu = EpisodeInfo::GetNumEpisodes() > 1;
+	const char *newGameLabel = blakeMainMenu ? "NEW MISSION" : language["STR_NG"];
+	MenuItem *newGameItem;
 	if(gameinfo.PlayerClasses.Size() > 1)
-		mainMenu.addItem(new MenuSwitcherMenuItem(language["STR_NG"], playerClasses));
+		newGameItem = new MenuSwitcherMenuItem(newGameLabel, playerClasses);
 	else if(!Net::IsArbiter())
-		mainMenu.addItem(new MenuItem(language["STR_NG"], JoinNetGame));
+		newGameItem = new MenuItem(newGameLabel, JoinNetGame);
 	else if(useEpisodeMenu)
-		mainMenu.addItem(new MenuSwitcherMenuItem(language["STR_NG"], episodes));
+		newGameItem = new MenuSwitcherMenuItem(newGameLabel, episodes);
 	else
-		mainMenu.addItem(new MenuSwitcherMenuItem(language["STR_NG"], skills));
+		newGameItem = new MenuSwitcherMenuItem(newGameLabel, skills);
 
-	mainMenu.addItem(new MenuSwitcherMenuItem(language["STR_OPTIONS"], optionsMenu));
-	mainMenu.addItem(GameSave::GetLoadMenuItem());
-	mainMenu.addItem(GameSave::GetSaveMenuItem());
-	if(IWad::CheckGameFilter("Blake"))
+	if(blakeMainMenu)
 	{
-		// Blake groups INSTRUCTIONS / STORY / ORDERING INFO under "READ THIS!"
-		// (bstone ReadThisMenu, 3d_menu.cpp:429).
-		readThisMenu.setHeadText(language["STR_RT"]);
-		readThisMenu.addItem(new MenuItem("INSTRUCTIONS", Instructions));
-		readThisMenu.addItem(new MenuItem("STORY", StoryScreen));
-		readThisMenu.addItem(new MenuItem("ORDERING INFO", OrderingScreen));
-		readThis = new MenuSwitcherMenuItem(language["STR_RT"], readThisMenu);
+		// DOS Planet Strike MainMenu order (3d_menu.cpp:85): NEW MISSION, ORDERING
+		// INFO, INSTRUCTIONS, STORY, GAME OPTIONS, HIGH SCORES, LOAD/SAVE MISSION,
+		// BACK TO MISSION, LOGOFF.  ORDERING / INSTRUCTIONS / STORY are flat
+		// top-level items, not a "READ THIS!" submenu.
+		mainMenu.addItem(newGameItem);
+		mainMenu.addItem(new MenuItem("ORDERING INFO", OrderingScreen));
+		MenuItem *instructionsItem = new MenuItem("INSTRUCTIONS", Instructions);
+		mainMenu.addItem(instructionsItem);
+		mainMenu.addItem(new MenuItem("STORY", StoryScreen));
+		mainMenu.addItem(new MenuSwitcherMenuItem("GAME OPTIONS", optionsMenu));
+		scoreEndGameItem = new MenuItem("HIGH SCORES", ViewScoresOrEndGame);
+		mainMenu.addItem(scoreEndGameItem);
+		MenuItem *loadItem = GameSave::GetLoadMenuItem();
+		loadItem->setText("LOAD MISSION");
+		mainMenu.addItem(loadItem);
+		MenuItem *saveItem = GameSave::GetSaveMenuItem();
+		saveItem->setText("SAVE MISSION");
+		mainMenu.addItem(saveItem);
+		backToGameItem = new MenuItem("BACK TO MISSION", PlayDemosOrReturnToGame);
+		mainMenu.addItem(backToGameItem);
+		mainMenu.addItem(new MenuItem("LOGOFF", QuitGame));
+		// The read-it items carry Blake's highlight; keep a handle for the
+		// post-new-game un-highlight (StartNewGame / JoinNetGame).
+		readThis = instructionsItem;
+		readThis->setHighlighted(true);
 	}
 	else
 	{
+		mainMenu.addItem(newGameItem);
+		mainMenu.addItem(new MenuSwitcherMenuItem(language["STR_OPTIONS"], optionsMenu));
+		mainMenu.addItem(GameSave::GetLoadMenuItem());
+		mainMenu.addItem(GameSave::GetSaveMenuItem());
 		readThis = new MenuItem(language["STR_RT"], ReadThis);
+		readThis->setVisible(gameinfo.DrawReadThis);
+		readThis->setHighlighted(true);
+		mainMenu.addItem(readThis);
+		scoreEndGameItem = new MenuItem(language["STR_VS"], ViewScoresOrEndGame);
+		mainMenu.addItem(scoreEndGameItem);
+		backToGameItem = new MenuItem(language["STR_BD"], PlayDemosOrReturnToGame);
+		mainMenu.addItem(backToGameItem);
 	}
-	readThis->setVisible(gameinfo.DrawReadThis);
-	readThis->setHighlighted(true);
-	mainMenu.addItem(readThis);
-	scoreEndGameItem = new MenuItem(language["STR_VS"], ViewScoresOrEndGame);
-	mainMenu.addItem(scoreEndGameItem);
-	backToGameItem = new MenuItem(language["STR_BD"], PlayDemosOrReturnToGame);
-	mainMenu.addItem(backToGameItem);
 
 	playerClasses.setHeadText(language["STR_PLAYERCLASS"]);
 	for(unsigned int i = 0;i < gameinfo.PlayerClasses.Size();++i)
@@ -544,11 +572,24 @@ void CreateMenus()
 	// Blake defaults to "Skilled Agent" (level 2); Wolf keeps its level-3 default.
 	skills.setCurrentPosition(blakeMenus ? 1 : 2);
 
-	optionsMenu.setHeadPicture("M_OPTION");
-	optionsMenu.addItem(new MenuSwitcherMenuItem(language["STR_CL"], controlBase));
-	optionsMenu.addItem(new MenuSwitcherMenuItem(language["STR_SD"], soundBase));
-	optionsMenu.addItem(new MenuSwitcherMenuItem(language["STR_DISPLAY"], displayMenu));
-	optionsMenu.addItem(new MenuSwitcherMenuItem(language["STR_AMOPTIONS"], automapMenu));
+	if(blakeMainMenu)
+	{
+		// DOS GopMenu order (3d_menu.cpp:101): SOUND, CONTROLS, CHANGE VIEW,
+		// SWITCHES.  PS has no in-game automap menu.  (GAME SWITCHES is added
+		// separately once its toggles exist.)
+		optionsMenu.setHeadText("GAME OPTIONS");
+		optionsMenu.addItem(new MenuSwitcherMenuItem("SOUND", soundBase));
+		optionsMenu.addItem(new MenuSwitcherMenuItem("CONTROLS", controlBase));
+		optionsMenu.addItem(new MenuSwitcherMenuItem("CHANGE VIEW", displayMenu));
+	}
+	else
+	{
+		optionsMenu.setHeadPicture("M_OPTION");
+		optionsMenu.addItem(new MenuSwitcherMenuItem(language["STR_CL"], controlBase));
+		optionsMenu.addItem(new MenuSwitcherMenuItem(language["STR_SD"], soundBase));
+		optionsMenu.addItem(new MenuSwitcherMenuItem(language["STR_DISPLAY"], displayMenu));
+		optionsMenu.addItem(new MenuSwitcherMenuItem(language["STR_AMOPTIONS"], automapMenu));
+	}
 
 	// Collect options and defaults
 	const char* soundEffectsOptions[] = {language["STR_NONE"], language["STR_PC"], language["STR_ALSB"] };
@@ -810,12 +851,13 @@ void US_ControlPanel (ScanCode scancode)
 			break;
 	}
 
+	const bool blakeMenu = IWad::CheckGameFilter("Blake");
 	if(ingame)
 	{
 		mainMenu[0]->setEnabled(Net::InitVars.mode == Net::MODE_SinglePlayer); // Require explicit end game for net games
-		scoreEndGameItem->setText(language["STR_EG"]);
-		scoreEndGameItem->setEnabled(Net::IsArbiter());
-		backToGameItem->setText(language["STR_BG"]);
+		scoreEndGameItem->setText(blakeMenu ? "HIGH SCORES" : language["STR_EG"]);
+		scoreEndGameItem->setEnabled(blakeMenu ? true : Net::IsArbiter());
+		backToGameItem->setText(blakeMenu ? "BACK TO MISSION" : language["STR_BG"]);
 		backToGameItem->setEnabled(true);
 		backToGameItem->setHighlighted(true);
 		GameSave::GetSaveMenuItem()->setEnabled(Net::InitVars.mode == Net::MODE_SinglePlayer && players[ConsolePlayer].state != player_t::PST_DEAD);
@@ -825,15 +867,15 @@ void US_ControlPanel (ScanCode scancode)
 		mainMenu[0]->setEnabled(true);
 		if (gameinfo.TrackHighScores == true && Net::InitVars.mode == Net::MODE_SinglePlayer)
 		{
-			scoreEndGameItem->setText(language["STR_VS"]);
+			scoreEndGameItem->setText(blakeMenu ? "HIGH SCORES" : language["STR_VS"]);
 			scoreEndGameItem->setEnabled(true);
 		}
 		else
 		{
-			scoreEndGameItem->setText(language["STR_EG"]);
-			scoreEndGameItem->setEnabled(false);
+			scoreEndGameItem->setText(blakeMenu ? "HIGH SCORES" : language["STR_EG"]);
+			scoreEndGameItem->setEnabled(blakeMenu ? true : false);
 		}
-		backToGameItem->setText(language["STR_BD"]);
+		backToGameItem->setText(blakeMenu ? "BACK TO DEMO" : language["STR_BD"]);
 		backToGameItem->setEnabled(Net::InitVars.mode == Net::MODE_SinglePlayer);
 		backToGameItem->setHighlighted(false);
 		GameSave::GetSaveMenuItem()->setEnabled(false);

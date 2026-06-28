@@ -1067,7 +1067,7 @@ things
 	{134, SmallAlienCanister,       0, 0, 0}
 	{135, SmallAlienCanister,       0, 0, 2, SmallAlienCanisterStatic}
 	{136, SmallAlienCanister,       0, 0, 3, SmallAlienCanisterStatic}
-	{137, SmallAlienCanisterEmpty,  0, 0, 0}
+	{137, GurneyMutantSleep,        0, 0, 0}
 	{138, ElectricArcBarrierOff,    0, 0, 0}
 	{139, ElectricArcBarrier,       0, 0, 0}
 	// No 140
@@ -1130,9 +1130,9 @@ things
 	{270, LargeCanisterAlien,       0, 0, 3}
 	{271, LargeCanisterAlien,       0, 0, 2}
 	{272, LargeCanisterAlien,       0, 0, 0}
-	{273, LargeAlienCanisterEmpty,  0, 0, 0}
-	{274, LargeAlienCanisterEmpty,  0, 0, 2}
-	{275, LargeAlienCanisterEmpty,  0, 0, 3}
+	{273, GurneyMutant,             0, 0, 0}
+	{274, GurneyMutant,             0, 0, 2}
+	{275, GurneyMutant,             0, 0, 3}
 	{276, PODAlienEgg,              0, 0, 2, PODAlienEggDead}
 	{277, BlackOoze,                0, 0, 0}
 	{278, FloatingBomb,             4, 0, 2}

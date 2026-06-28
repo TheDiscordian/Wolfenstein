@@ -1387,11 +1387,15 @@ actor PODAlienEgg
 	health 1
 	+SOLID
 	+SHOOTABLE
+	action native A_PodEggInit();
+	action native A_PodEggTick();
 	states
 	{
 		Spawn:
-			PODA A -1 NOP A_Look(0, 0, 0, 0, 360)
-			stop
+			PODA A 0 A_PodEggInit
+		EggWait:
+			PODA A 7 A_PodEggTick
+			loop
 		See:
 		Death:
 			PODA B 3.5 A_ChangeFlag("SHOOTABLE", false)

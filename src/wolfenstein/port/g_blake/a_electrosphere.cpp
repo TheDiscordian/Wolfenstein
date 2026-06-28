@@ -196,7 +196,9 @@ ACTION_FUNCTION(A_SphereBounce)
 		const fixed dy = abs(p->y - self->y);
 		if((dx > dy ? dx : dy) < TILEGLOBAL)
 		{
-			PlaySoundLocActor("electrosphere/attack", self);
+			// DOS plays the arc-zap (ELECARCDAMAGESND), not the shot sample
+			// (3d_act2.cpp:1042).
+			PlaySoundLocActor("barrier/zap", self);
 			// bstone arcs 4/tic at 70 Hz; this thinker runs once per sim step,
 			// so scale by simStepMult to keep the health-drain rate.
 			DamageActor(p, self, 4 * simStepMult);

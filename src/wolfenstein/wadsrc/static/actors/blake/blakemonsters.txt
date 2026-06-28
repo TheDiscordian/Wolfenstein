@@ -1398,7 +1398,7 @@ actor PODAlienEgg
 			loop
 		See:
 		Death:
-			PODA B 3.5 A_ChangeFlag("SHOOTABLE", false)
+			PODA B 3.5 A_ChangeFlag("SHOOTABLE", false) A_PlaySound("podalien/release")
 			PODA CD 3.5
 			PODA D 0 A_SpawnItemEx("PODAlien", 0, 0, 0, 0, 0, 0, 0, SXF_TRANSFERPOINTERS)
 			stop

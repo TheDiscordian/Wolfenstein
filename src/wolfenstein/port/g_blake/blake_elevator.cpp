@@ -501,8 +501,11 @@ static int ElevShowRatio(int bx, int by, int total, int accum)
 		return 100;
 	}
 
-	const int maxperc = accum * 100 / total;
-	const int numbars = maxperc * 48 / 100;
+	// DOS LRATIO fixed-point (3d_def.h:164): LRATIO(100,total,accum,10) and
+	// LRATIO(48,100,maxperc,10).  Plain integer division shifts the percentages
+	// and bar lengths by one.
+	const int maxperc = (int)(((long)100 * (((long)accum << 10) / total)) >> 10);
+	const int numbars = (int)(((long)48 * (((long)maxperc << 10) / 100)) >> 10);
 
 	ElevBar(0x07, bx, by, BAR_W, BAR_H);
 
@@ -597,7 +600,7 @@ static int ElevCalcRatio(int total, int accum)
 {
 	if(!total)
 		return 100;
-	return accum * 100 / total;
+	return (int)(((long)100 * (((long)accum << 10) / total)) >> 10);	// DOS LRATIO
 }
 
 // Overall mission ratio for the high-score table (bstone CheckHighScore's

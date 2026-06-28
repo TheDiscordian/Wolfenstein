@@ -1564,7 +1564,9 @@ void BlakeStatusBar::Tick()
 	// All-enemies-destroyed pinball bonus.  Edge-detected here rather than in
 	// GivePoints (bstone's hook) because AActor::Die scores BEFORE bumping
 	// killcount, so a score-time check would miss the final kill.
-	if(gamestate.killtotal > 0 && gamestate.killcount >= gamestate.killtotal
+	// DOS B_ENEMY_DESTROYED has no total-enemy>0 guard (3d_agent.cpp:3664), so a
+	// zero-enemy floor (0 >= 0) still earns the 50,000 bonus.
+	if(gamestate.killcount >= gamestate.killtotal
 		&& IWad::CheckGameFilter("Blake")
 		&& !(pinballShown & 0x10) && !(pinballQueue & 0x10))
 		pinballQueue |= 0x10;	// B_ENEMY_DESTROYED

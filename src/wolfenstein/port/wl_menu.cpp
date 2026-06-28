@@ -1019,7 +1019,10 @@ int CP_CheckQuick (ScanCode scancode)
 int CP_EndGame (int)
 {
 	int res;
-	res = Confirm (language["ENDGAMESTR"]);
+	// DOS Blake uses a fixed end-game prompt (3d_menu.cpp:19), not the Wolf string.
+	res = Confirm (IWad::CheckGameFilter("Blake")
+		? "    End current game?\n Are you sure (Y or N)?"
+		: language["ENDGAMESTR"]);
 	if (!ingame)
 		mainMenu.draw();
 	if(!res) return 0;

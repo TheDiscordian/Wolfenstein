@@ -55,7 +55,8 @@ ACTION_FUNCTION(A_BlakeMorphWake)
 	self->target = p;
 	self->flags &= ~FL_PATHING;
 	self->flags |= FL_ATTACKMODE | FL_FIRSTATTACK;
-	self->speed = self->runspeed;
+	// DOS leaves speed at the spawn value on morph completion (3d_act2.cpp:1506):
+	// no FirstSighting run-speed bump, so the morphed boss chases at base speed.
 	return false;
 }
 

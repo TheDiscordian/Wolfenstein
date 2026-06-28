@@ -85,7 +85,7 @@ void ElectroWall_AddWall(unsigned int x, unsigned int y)
 	numEAWalls++;
 }
 
-void ElectroWall_SetDelay(unsigned int x, unsigned int y, int qtyByte)
+bool ElectroWall_SetDelay(unsigned int x, unsigned int y, int qtyByte)
 {
 	for(int w = 0;w < numEAWalls;++w)
 		if(eaList[w].tilex == x && eaList[w].tiley == y)
@@ -93,8 +93,9 @@ void ElectroWall_SetDelay(unsigned int x, unsigned int y, int qtyByte)
 			eaList[w].byteVal = qtyByte & 0xFF;
 			eaList[w].delay = 60 * eaList[w].byteVal;	// bstone 3d_game.cpp
 			eaList[w].fixedByte = true;
-			return;
+			return true;
 		}
+	return false;
 }
 
 // actorat[] equivalent: a solid actor on the tile blocks the spawn.

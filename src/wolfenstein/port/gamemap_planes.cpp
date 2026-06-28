@@ -41,6 +41,7 @@
 #include "g_blake/blake_cloak.h"
 #include "g_blake/blake_goldstern.h"
 #include "g_blake/blake_electrowall.h"
+#include "g_blake/blake_scanvalue.h"
 #include "g_blake/blake_informant.h"
 #include "g_mapinfo.h"
 #include "gamemap.h"
@@ -1086,6 +1087,7 @@ void GameMap::ReadPlanesData()
 				Blake_ReservedDropClear();
 				Blake_CloakCellClear();
 				ElectroWall_Clear();
+				Blake_ScanValueClear();
 
 
 				for(unsigned int i = 0;i < size;++i)
@@ -1377,8 +1379,13 @@ void GameMap::ReadPlanesData()
 								Blake_AddHint((oldplane[i]>>8) - 0xF1,
 									i%header.width, i/header.width, oldplane[i]&0xFF);
 								continue;
-							case 0xFA: // Quantity modifier (PS electro-wall interval)
-								ElectroWall_SetDelay(i%header.width, i/header.width, oldplane[i]&0xFF);
+							case 0xFA: // Quantity modifier.  A 0xFA word pins an
+							           // electro-wall's interval on its own cell, or
+							           // carries the scan_value timing byte for the
+							           // object in the preceding cell (morph post, pod
+							           // egg, gurney -- DOS 3d_game.cpp:335).
+								if(!ElectroWall_SetDelay(i%header.width, i/header.width, oldplane[i]&0xFF) && i > 0)
+									Blake_ScanValueSet((i-1)%header.width, (i-1)/header.width, oldplane[i]&0xFF);
 								continue;
 							case 0xFC: // Concession machine credits: patch the
 							           // vend count into the machine trigger

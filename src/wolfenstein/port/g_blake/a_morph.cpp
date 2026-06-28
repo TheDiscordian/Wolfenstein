@@ -38,6 +38,7 @@
 #include "wl_agent.h"
 #include "wl_play.h"
 #include "thingdef/thingdef.h"
+#include "blake_scanvalue.h"
 
 // A_BlakeMorphWake: bstone converts a finished morph post in place straight into
 // an actively-chasing enemy (NewState(s_ofs_chase1), 3d_act2.cpp:2311).  The port
@@ -85,17 +86,22 @@ ACTION_FUNCTION(A_BlakeWeaponUnlock)
 }
 
 // Morph posts (PS) morph on a timer that runs only while the post is drawn on
-// screen, not on line-of-sight (bstone T_OfsThink morph case, 3d_act2.cpp:1612:
-// "if (!(obj->flags & FL_VISIBLE)) break; if (temp2 > tics) temp2 -= tics; else
-// morph").  temp1 is that countdown.
-//
-// bstone's per-post delay comes from a 0xfa-prefixed map byte (scan_value*60)
-// that the port's tile->thing xlat discards, so a fixed ~2s on-screen delay is
-// used for every post; the previous port morphed instantly on sight with no
-// delay, so this is strictly closer to the original on the trigger.
+// screen, not on line-of-sight (DOS T_OfsThink morph case, 3d_act2.cpp:1612).
+// temp1 is that countdown.  DOS seeds it from the post's scan_value byte (the
+// 0xFA object-plane word, 3d_act2.cpp:646): temp1 = scan_value*60 tics, or never
+// when the map placed no byte (DOS sets 0xffff).  A scan_value of 0xff also makes
+// the post unshootable.
 ACTION_FUNCTION(A_BlakeMorphInit)
 {
-	self->temp1 = 140; // ~2 s of on-screen time at 70 Hz
+	const int sv = Blake_ScanValueGet(self->tilex, self->tiley);
+	if(sv < 0)
+		self->temp1 = -1;	// no 0xFA byte: effectively never auto-morphs
+	else
+	{
+		self->temp1 = (short)(sv * 60);
+		if(sv == 0xff)
+			self->flags &= ~FL_SHOOTABLE;	// DOS: temp2==0xff*60 -> not shootable
+	}
 	return false;
 }
 
@@ -103,6 +109,9 @@ ACTION_FUNCTION(A_BlakeMorphTick)
 {
 	if(!(self->flags & FL_VISIBLE))
 		return false; // frozen while off screen
+
+	if(self->temp1 < 0)
+		return false; // no scan_value byte: never auto-morphs (DOS 0xffff)
 
 	if(self->temp1 > (short)tics)
 	{

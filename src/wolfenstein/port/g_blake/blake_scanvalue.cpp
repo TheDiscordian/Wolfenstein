@@ -1,5 +1,5 @@
 /*
-** blake_electrowall.h
+** blake_scanvalue.cpp
 **
 **---------------------------------------------------------------------------
 ** Copyright 2026 TheDiscordian
@@ -28,25 +28,34 @@
 ** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 ** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **---------------------------------------------------------------------------
-**
-** Planet Strike electro-alien spawning walls.
-**
 */
 
-#ifndef __BLAKE_ELECTROWALL_H__
-#define __BLAKE_ELECTROWALL_H__
+#include "blake_scanvalue.h"
 
-class FArchive;
+#define MAXSCANVALS 128
 
-// Called at map load (Plane_Tiles) before the wall plane is scanned.
-void ElectroWall_Clear();
-// Registers an electro-alien emitter wall (PS wall-plane tile 24).
-void ElectroWall_AddWall(unsigned int x, unsigned int y);
-// Applies the 0xFA object-plane quantity byte: fixes that wall's spawn interval.
-// Returns true if a registered electro-wall sits on this cell and took the byte.
-bool ElectroWall_SetDelay(unsigned int x, unsigned int y, int qtyByte);
-// Once-per-sim-step: emits electro aliens from the walls up to the skill cap.
-void ElectroWall_Tick();
-void Blake_ElectroWallSerialize(FArchive &arc);
+static struct { short x, y, val; } svList[MAXSCANVALS];
+static int numScanVals;
 
-#endif
+void Blake_ScanValueClear()
+{
+	numScanVals = 0;
+}
+
+void Blake_ScanValueSet(int x, int y, int val)
+{
+	if(numScanVals >= MAXSCANVALS)
+		return;
+	svList[numScanVals].x = (short)x;
+	svList[numScanVals].y = (short)y;
+	svList[numScanVals].val = (short)(val & 0xFF);
+	++numScanVals;
+}
+
+int Blake_ScanValueGet(int x, int y)
+{
+	for(int i = 0;i < numScanVals;++i)
+		if(svList[i].x == x && svList[i].y == y)
+			return svList[i].val;
+	return -1;
+}

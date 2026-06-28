@@ -1,5 +1,5 @@
 /*
-** blake_electrowall.h
+** blake_scanvalue.h
 **
 **---------------------------------------------------------------------------
 ** Copyright 2026 TheDiscordian
@@ -28,25 +28,18 @@
 ** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
 ** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **---------------------------------------------------------------------------
-**
-** Planet Strike electro-alien spawning walls.
-**
 */
 
-#ifndef __BLAKE_ELECTROWALL_H__
-#define __BLAKE_ELECTROWALL_H__
+#ifndef __BLAKE_SCANVALUE_H__
+#define __BLAKE_SCANVALUE_H__
 
-class FArchive;
-
-// Called at map load (Plane_Tiles) before the wall plane is scanned.
-void ElectroWall_Clear();
-// Registers an electro-alien emitter wall (PS wall-plane tile 24).
-void ElectroWall_AddWall(unsigned int x, unsigned int y);
-// Applies the 0xFA object-plane quantity byte: fixes that wall's spawn interval.
-// Returns true if a registered electro-wall sits on this cell and took the byte.
-bool ElectroWall_SetDelay(unsigned int x, unsigned int y, int qtyByte);
-// Once-per-sim-step: emits electro aliens from the walls up to the skill cap.
-void ElectroWall_Tick();
-void Blake_ElectroWallSerialize(FArchive &arc);
+// PS object-plane "scan_value" quantity byte (DOS 3d_game.cpp:335): a 0xFA__
+// word in the object plane carries the low-byte timing value for the object in
+// the PRECEDING cell -- a morph post, pod egg or gurney mutant.  The map loader
+// records it per object cell; the spawning actor's Init action reads it back by
+// its own tile coords.  Set per level, cleared at load.
+void Blake_ScanValueClear();
+void Blake_ScanValueSet(int x, int y, int val);   // val 0..255
+int  Blake_ScanValueGet(int x, int y);            // -1 when no byte was placed
 
 #endif

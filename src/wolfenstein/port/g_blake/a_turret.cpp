@@ -43,39 +43,58 @@
 
 static FRandom pr_turret("CeilingTurret");
 
-// A_TurretSeek: bstone T_Seek (3d_act2.cpp:2226).  The hanging turret tracks the
-// player while it has line of sight and, when the player is within fifteen tiles,
-// rolls a distance-weighted chance to open fire -- point-blank always fires, the
-// odds thinning the further out the player is.  On a successful roll it jumps to
-// Missile (the port's See state otherwise sat on A_FaceTarget and never fired).
+static const int SEEK_TURN_DELAY = 30;	// tics between sweep steps (DOS 3d_act2.c:32)
+
+// A_TurretSeek: DOS T_Seek (3d_act2.cpp:5063).  The hanging turret fires only when
+// the player is within its ~45 deg facing cone with line of sight (CheckView) and
+// inside fifteen tiles, on a distance-weighted chance -- point-blank always fires.
+// While it has not found the player it sweeps, advancing one of eight facings
+// every SEEK_TURN_DELAY (30) tics; the directional TURRA1..8 sprite shows the turn.
+// (The port previously fired on any line of sight and never rotated.)
 ACTION_FUNCTION(A_TurretSeek)
 {
 	AActor *p = players[ConsolePlayer].mo;
 	if(!p)
 		return false;
 
-	// bstone seeks only when the player is on a different tile and visible.
-	if(self->tilex == p->tilex && self->tiley == p->tiley)
-		return false;
-	if(!CheckLine(self, p))
-		return false;
+	bool targetFound = false;
 
-	const int dx = abs((int)self->tilex - (int)p->tilex);
-	const int dy = abs((int)self->tiley - (int)p->tiley);
-	if(dx >= 15 || dy >= 15)
-		return false;
-
-	const int dist = dx > dy ? dx : dy;
-	const int chance = dist ? (pr_turret() / dist) : 300;
-	if(pr_turret() < chance)
+	// CheckView: a different tile, within the facing cone, with line of sight.
+	if((self->tilex != p->tilex || self->tiley != p->tiley) &&
+		self->CheckVisibility(p, ANGLE_45/2))
 	{
-		const Frame *missile = self->FindState("Missile");
-		if(missile)
+		const int dx = abs((int)self->tilex - (int)p->tilex);
+		const int dy = abs((int)self->tiley - (int)p->tiley);
+		if(dx < 15 && dy < 15)
 		{
-			if(result)
-				result->JumpFrame = missile;
-			else
-				self->SetState(missile);
+			const int dist = dx > dy ? dx : dy;
+			const int chance = (dist <= 1) ? 300 : (pr_turret() / dist);
+			if(pr_turret() < chance)
+			{
+				const Frame *missile = self->FindState("Missile");
+				if(missile)
+				{
+					if(result)
+						result->JumpFrame = missile;
+					else
+						self->SetState(missile);
+				}
+				return false;
+			}
+			targetFound = true;
+		}
+	}
+
+	// Sweep one of eight facings every 30 tics while searching.  Only the rotating
+	// turret runs this seek (the static turret has no seek state), so no stationary
+	// guard is needed; temp1 is the sweep countdown.
+	if(!targetFound)
+	{
+		self->temp1 -= (short)tics;
+		if(self->temp1 <= 0)
+		{
+			self->temp1 = SEEK_TURN_DELAY;
+			self->angle += ANGLE_45;
 		}
 	}
 	return false;

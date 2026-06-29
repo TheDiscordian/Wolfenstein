@@ -33,10 +33,10 @@ actor AutoChargePistol : BlakeWeapon
 			ACPG BC 3
 			ACPG D 3 A_GunAttack(GAF_MACDAMAGE, "*", 1.0, 128)
 			ACPG E 3
-			// Recharge lockout: ~50 tics from the shot before the pistol can fire
-			// again (bstone AUTOCHARGE_WAIT=50).  Without it the auto-charge pistol
-			// tap-fires several times faster than the original.
-			ACPG A 44
+			// Recharge lockout: the whole fire cycle totals 25 authoring tics =
+			// 50 internal (70 Hz) = AUTOCHARGE_WAIT, ~0.71s before the pistol can
+			// fire again.  ACPG BC 3 + D 3 + E 3 + A 13 = 25.
+			ACPG A 13
 			goto Ready
 		Spawn:
 			ACPP A -1

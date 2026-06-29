@@ -682,6 +682,12 @@ static uint8_t RadarEnemyColor(const AActor *ob)
 		{ "SpectorDemon", 35 },
 		{ "ArmoredStalker", 36 },
 		{ "CrawlerBeast", 37 },
+		// DOS ShowOverhead tints any live actor in deadobj<obclass<SPACER1_OBJ, so
+		// crates, ooze and pod eggs appear on the magnified radar too, not just
+		// walking enemies (3d_draw.c:2156).
+		{ "PODAlienEgg", 46 },
+		{ "GreenOoze", 42 }, { "BlackOoze", 43 }, { "GrayOoze", 44 }, { "WhiteOoze", 45 },
+		{ "BreakableCrate3", 41 }, { "BreakableCrate2", 40 }, { "BreakableCrate1", 39 },
 	};
 	static const unsigned int N = sizeof(table) / sizeof(table[0]);
 	static const ClassDef *cls[N];

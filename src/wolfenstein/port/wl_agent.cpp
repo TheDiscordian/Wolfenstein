@@ -622,13 +622,11 @@ bool ActorBlocksSpot (AActor *ob, unsigned int x, unsigned int y)
 	return false;
 }
 
-// Blake's barrier thinker (A_BarrierDamage) fried every shootable actor sitting
-// on its own tile, and used to scan the whole actor list per lit barrier every
-// other tic to find them.  An actor on tile (tx, ty) is within one cell of it in
-// the collision grid (tilex differs from the physical cell by at most one), so
-// the 3x3 cell block plus the oversized side list is the complete candidate set;
-// the original exact-tile predicate then runs on live fields -- identical
-// results without a world scan.
+// Damages every shootable actor sitting on tile (tx, ty) -- Blake's barrier
+// thinker (A_BarrierDamage) fries actors on its own cell.  An actor on the tile
+// is within one cell of it in the collision grid (tilex differs from the physical
+// cell by at most one), so the 3x3 cell block plus the oversized side list is the
+// complete candidate set; the exact-tile predicate then runs on live fields.
 void DamageActorsOnTile (AActor *source, int tx, int ty, int dmg)
 {
 	if(collisionGridMap == map && collisionGridW > 0)

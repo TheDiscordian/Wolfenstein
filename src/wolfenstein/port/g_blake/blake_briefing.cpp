@@ -54,6 +54,19 @@ static void Blake_PresentBriefingLump(const char *lumpname, bool fadeOutAfter = 
 	// (0x7d, == pi.bgcolor below).  Still faded to black, so no flicker.
 	VWB_Clear(0x7d, 0, 0, screenWidth, screenHeight);
 
+	// HelpPresenter frames the text with a full-screen help-window border
+	// (3d_menu.cpp:318); the four edge pics ship in the Blake data (vsimap/bs6map).
+	static const FTextureID winPics[4] = {
+		TexMan.GetTexture("TOPWINDW", FTexture::TEX_Any),
+		TexMan.GetTexture("LFTWINDW", FTexture::TEX_Any),
+		TexMan.GetTexture("RGTWINDW", FTexture::TEX_Any),
+		TexMan.GetTexture("BOTWINDW", FTexture::TEX_Any),
+	};
+	static const int winPos[4][2] = { {0,0}, {0,8}, {312,8}, {8,176} };
+	for(int i = 0;i < 4;++i)
+		if(FTexture *t = TexMan(winPics[i]))
+			VWB_DrawGraphic(t, winPos[i][0], winPos[i][1], MENU_NONE);
+
 	// Text region + colours, copied from HelpPresenter (3d_menu.cpp:1704).
 	// The script's own ^BC/^LC/^DC/^SC codes override these per page; these are
 	// the defaults used before the first such code fires.

@@ -1144,7 +1144,10 @@ void TP_HandleCodes()
 			for (i = 0; i < 30; i++)
 			{
 				VW_WaitVBL(1);
-				CycleColors();
+				// DOS CycleColors waits an extra VBL when no colour range fired
+				// (3d_main.c:1199), so each idle ^PA step is two VBLs, not one.
+				if (!CycleColors())
+					VW_WaitVBL(1);
 			}
 		}
 		break;

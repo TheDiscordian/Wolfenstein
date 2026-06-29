@@ -892,17 +892,18 @@ void PollControls (bool absolutes)
 		AM_CheckKeys();
 	}
 
+	static int lastoffs;
 	for(unsigned int i = 0;i < Net::InitVars.numPlayers;++i)
 	{
 		if(control[i].buttonstate[bt_pause] && !control[i].buttonheld[bt_pause])
 		{
 			Paused ^= 1;
 
-			static int lastoffs;
 			if(Paused & 1)
 			{
 				lastoffs = StopMusic();
 				IN_ReleaseMouse();
+				LastScan = sc_None;	// DOS clears keys so any later press resumes
 			}
 			else
 			{
@@ -913,6 +914,19 @@ void PollControls (bool absolutes)
 				ResetTimeCount();
 			}
 		}
+	}
+
+	// DOS resumes the Blake pause modal on any key (PAUSED_MSG "Press any key to
+	// resume.", 3d_play.c:787); the toggle above only covers the pause key.
+	if((Paused & 1) && LastScan != sc_None && IWad::CheckGameFilter("Blake"))
+	{
+		Paused &= ~1;
+		IN_GrabMouse();
+		ContinueMusic(lastoffs);
+		if (MousePresent && IN_IsInputGrabbed())
+			IN_CenterMouse();
+		ResetTimeCount();
+		IN_ClearKeysDown();
 	}
 }
 
@@ -1424,7 +1438,12 @@ void PlayFrame()
 	if(automap && !gamestate.victoryflag)
 		BasicOverhead();
 	if(Paused & 1)
-		VWB_DrawGraphic(TexMan("PAUSED"), (20 - 4)*8, 80 - 2*8);
+	{
+		if(IWad::CheckGameFilter("Blake"))
+			Blake_DrawPausedScreen();
+		else
+			VWB_DrawGraphic(TexMan("PAUSED"), (20 - 4)*8, 80 - 2*8);
+	}
 
 	if(Net::IsBlocked())
 	{

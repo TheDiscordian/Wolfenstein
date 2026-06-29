@@ -354,6 +354,37 @@ static void ElevDrawBottomBox(const FString &text)
 	}
 }
 
+// Pause overlay (DOS PAUSED_MSG via BMAmsg, 3d_play.c:575): a centred bevelled
+// box reading "Game Paused / Press any key to resume.", replacing the Wolfenstein
+// PAUSED pic that Blake never had.  Drawn over the frozen frame each paused tic.
+void Blake_DrawPausedScreen()
+{
+	static const char * const line1 = "Game Paused";
+	static const char * const line2 = "Press any key to resume.";
+
+	FFont *font = V_GetFont("BIGFONT");
+	if(!font)
+		font = SmallFont;
+
+	word w1, h1, w2, h2;
+	VW_MeasurePropString(font, line1, w1, h1);
+	VW_MeasurePropString(font, line2, w2, h2);
+
+	const int pitch = h1 + 2;
+	const int textw = MAX<int>(w1, w2);
+	const int boxw = textw + 28;
+	const int boxh = pitch*2 + 20;
+	const int boxx = (320 - boxw)/2;
+	const int boxy = (200 - boxh)/2;
+
+	ElevBevelBox(boxx, boxy, boxw, boxh, BLAKE_BORDER_HI, BLAKE_BORDER_LO);
+	ElevBevelBox(boxx+4, boxy+4, boxw-8, boxh-8, BLAKE_BORDER_LO, BLAKE_BORDER_HI);
+
+	int ty = boxy + (boxh - (pitch*2))/2;
+	ElevShadowText(font, line1, boxx + (boxw - w1)/2, ty, CR_WHITE);
+	ElevShadowText(font, line2, boxx + (boxw - w2)/2, ty + pitch, CR_WHITE);
+}
+
 // 64x64 radar replica of bstone ShowOverhead(14, 71, 32, 0,
 // OV_KEYS|OV_WHOLE_MAP): floors 0x55, doors by state, player 0xF0, keys
 // 0xF3; walls and unrevealed tiles keep the unmapped colour.  Revealed AOG

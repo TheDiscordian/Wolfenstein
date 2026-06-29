@@ -48,6 +48,9 @@ void Blake_PsUnlockFloor(int lvl);
 void Blake_PsSerialize(FArchive &arc);
 void Blake_PsClear();
 
+// Centred "Game Paused" box (DOS PAUSED_MSG), drawn over the frozen frame.
+void Blake_DrawPausedScreen();
+
 // Set by Elevator_SelectFloor; PlayLoop runs the panel between frames.
 extern bool Blake_ElevatorRequested;
 void Blake_ElevatorCheck();

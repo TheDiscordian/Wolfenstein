@@ -72,6 +72,7 @@ public:
 		memset(EcgLegend, 0, sizeof(EcgLegend));
 		memset(EcgSegments, 0, sizeof(EcgSegments));
 		iconNF = iconFrame = iconAnimTics = 0;
+		iconAnimDelay = ICON_ANIM_DELAY;
 		iconKey = 0;
 	}
 
@@ -164,11 +165,14 @@ protected:
 	// (bstone DISPLAY_MSG / DisplayTime 0, e.g. the start-game greeting).
 	static const int INFOMSG_PERSIST = -1;
 
-	// Info-area enemy walk-cycle frame delay, in Tick calls (~60Hz).  The icon is
-	// drawn live by drawInfoIcon() off the cache key, so animation speed no longer
-	// drives the bar-redraw rate (that was what tripped the device white lines).
-	// 6 -> ~10fps, the brisk "running" cadence of the DOS info-area enemy.
-	static const int ICON_ANIM_DELAY = 6;
+	// Info-area enemy walk-cycle frame delay, in Tick calls (~60Hz).  DOS steps
+	// the ^AN icon every piAnimTable maxdelay 70Hz tics (3d_agent.c AnimatePage):
+	// 20 for almost every enemy, 10 for the cube/barriers/volatile transport,
+	// 8 for the perscan drone.  Converted to 60Hz Tick units (*6/7) that is 17 /
+	// 9 / 7.  ICON_ANIM_DELAY is the common case; per-icon overrides live in
+	// iconAnimDelay, set per class at bake time.  (The icon is drawn live off the
+	// cache key, so its rate does NOT touch the bar redraw / the GPU cache seam.)
+	static const int ICON_ANIM_DELAY = 17;
 
 private:
 	int CurrentScore;
@@ -191,6 +195,7 @@ private:
 	int iconNF;                   // number of baked frames (0 = none)
 	int iconFrame;                // current animation frame
 	int iconAnimTics;             // tic accumulator for the walk cycle
+	int iconAnimDelay;            // per-enemy frame delay (DOS piAnimTable maxdelay*6/7)
 	int iconW[MAX_ICON_FRAMES], iconH[MAX_ICON_FRAMES];
 	// Opaque-content bounds within the (often padded) sprite frame, so the figure
 	// is centred in the box by its actual pixels, not the canvas.
@@ -1291,9 +1296,26 @@ void BlakeStatusBar::DrawStatusBar()
 void BlakeStatusBar::SetInfoMessageIcon(const ClassDef *cls)
 {
 	iconNF = iconFrame = iconAnimTics = 0;
+	iconAnimDelay = ICON_ANIM_DELAY;
 	iconKey = cls ? (int32_t)(intptr_t)cls : 0;
 	if(!cls)
 		return;
+
+	// DOS piAnimTable maxdelay is 10 for the cube/barriers/volatile transport and
+	// 8 for the perscan drone, vs 20 for everything else (3d_agent.c AnimatePage);
+	// in 60Hz Tick units (*6/7) that is 9 and 7 vs the default 17.
+	static const struct { const char *name; int delay; } fastIcons[] = {
+		{ "SecurityCube", 9 }, { "ElectricArcBarrier", 9 },
+		{ "ElectricPostBarrier", 9 }, { "VolatileTransport", 9 },
+		{ "FloatingBomb", 7 },
+	};
+	const FName clsName = cls->GetName();
+	for(unsigned i = 0; i < countof(fastIcons); ++i)
+		if(clsName == FName(fastIcons[i].name))
+		{
+			iconAnimDelay = fastIcons[i].delay;
+			break;
+		}
 
 	FTextureID frames[MAX_ICON_FRAMES];
 	const int nf = R_GetClassIconFrames(cls, frames, MAX_ICON_FRAMES);
@@ -1413,6 +1435,26 @@ void BlakeStatusBar::DrawInfoArea()
 		screen->DrawTexture(info, stx, sty,
 			DTA_DestWidthF, stw,
 			DTA_DestHeightF, sth,
+			TAG_DONE);
+	}
+
+	// LINC message-activity lamp (DOS DIM_LIGHTPIC/BRI_LIGHTPIC, STATUSDRAWPIC at
+	// 0,40 -> 3d_agent.c:1320/1455): bright while a timed message is up, dim when
+	// the panel is idle.  InfoMessageTics != 0 is the port's MsgTicsRemain, so the
+	// lamp tracks message state and re-bakes whenever the info area redraws.
+	static FTextureID STLampDim = TexMan.GetTexture("STDIMLGT", FTexture::TEX_Any);
+	static FTextureID STLampBri = TexMan.GetTexture("STBRILGT", FTexture::TEX_Any);
+	FTexture *lamp = TexMan(InfoMessageTics != 0 ? STLampBri : STLampDim);
+	if(lamp)
+	{
+		double lx = 0;
+		double ly = (200-STATUSLINES) + 40;
+		double lw = lamp->GetScaledWidthDouble();
+		double lh = lamp->GetScaledHeightDouble();
+		screen->VirtualToRealCoords(lx, ly, lw, lh, 320, 200, true, true);
+		screen->DrawTexture(lamp, lx, ly,
+			DTA_DestWidthF, lw,
+			DTA_DestHeightF, lh,
 			TAG_DONE);
 	}
 
@@ -1611,8 +1653,8 @@ void BlakeStatusBar::Tick()
 		InfoMessagePriority = 0;
 	}
 
-	// Advance the info-area enemy walk cycle (the clean build's per-Tick timing).
-	if(iconNF > 1 && ++iconAnimTics >= ICON_ANIM_DELAY)
+	// Advance the info-area enemy walk cycle at the icon's per-enemy DOS rate.
+	if(iconNF > 1 && ++iconAnimTics >= iconAnimDelay)
 	{
 		iconAnimTics = 0;
 		iconFrame = (iconFrame + 1) % iconNF;

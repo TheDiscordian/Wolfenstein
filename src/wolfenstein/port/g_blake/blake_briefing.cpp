@@ -29,7 +29,7 @@
 // through the Text Presenter.  Shared by the briefings and the Story/Ordering
 // menu screens.  fadeOutAfter leaves a black screen on return (menu callers fade
 // the menu back in); briefings omit it because GameLoop fades before the level.
-static void Blake_PresentBriefingLump(const char *lumpname, bool fadeOutAfter = false)
+static void Blake_PresentBriefingLump(const char *lumpname, bool fadeOutAfter = false, bool continueKeys = true)
 {
 	int lumpnum = Wads.CheckNumForName(lumpname);
 	if (lumpnum == -1)
@@ -40,9 +40,10 @@ static void Blake_PresentBriefingLump(const char *lumpname, bool fadeOutAfter = 
 	PresenterInfo pi;
 	memset(&pi, 0, sizeof(pi));
 
-	// Mirror HelpPresenter's flags: show page counter, ENTER continues, ESC
-	// aborts.
-	pi.flags = TPF_SHOW_PAGES | TPF_CONTINUE | TPF_ABORTABLE;
+	// Briefings let ENTER advance pages; the Instructions / Story / Ordering
+	// screens do not (DOS continue_keys=false, 3d_menu.cpp:287/561/576).  ESC
+	// always aborts.
+	pi.flags = TPF_SHOW_PAGES | (continueKeys ? TPF_CONTINUE : 0) | TPF_ABORTABLE;
 
 	VW_FadeOut();
 
@@ -195,7 +196,7 @@ void Blake_ShowStory()
 	{
 		return;
 	}
-	Blake_PresentBriefingLump("SAGAART", true);
+	Blake_PresentBriefingLump("SAGAART", true, false);
 }
 
 // The ORDERING INFO screen: presents the ordering text ("ORDERART" lump) --
@@ -206,7 +207,7 @@ void Blake_ShowOrdering()
 	{
 		return;
 	}
-	Blake_PresentBriefingLump("ORDERART", true);
+	Blake_PresentBriefingLump("ORDERART", true, false);
 }
 
 // The INSTRUCTIONS screen: presents the help text ("HELPART" lump, which holds
@@ -220,7 +221,7 @@ void Blake_ShowInstructions()
 	{
 		return;
 	}
-	Blake_PresentBriefingLump("HELPART", true);
+	Blake_PresentBriefingLump("HELPART", true, false);
 }
 
 // bstone TerminateStr: trim at the "^XX" end marker.
@@ -259,15 +260,15 @@ void Blake_ShowQuickInfo()
 
 	WindowH = 168;	// Message() centres on WindowH
 	Message(s1);
+	// DOS holds page 1 for ~120 tics, then ALWAYS shows page 2 (3d_play.c:1860);
+	// a keypress during page 1 must not skip page 2.
+	IN_UserInput(120, ACK_Local);
 
-	if(!IN_UserInput(120, ACK_Local))	// ~120 tics, or a key
+	FString s2;
+	if(Blake_LoadQuickInfoLump("QUIKINF2", s2))
 	{
-		FString s2;
-		if(Blake_LoadQuickInfoLump("QUIKINF2", s2))
-		{
-			Message(s2);
-			IN_Ack(ACK_Local);
-		}
+		Message(s2);
+		IN_Ack(ACK_Local);
 	}
 
 	IN_ClearKeysDown();

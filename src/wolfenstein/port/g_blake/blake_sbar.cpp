@@ -256,6 +256,13 @@ const BlakeAttackMsg blakeAttackMsgs[] = {
 	// Environmental hazards pass themselves as the attacker (3d_msgs.c actor_info).
 	{ "ElectricArcBarrier",      "^FC17\r  ATTACKING:\r^FCA6 ELECTRIC ARC\r   BARRIER." },
 	{ "ElectricPostBarrier",     "^FC17\r  ATTACKING:\r^FCA6    POST\r   BARRIER." },
+	// Ooze puddles burn the player who stands in them (a_ooze.cpp passes the
+	// puddle as the attacker).  DOS ActorInfoMsg order green/black/green2/black2
+	// = GreenOoze/BlackOoze/GrayOoze/WhiteOoze (3d_msgs.c actor_info41/42/41a/42a).
+	{ "GreenOoze",               "^FC17\r  ATTACKING:\r^FCA6 STANDING IN\r  BIO TOXIC\r    WASTE." },
+	{ "BlackOoze",               "^FC17\r  ATTACKING:\r^FCA6 STANDING IN\r TOXIC SLUDGE." },
+	{ "GrayOoze",                "^FC17\r  ATTACKING:\r^FCA6 STANDING IN\r TOXIC SLUDGE." },
+	{ "WhiteOoze",               "^FC17\r  ATTACKING:\r^FCA6 STANDING IN\r  BIO TOXIC\r    WASTE." },
 };
 
 // The DOS pickup info-area message per Blake pickup class (bstone BonusMsg,

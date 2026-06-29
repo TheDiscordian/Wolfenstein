@@ -1045,12 +1045,20 @@ void CheckKeys (void)
 		else
 			jam_enterReleased = true;
 
-		// Dedicated drop-detonator input (DOS sc_Tilde, 3d_play.c:883): drop a
-		// fission/plasma detonator at the player's feet without switching weapons.
-		// Desktop = the ` / ~ key; a Pocket button still needs assigning, so the
-		// detonator weapon slot is kept for now.
+		// Pocket buttons reach here as game-controller buttons (id_in IN_JoyButtons,
+		// bit i = SDL controller button i).  X=2 and Y=3 are the two face buttons
+		// whose run/strafe duty is redundant on the Pocket (Run is the B-hold, side-
+		// step is the L/R shoulders), so they carry the two PS actions that DOS gave
+		// dedicated keys.  Their legacy run/strafe still rides along harmlessly on a
+		// tap.  On a keyboardless Pocket this is the only path; desktop keeps ~/Q/E.
+		const int blakeJoy = IN_JoyButtons();
+		const bool padX = (blakeJoy & (1 << 2)) != 0;	// drop detonator
+		const bool padY = (blakeJoy & (1 << 3)) != 0;	// 180 turn-around
+
+		// Drop-detonator (DOS sc_Tilde, 3d_play.c:883): drop a fission detonator at
+		// the player's feet without switching weapons.  Desktop ` / ~, Pocket X.
 		static bool dropDetReleased = true;
-		if(Keyboard[sc_Grave])
+		if(Keyboard[sc_Grave] || padX)
 		{
 			if(dropDetReleased && players[ConsolePlayer].mo)
 			{
@@ -1064,9 +1072,9 @@ void CheckKeys (void)
 
 		// Quick-turn (DOS Q=-90 / E=+90 / Enter=180, 3d_play.c:751): snap the
 		// player's facing.  Desktop = Q / E (two presses = a 180); DOS rotates
-		// smoothly, this snaps.  Pocket buttons still need assigning.
+		// smoothly, this snaps.  Pocket Y = the 180 turn-around (DOS Enter).
 		AActor * const pmo = players[ConsolePlayer].mo;
-		static bool qtLeftRel = true, qtRightRel = true;
+		static bool qtLeftRel = true, qtRightRel = true, qtAroundRel = true;
 		if(Keyboard[sc_Q])
 		{
 			if(qtLeftRel && pmo)
@@ -1083,6 +1091,14 @@ void CheckKeys (void)
 		}
 		else
 			qtRightRel = true;
+		if(padY)
+		{
+			if(qtAroundRel && pmo)
+				pmo->angle += ANGLE_180;
+			qtAroundRel = false;
+		}
+		else
+			qtAroundRel = true;
 	}
 
 	// [BL] Allow changing the screen size with the -/= keys a la Doom.

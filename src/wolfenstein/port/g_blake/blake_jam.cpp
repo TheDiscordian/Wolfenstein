@@ -40,6 +40,8 @@
 #include "wl_agent.h"
 #include "wl_iwad.h"
 #include "wl_play.h"
+#include "wl_game.h"
+#include "g_mapinfo.h"
 
 static void GiveByName(AActor *mo, const char *name)
 {
@@ -48,11 +50,11 @@ static void GiveByName(AActor *mo, const char *name)
 		mo->GiveInventory(cls, 1);
 }
 
-// DOS Blake Stone 'JAM' cheat payload (type J, A, M, Enter). Full health, full
-// charge, every key and standard weapon for the current game. The DOS extras with
-// no port hook -- radar power, score reset, the survival-time bonus -- are
-// omitted; the plasma detonator is excluded exactly as the original GiveWeapon
-// loop excludes it.
+// DOS Blake Stone 'JAM' cheat payload (type J, A, M, Enter, 3d_play.c:712). Full
+// health, full charge, every key and standard weapon for the current game, plus
+// the DOS extras: refill the radar, reset score and the extra-life threshold, and
+// add the survival-time bonus.  The plasma detonator is excluded exactly as the
+// original GiveWeapon loop excludes it.
 void Blake_GiveJamArsenal()
 {
 	player_t &p = players[ConsolePlayer];
@@ -91,6 +93,24 @@ void Blake_GiveJamArsenal()
 	if(isPS)
 		GiveByName(p.mo, "AntiPlasmaCannon");
 
+	// DOS JAM extras (3d_play.c:712-740): refill the radar, reset score and the
+	// extra-life threshold (the cheat's penalty), and add the survival-time bonus.
+	if(isPS)
+	{
+		static const ClassDef * const radarCls = ClassDef::FindClass("RadarPack");
+		AInventory *rp = radarCls ? p.mo->FindInventory(radarCls) : NULL;
+		if(!rp && radarCls)
+		{
+			p.mo->GiveInventory(radarCls, 1);
+			rp = p.mo->FindInventory(radarCls);
+		}
+		if(rp)
+			rp->amount = rp->maxamount;
+	}
+	p.score = 0;
+	p.nextextra = gameinfo.ExtraPoints;
+	gamestate.TimeCount += 42000L;
+
 	if(StatusBar)
-		StatusBar->DisplayInfoMessage("\r\r     YOU CHEATER!", 0x200, 300);
+		StatusBar->DisplayInfoMessage("\r\r NOW you're jammin'!!", 0x200, 300);
 }

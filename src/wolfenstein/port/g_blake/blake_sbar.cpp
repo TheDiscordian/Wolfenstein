@@ -131,6 +131,22 @@ public:
 		iconNF = iconFrame = iconAnimTics = 0;	// pickups/attacks re-bake via SetInfoMessageIcon
 	}
 
+	// Attacker LINC entry.  A repeat hit from the SAME attacker class refreshes
+	// only the message timer, so the icon walk cycle keeps running instead of
+	// restarting (DOS 3d_agent.c:570 resets MsgTicsRemain, not the icon).
+	void ShowAttackerInfo(const char *msg, int priority, int tics, const class ClassDef *cls)
+	{
+		const int32_t key = cls ? (int32_t)(intptr_t)cls : 0;
+		if(InfoMessageTics != 0 && iconNF > 0 && key != 0 && iconKey == key)
+		{
+			if(priority >= InfoMessagePriority)
+				InfoMessageTics = tics;
+			return;
+		}
+		DisplayInfoMessage(msg, priority, tics);
+		SetInfoMessageIcon(cls);
+	}
+
 	// Sets the icon drawn in the info area's left box for the current message
 	// (bstone ^SH/^AN): bakes the class's walk-cycle frames (enemies) or spawn
 	// frame (items).  Pass NULL to clear.
@@ -301,6 +317,13 @@ void Blake_SetInfoIcon(const ClassDef *cls)
 	extern DBaseStatusBar *StatusBar;
 	if (StatusBar && IWad::CheckGameFilter("Blake"))
 		static_cast<BlakeStatusBar *>(StatusBar)->SetInfoMessageIcon(cls);
+}
+
+void Blake_ShowAttackerInfo(const char *msg, int priority, int tics, const ClassDef *cls)
+{
+	extern DBaseStatusBar *StatusBar;
+	if (StatusBar && IWad::CheckGameFilter("Blake"))
+		static_cast<BlakeStatusBar *>(StatusBar)->ShowAttackerInfo(msg, priority, tics, cls);
 }
 
 // LINC "ACCESS DENIED" message when a locked door is tried without the key

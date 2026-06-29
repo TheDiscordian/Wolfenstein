@@ -384,9 +384,10 @@ void player_t::TakeDamage (int points, AActor *attacker)
 		extern const char *Blake_AttackerInfoMsg(AActor *attacker);
 		if (const char *amsg = Blake_AttackerInfoMsg(attacker))
 		{
-			StatusBar->DisplayInfoMessage(amsg, 0x200, 300);
-			extern void Blake_SetInfoIcon(const ClassDef *cls);
-			Blake_SetInfoIcon(attacker->GetClass());	// enemy icon (bstone ^AN)
+			// Combined: a repeat hit from the same attacker class refreshes the
+			// timer without restarting the icon walk cycle (bstone 3d_agent.c:570).
+			extern void Blake_ShowAttackerInfo(const char *, int, int, const ClassDef *);
+			Blake_ShowAttackerInfo(amsg, 0x200, 300, attacker->GetClass());
 		}
 	}
 

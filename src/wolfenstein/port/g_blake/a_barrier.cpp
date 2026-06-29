@@ -46,7 +46,7 @@
 static FRandom pr_barrier("BlakeBarrier");
 
 // Per-tic thinker for active electric barriers: the arc zaps a player standing
-// alongside (DOS T_SmartThought, 3d_act2.cpp:1459).  DOS deals no tile-area
+// alongside (DOS T_SmartThought, 3d_act2.c:1459).  DOS deals no tile-area
 // damage to other actors, and the post barrier deals no contact damage at all.
 ACTION_FUNCTION(A_BarrierDamage)
 {

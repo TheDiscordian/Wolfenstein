@@ -33,7 +33,7 @@
 #ifndef __BLAKE_SCANVALUE_H__
 #define __BLAKE_SCANVALUE_H__
 
-// PS object-plane "scan_value" quantity byte (DOS 3d_game.cpp:335): a 0xFA__
+// PS object-plane "scan_value" quantity byte (DOS 3d_game.c:335): a 0xFA__
 // word in the object plane carries the low-byte timing value for the object in
 // the PRECEDING cell -- a morph post, pod egg or gurney mutant.  The map loader
 // records it per object cell; the spawning actor's Init action reads it back by

@@ -56,7 +56,7 @@ ACTION_FUNCTION(A_BlakeMorphWake)
 	self->target = p;
 	self->flags &= ~FL_PATHING;
 	self->flags |= FL_ATTACKMODE | FL_FIRSTATTACK;
-	// DOS leaves speed at the spawn value on morph completion (3d_act2.cpp:1506):
+	// DOS leaves speed at the spawn value on morph completion (3d_act2.c:1506):
 	// no FirstSighting run-speed bump, so the morphed boss chases at base speed.
 	return false;
 }
@@ -86,7 +86,7 @@ ACTION_FUNCTION(A_BlakeWeaponUnlock)
 }
 
 // Morph posts (PS) morph on a timer that runs only while the post is drawn on
-// screen, not on line-of-sight (DOS T_OfsThink morph case, 3d_act2.cpp:1612).
+// screen, not on line-of-sight (DOS T_OfsThink morph case, 3d_act2.c:1612).
 // temp1 is that countdown.  DOS seeds it from the post's scan_value byte (the
 // 0xFA object-plane word, 3d_act2.cpp:646): temp1 = scan_value*60 tics, or never
 // when the map placed no byte (DOS sets 0xffff).  A scan_value of 0xff also makes

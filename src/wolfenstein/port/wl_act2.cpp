@@ -393,7 +393,7 @@ void T_Projectile (AActor *self)
 							if(const Frame *sd = check->FindState("Shutdown"))
 							{
 								check->health = 15;
-								check->temp1 = 0;
+								check->temp1 = (short)(pr_explodemissile() & 0xf);	// DOS US_RndT()&0xf
 								check->SetState(sd);
 							}
 						}

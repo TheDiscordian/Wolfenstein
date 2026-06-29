@@ -772,7 +772,7 @@ void BlakeStatusBar::DrawRadarOverhead(int rzoom)
 			{
 				if(drawPlayer && mx == (int)pl->tilex && my == (int)pl->tiley)
 				{
-					color = 0xF0;	// player
+					color = 0xf1;	// player (DOS PLAYER_COLOR, 3d_draw.c:2007)
 					drawPlayer = false;
 				}
 				else
@@ -1047,7 +1047,7 @@ void BlakeStatusBar::DrawStatusBar()
 	{
 		const int slot = levelInfo->LevelNumber - 1;        // PS: 0-based floor (== bstone mapon)
 		if(slot > 19)
-			area.Format("SECRET %d", (slot - 20) + 1);
+			area = "SECRET";	// DOS prints a bare "SECRET", no index (3d_game.c:2574)
 		else
 			area.Format("AREA: %d", slot + 1);
 	}

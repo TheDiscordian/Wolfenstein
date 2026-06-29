@@ -45,8 +45,9 @@
 
 static FRandom pr_barrier("BlakeBarrier");
 
-// Per-tic thinker for active electric barriers: arcs zap players standing
-// alongside; anything shootable caught on the tile itself gets fried.
+// Per-tic thinker for active electric barriers: the arc zaps a player standing
+// alongside (DOS T_SmartThought, 3d_act2.cpp:1459).  DOS deals no tile-area
+// damage to other actors, and the post barrier deals no contact damage at all.
 ACTION_FUNCTION(A_BarrierDamage)
 {
 	ACTION_PARAM_BOOL(zapPlayer, 0); // arcs zap the player, posts don't
@@ -67,9 +68,6 @@ ACTION_FUNCTION(A_BarrierDamage)
 			}
 		}
 	}
-
-	if(pr_barrier() < 0x7f)
-		DamageActorsOnTile(self, self->tilex, self->tiley, 500);
 
 	return true;
 }
@@ -101,7 +99,7 @@ ACTION_FUNCTION(A_BarrierShutdown)
 		else // currently lit -> go dark
 		{
 			self->flags &= ~FL_SOLID;
-			self->temp1 = (short)(5 + (pr_barrier() & 0xf));
+			self->temp1 = (short)((5 + pr_barrier()) & 0xf);	// DOS (5+US_RndT())&0xf = 0..15
 			f = self->FindState("ShutdownDark");
 		}
 		self->health--;

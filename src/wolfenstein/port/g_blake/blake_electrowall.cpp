@@ -41,6 +41,7 @@
 #include "blake_electrowall.h"
 #include "g_mapinfo.h"
 #include "id_ca.h"
+#include "id_sd.h"
 #include "gamemap.h"
 #include "m_random.h"
 #include "wl_agent.h"
@@ -194,6 +195,10 @@ void ElectroWall_Tick()
 			((fixed)ny<<TILESHIFT)+TILEGLOBAL/2, 0, SPAWN_AllowReplacement);
 		if(!a)
 			continue;
+
+		// The electro-alien materializes with its appear sound (DOS
+		// SD_PlaySound(ELECAPPEARSND), 3d_act1.c:2198).
+		PlaySoundLocActor("electroalien/spawn", a);
 
 		// Dynamically-spawned electro aliens don't count toward the floor's kill
 		// total (bstone never adds them to stats); undo Spawn's increment.

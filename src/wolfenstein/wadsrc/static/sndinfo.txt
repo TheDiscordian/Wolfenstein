@@ -526,6 +526,7 @@ mutanthuman/death		{ DSMTHDTH ALMTHDTH PCMTHDTH }
 mutanthuman/melee		{ DSFISTAT ALFISTAT PCFISTAT }
 
 electrosphere/attack	{ DSELCATK ALELCATK PCELCATK }
+electroalien/spawn		{ DSELCSIT ALELCSPN PCELCSPN }
 
 smallcanisteralien/release	{ DSSCNBRK ALSCNBRK PCSCNBRK }
 smallcanisteralien/sight	{ DSSCNSIT ALSCNSIT PCSCNSIT }

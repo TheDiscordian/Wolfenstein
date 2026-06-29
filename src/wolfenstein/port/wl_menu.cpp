@@ -585,12 +585,12 @@ void CreateMenus()
 		optionsMenu.addItem(new MenuSwitcherMenuItem("CHANGE VIEW", displayMenu));
 		optionsMenu.addItem(new MenuSwitcherMenuItem("SWITCHES", gameSwitchesMenu));
 
-		// GAME SWITCHES (DOS CP_Switches, 3d_menu.c:136/1058).  LIGHTING and REBA
-		// ATTACK INFO gate live behaviour; SHOW CEILINGS / SHOW FLOORS await a gate
-		// in the floor/ceiling render path and are omitted rather than shown dead.
+		// GAME SWITCHES (DOS CP_Switches, 3d_menu.c:136/1058), in DOS order.
 		gameSwitchesMenu.setHeadText("GAME SWITCHES");
 		gameSwitchesMenu.addItem(new BooleanMenuItem("LIGHTING", Blake_SwitchRef(GS_LIGHTING)));
 		gameSwitchesMenu.addItem(new BooleanMenuItem("REBA ATTACK INFO", Blake_SwitchRef(GS_ATTACK_INFOAREA)));
+		gameSwitchesMenu.addItem(new BooleanMenuItem("SHOW CEILINGS", Blake_SwitchRef(GS_DRAW_CEILING)));
+		gameSwitchesMenu.addItem(new BooleanMenuItem("SHOW FLOORS", Blake_SwitchRef(GS_DRAW_FLOOR)));
 	}
 	else
 	{

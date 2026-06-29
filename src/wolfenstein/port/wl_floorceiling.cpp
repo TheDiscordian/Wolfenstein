@@ -7,7 +7,9 @@
 #include "wl_draw.h"
 #include "wl_main.h"
 #include "wl_shade.h"
+#include "wl_iwad.h"
 #include "r_data/colormaps.h"
+#include "g_blake/blake_gameswitches.h"
 #include "of_ecwolf_gpu.h"
 
 #include <climits>
@@ -174,6 +176,15 @@ static bool R_GetDefaultPlaneSolidColor(bool floor, byte &color)
 	const FTextureID texture =
 		levelInfo->DefaultTexture[floor ? MapSector::Floor : MapSector::Ceiling];
 	return R_TextureSolidColor(texture, color);
+}
+
+// PS GAME SWITCHES "SHOW FLOORS" / "SHOW CEILINGS": when off, that half of the
+// view is filled with the level's solid floor/ceiling colour instead of the
+// textured plane (DOS VGAClearScreen to BottomColor/TopColor, 3d_draw.c:1195).
+static bool BlakeHidePlane(bool floor)
+{
+	return IWad::CheckGameFilter("Blake") &&
+		!Blake_GetSwitch(floor ? GS_DRAW_FLOOR : GS_DRAW_CEILING);
 }
 
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
@@ -448,6 +459,17 @@ int DrawFloorAndCeilingBackdropGPU(byte *vbuf, unsigned vbufPitch)
 		R_GetDefaultPlaneSolidColor(true, floorColor);
 	bool solidCeiling = R_GetUniformPlaneSolidColor(false, ceilingColor) ||
 		R_GetDefaultPlaneSolidColor(false, ceilingColor);
+	// SHOW FLOORS / SHOW CEILINGS off: draw that half as the level's solid colour.
+	if(BlakeHidePlane(true))
+	{
+		R_GetDefaultPlaneSolidColor(true, floorColor);
+		solidFloor = true;
+	}
+	if(BlakeHidePlane(false))
+	{
+		R_GetDefaultPlaneSolidColor(false, ceilingColor);
+		solidCeiling = true;
+	}
 	OF_PERF_DBG(of_fl_dbg_solid = (solidCeiling ? 2u : 0u) | (solidFloor ? 1u : 0u));
 
 	FTexture *floorTexture = solidFloor ? NULL : R_GetDefaultPlaneTexture(true);
@@ -785,7 +807,12 @@ void DrawFloorAndCeiling(byte *vbuf, unsigned vbufPitch, int min_wallheight, int
 	// Floor half (planeheight viewz).  Skipped when the GPU backdrop already drew it.
 	if(!(skipHalves & FC_FLOOR))
 	{
-		if(R_GetUniformPlaneSolidColor(true, solidColor))
+		if(BlakeHidePlane(true))
+		{
+			if(R_GetDefaultPlaneSolidColor(true, solidColor) || R_GetUniformPlaneSolidColor(true, solidColor))
+				R_DrawSolidPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz, solidColor);
+		}
+		else if(R_GetUniformPlaneSolidColor(true, solidColor))
 			R_DrawSolidPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz, solidColor);
 		else
 			R_DrawPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz);
@@ -794,7 +821,12 @@ void DrawFloorAndCeiling(byte *vbuf, unsigned vbufPitch, int min_wallheight, int
 	// Ceiling half (planeheight viewz + plane depth).
 	if(!(skipHalves & FC_CEILING))
 	{
-		if(R_GetUniformPlaneSolidColor(false, solidColor))
+		if(BlakeHidePlane(false))
+		{
+			if(R_GetDefaultPlaneSolidColor(false, solidColor) || R_GetUniformPlaneSolidColor(false, solidColor))
+				R_DrawSolidPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz+(map->GetPlane(0).depth<<FRACBITS), solidColor);
+		}
+		else if(R_GetUniformPlaneSolidColor(false, solidColor))
 			R_DrawSolidPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz+(map->GetPlane(0).depth<<FRACBITS), solidColor);
 		else
 			R_DrawPlane(vbuf, vbufPitch, min_wallheight, halfheight, viewz+(map->GetPlane(0).depth<<FRACBITS));

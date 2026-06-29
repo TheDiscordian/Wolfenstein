@@ -317,6 +317,16 @@ void Blake_DoorDeniedMsg(AActor *activator, int lock)
 	StatusBar->DisplayInfoMessage(msg, 0x200, 300);
 }
 
+// Shown on a successful keyed-door open (DOS od_granted, 3d_act1.c:1098).
+// Blake-only; mirrors Blake_DoorDeniedMsg's guard.
+void Blake_DoorGrantedMsg(AActor *activator)
+{
+	extern DBaseStatusBar *StatusBar;
+	if (!activator || !activator->player || !IWad::CheckGameFilter("Blake"))
+		return;
+	StatusBar->DisplayInfoMessage("\r\r    ACCESS GRANTED\r    DOOR UNLOCKED.", 0x200, 300);
+}
+
 // LINC info-area bonus message when the player grabs a pickup (bstone GetBonus
 // -> DisplayInfoMsg, MP_BONUS).  Looked up by actor class; Blake-only.  Called
 // from AInventory::Touch after a successful pickup, so the live token total is

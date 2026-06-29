@@ -367,6 +367,8 @@ FUNC(Door_Open)
 				Blake_DoorDeniedMsg(activator, args[3]);
 				return 0;
 			}
+			extern void Blake_DoorGrantedMsg(AActor *);
+			Blake_DoorGrantedMsg(activator);
 		}
 	}
 

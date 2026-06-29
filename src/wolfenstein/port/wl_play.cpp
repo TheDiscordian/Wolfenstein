@@ -1602,6 +1602,11 @@ void PlayLoop (void)
 //
 // actor thinking
 //
+		// DOS `alerted` latches once the player makes combat noise and clears only
+		// at level setup; the Blake security light reads it (a_security.cpp).
+		extern bool blakeSecAlerted;
+		if(madenoise)
+			blakeSecAlerted = true;
 		madenoise = false;
 
 		// Run tics

@@ -41,20 +41,23 @@
 #include "gamemap.h"
 #include "thingdef/thingdef.h"
 
-// A_SecurityLook: bstone T_Security (3d_act2.cpp:5668) trips the light's alert when
-// the player occupies a connected area (areabyplayer[areanumber]) -- a presence
-// sensor, never a line-of-sight check, so a player hiding behind cover in the same
-// room still sets it off.  The port's areas are sound zones, so this mirrors it
-// with map->CheckLink (the same test FirstSighting/CheckSightTo use for hearing).
-// Detection jumps to See, where the light flashes its alert cycle and rouses the
-// area.  The previous A_Look gave it an empty sight window, so it never tripped.
+// Set once the player has made combat noise on this level (DOS `alerted`, set in
+// MakeAlertNoise and cleared at level setup); latched from madenoise in PlayLoop
+// and reset by the map loader.
+bool blakeSecAlerted = false;
+
+// A_SecurityLook: bstone T_Security (3d_act2.cpp:5668) trips the light's alert
+// only once the player has made combat noise (`alerted`) AND occupies a connected
+// area (areabyplayer[areanumber]) -- not on silent presence.  The port's areas are
+// sound zones, so map->CheckLink mirrors areabyplayer.  Detection jumps to See,
+// where the light flashes; it does not rouse other actors.
 ACTION_FUNCTION(A_SecurityLook)
 {
 	AActor *p = players[ConsolePlayer].mo;
 	if(!p)
 		return false;
 
-	if(map->CheckLink(self->GetZone(), p->GetZone(), true))
+	if(blakeSecAlerted && map->CheckLink(self->GetZone(), p->GetZone(), true))
 	{
 		const Frame *see = self->FindState("See");
 		if(see)

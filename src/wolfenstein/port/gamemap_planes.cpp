@@ -1088,6 +1088,7 @@ void GameMap::ReadPlanesData()
 				Blake_CloakCellClear();
 				ElectroWall_Clear();
 				Blake_ScanValueClear();
+				{ extern bool blakeSecAlerted; blakeSecAlerted = false; }	// DOS clears `alerted` at level setup
 
 
 				for(unsigned int i = 0;i < size;++i)

@@ -1089,8 +1089,10 @@ actor SecurityLight
 			SECL A 10 A_SecurityLook
 			loop
 		See:
-			SECL B 10 bright A_AlertMonsters
-			SECL A 10 A_AlertMonsters
+			// DOS flashes the light's own lighting only; it never rouses other
+			// actors (T_Security toggles FL_ALERTED, no MakeAlertNoise).
+			SECL B 10 bright
+			SECL A 10
 			loop
 	}
 }

@@ -48,6 +48,7 @@ actor PlasmaDetonatorDrop : SmartAnimation
 	deathsound "misc/plasmadetonator/explosion"
 
 	action native A_BlakeDetonatorExplode();
+	action native A_BlakeBlastDoors();
 
 	states
 	{
@@ -58,8 +59,25 @@ actor PlasmaDetonatorDrop : SmartAnimation
 			PEXP A 0 A_Scream
 			PEXP A 0 A_Explode(500, 128, XF_HURTSOURCE, true)
 			PEXP A 0 A_BlakeDetonatorExplode
+			PEXP A 0 A_BlakeBlastDoors
 			PEXP A random(1.5, 3) A_InitSmartAnim(random(3, 6))
 			PEXP BCDEFGH 1.5 A_SmartAnimDelay
+			stop
+	}
+}
+
+// Cosmetic door blast (DOS doorexplodeobj, 3d_act2.c:1566): an explosion sprite
+// and sound where a blasted door bursts open.  No radius damage of its own.
+actor BlakeDoorExplosion : SmartAnimation
+{
+	+NOGRAVITY
+	deathsound "door/explode"
+	states
+	{
+		Spawn:
+			EXPL B 0 bright A_Scream
+			EXPL B 0 bright A_InitSmartAnim(random(3, 6))
+			EXPL BCDE 1.5 bright A_SmartAnimDelay
 			stop
 	}
 }

@@ -183,6 +183,7 @@ actor AntiPlasmaShot : SmartAnimation
 	// nearly every PS enemy (FL2_BFGSHOT_SOLID, 3d_act2.cpp:1125+); only pod,
 	// genetic guard and the freed large-canister alien are ripped through. Not a
 	// blanket ripper -- it was over-piercing whole lines of enemies.
+	action native A_BlakeBlastDoors();
 	states
 	{
 		Spawn:
@@ -194,6 +195,8 @@ actor AntiPlasmaShot : SmartAnimation
 			// (40 + rnd&0x7f) << 1 = 80..334, and it can hurt the firing player.
 			// (Was the PlasmaGrenade's 50..177 with no self-damage.)
 			APCS E 0 bright A_Explode(random(80, 334), 128, XF_HURTSOURCE)
+			// DOS bfg_shotobj forces a hit door wall open (3d_act2.c:5476).
+			APCS E 0 bright A_BlakeBlastDoors
 			APCS E 2.5 bright A_InitSmartAnim(random(1, 7))
 			APCS FGHIJKL 0.5 bright A_SmartAnimDelay
 			stop

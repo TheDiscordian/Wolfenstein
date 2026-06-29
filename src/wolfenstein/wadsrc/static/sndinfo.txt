@@ -432,6 +432,8 @@ $random misc/plasmadetonator/explosion { misc/blake/explosion1 misc/blake/explos
 
 $random crate/explode { misc/blake/explosion1 misc/blake/explosion2 }
 
+$random door/explode { misc/blake/explosion1 misc/blake/explosion2 }
+
 plasmagrenade/fire		{ DSGRENAD ALGRENAD PCGRENAD }
 $random plasmagrenade/hit { misc/blake/explosion1 misc/blake/explosion2 }
 

@@ -347,6 +347,18 @@ class EVDoor : public Thinker
 };
 IMPLEMENT_INTERNAL_CLASS(EVDoor)
 
+// Blake Stone blastable doors: an explosion jams a closed, unlocked door open
+// (DOS BlockDoorOpen, 3d_act1.c:1124).  The door's own Door_Open trigger gives
+// the slide speed and orientation; a negative open delay makes it stay open.
+// Skips spots that already have a door thinker (opening/open) -- DOS only blasts
+// doors that are still closed.
+void Blake_ForceDoorOpen(MapSpot spot, const MapTrigger *trig)
+{
+	if(!spot || !trig || spot->thinker)
+		return;
+	new EVDoor(spot, trig->arg[1], -1, trig->arg[4]&0x1, trig->arg[4]>>1);
+}
+
 FUNC(Door_Open)
 {
 	static const unsigned int DOOR_TYPE_DIRECTION = 0x1;

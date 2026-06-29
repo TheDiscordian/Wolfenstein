@@ -435,9 +435,9 @@ void Blake_WeaponSelectMsg(bool available)
 // --- Pinball score bonuses (bstone CheckPinballBonus / DisplayPinballBonus) --
 // The DOS game awards "pinball" bonuses at score milestones, shown in the info
 // area above all gameplay messages (MP_PINBALL_BONUS) and drained one at a time
-// as the area frees up.  State is per-level and transient (not serialised): a
-// bonus queued but not yet shown is lost on save/reload -- a minor cosmetic
-// difference from bstone's saved per-level queue.
+// as the area frees up.  The queue, the shown-mask and the accumulated points
+// persist across save/load (Blake_PinballSerialize), so a bonus earned but not
+// yet shown survives a reload and still awards its points when it drains.
 //
 // All seven bstone bonuses are wired: Guardian-Alien (0x01), score rolled
 // (0x02), half-million "great score" (0x04), extra life (0x08), all enemies

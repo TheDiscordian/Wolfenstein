@@ -253,6 +253,9 @@ const BlakeAttackMsg blakeAttackMsgs[] = {
 	{ "SpectorDemon",            "^FC17\r  ATTACKING:\r^FCA6 THE SPECTOR\r   DEMON" },
 	{ "ArmoredStalker",          "^FC17\r  ATTACKING:\r^FCA6 THE ARMORED\r   STALKER" },
 	{ "CrawlerBeast",            "^FC17\r  ATTACKING:\r^FCA6 THE CRAWLER\r    BEAST" },
+	// Environmental hazards pass themselves as the attacker (3d_msgs.c actor_info).
+	{ "ElectricArcBarrier",      "^FC17\r  ATTACKING:\r^FCA6 ELECTRIC ARC\r   BARRIER." },
+	{ "ElectricPostBarrier",     "^FC17\r  ATTACKING:\r^FCA6    POST\r   BARRIER." },
 };
 
 // The DOS pickup info-area message per Blake pickup class (bstone BonusMsg,

@@ -14,6 +14,8 @@ enum
 
 // Called at map load before objects are parsed.
 void Blake_ClearHints();
+// Clears the once-per-game "don't shoot the informants" warning (new-game only).
+void Blake_InformantNewGame();
 // Records one scientist hint word; msgnum is the 1-based message number.
 void Blake_AddHint(unsigned int type, unsigned int x, unsigned int y, unsigned int msgnum);
 // Interrogates the nearest friendly scientist in front of the player.

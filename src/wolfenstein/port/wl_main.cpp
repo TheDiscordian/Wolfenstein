@@ -628,6 +628,7 @@ void NewGame (int difficulty, FString map, bool displayBriefing, FName playerCla
 	Blake_FloorClear();
 	Blake_FloorLocksNewGame();
 	Blake_InformantsClear();
+	Blake_InformantNewGame();
 
 	FName playerClassNames[MAXPLAYERS];
 	playerClassNames[ConsolePlayer] = playerClass != NAME_None ? playerClass : gameinfo.PlayerClasses[0];

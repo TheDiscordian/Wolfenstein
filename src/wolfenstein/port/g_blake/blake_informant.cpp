@@ -83,6 +83,12 @@ void Blake_ClearHints()
 		hintTexts[type].Clear();
 	}
 	hintTextsLoaded = false;
+}
+
+// DOS clears the "don't shoot the informants" warning only at new-game start
+// (GS_KILL_INF_WARN, 3d_main.cpp:221), so it shows once per game, not per floor.
+void Blake_InformantNewGame()
+{
 	informantWarned = false;
 }
 
@@ -318,41 +324,6 @@ static AActor *FindBonusItem(bool &plural)
 	return NULL;
 }
 
-// bstone Interrogate near-100% branch (3d_agent.cpp:3470): once the floor is
-// 97-99% cleared by points, the informant stops giving general hints and instead
-// calls out where a remaining enemy -- or, failing that, treasure -- is, so the
-// player can chase down the last percent.  Empty result means "not in the window,
-// fall back to the normal hint".
-static FString Blake_InformantLocationReport(AActor *playerMo)
-{
-	const int pct = Blake_LevelPointsPercent();
-	if(pct <= 96 || pct >= 100)
-		return FString();
-
-	FString msg;
-	if(AActor *enemy = FindCountableEnemy())
-	{
-		msg.Format(" THERE IS\r%s\r AT %d,%d  (%d,%d)", EnemyReportName(enemy),
-			enemy->tilex, enemy->tiley, playerMo->tilex, playerMo->tiley);
-		return msg;
-	}
-
-	bool plural = false;
-	if(AActor *item = FindBonusItem(plural))
-	{
-		const char *name = TreasureReportName(item, plural);
-		if(plural)
-			msg.Format(" THERE ARE %s\r AT %d,%d  (%d,%d)", name,
-				item->tilex, item->tiley, playerMo->tilex, playerMo->tiley);
-		else
-			msg.Format(" THERE IS A\r%s\r AT %d,%d  (%d,%d)", name,
-				item->tilex, item->tiley, playerMo->tilex, playerMo->tiley);
-		return msg;
-	}
-
-	return FString(" YOU HAVE COLLECTED\r ALL TREASURES");
-}
-
 // FirstSighting equivalent (wl_state.cpp keeps it static). bstone only
 // clears FL_FRIENDLY and lets the next SightPlayer call aggro the mean
 // scientist; the port provokes him directly.
@@ -460,10 +431,9 @@ bool Blake_TryInterrogate(AActor *playerMo)
 
 		if(reply.IsEmpty())
 		{
-			// Near 100%: point Blake at the last enemy/treasure instead of a hint.
-			reply = Blake_InformantLocationReport(playerMo);
-			if(reply.IsEmpty())
-				reply = PickInformantHint(best);
+			// DOS Interrogate gives a general hint here; bstone's near-100%
+			// location report (3d_agent.cpp:3470) is not in the DOS game.
+			reply = PickInformantHint(best);
 			best->flags |= FL_INTERROGATED;
 		}
 	}

@@ -66,6 +66,23 @@ make test  CORE=blakestone        # PC build (app_pc); GPU path stubbed
 
 Verify the on-card ELF after `make copy` (`cmp` / `sha256sum`).
 
+## Code comments
+
+Comments say what the code does now and why (the DOS behaviour it mirrors), in
+present tense. They are not a changelog — `git log` holds the history.
+
+- Never narrate history or process: no "was X", "previously", "used to", "no
+  longer", "this fixes the regression", "(Was the grenade's 50..177)", "over-
+  pierced whole lines", "easy to forget", "reintroduced twice". State the current
+  fact and drop the old-bug story.
+- Keep correctness footguns that stop a future bug (e.g. "A_Chase clobbers
+  self->hidden", "temp1 is free only if not +SHOOTMODEAI") — in present tense, as
+  a constraint, not a war story.
+- DOS vs bstone are not interchangeable. Planet Strike's DOS source exists
+  (`/tmp/ps_dos_src`), so cite it for PS (e.g. `DOS 3d_agent.c:655`). Aliens of
+  Gold's DOS source was lost, so bstone is the AOG authority and only a PS
+  cross-reference. Never write "bstone/DOS" as if they are one thing.
+
 ## Branches
 
 All Blake Stone work goes on **`blake-union`** — the one shippable branch. Do

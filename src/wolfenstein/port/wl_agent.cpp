@@ -13,6 +13,7 @@
 #include "actor.h"
 #include "thingdef/thingdef.h"
 #include "g_blake/blake_informant.h"
+#include "g_blake/blake_gameswitches.h"
 #include "lnspec.h"
 #include "wl_agent.h"
 #include "a_inventory.h"
@@ -377,7 +378,8 @@ void player_t::TakeDamage (int points, AActor *attacker)
 	// Show the attacking enemy in the LINC info area (bstone 3d_agent.cpp:1015;
 	// priority 0x200 = MP_TAKE_DAMAGE, 300 tics = DISPLAY_MSG_STD_TIME).  Returns
 	// NULL for non-Blake / unmapped attackers, so Wolfenstein shows nothing.
-	if (attacker && attacker != mo && (attacker->flags & FL_ISMONSTER))
+	if (attacker && attacker != mo && (attacker->flags & FL_ISMONSTER)
+		&& Blake_GetSwitch(GS_ATTACK_INFOAREA))
 	{
 		extern const char *Blake_AttackerInfoMsg(AActor *attacker);
 		if (const char *amsg = Blake_AttackerInfoMsg(attacker))

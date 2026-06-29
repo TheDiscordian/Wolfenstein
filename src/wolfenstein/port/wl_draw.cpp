@@ -31,6 +31,7 @@
 #include "a_inventory.h"
 #include "thingdef/thingdef.h"
 #include "g_blake/blake_cloak.h"
+#include "g_blake/blake_gameswitches.h"
 #include "of_ecwolf_gpu.h"
 #if defined(OF_ECWOLF_OPENFPGA) && !defined(OF_PC)
 #define OF_ECWOLF_WALL_GPU_ENABLED 1
@@ -345,7 +346,8 @@ void ScalePost()
 
 	const int shade = gWallShade;
 	const int tz = FixedMul(r_depthvisibility<<8, wallheight[postx]);
-	const int shadeIndex = GETPALOOKUP(MAX(tz, MINZ), shade);
+	// GS_LIGHTING off -> flat full-bright shading (DOS SHOW LIGHTING switch).
+	const int shadeIndex = Blake_GetSwitch(GS_LIGHTING) ? GETPALOOKUP(MAX(tz, MINZ), shade) : 0;
 	BYTE *curshades = &NormalLight.Maps[shadeIndex<<8];
 
 	ywcount = yd = wallheight[postx];

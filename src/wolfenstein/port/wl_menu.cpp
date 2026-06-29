@@ -11,6 +11,7 @@
 #include "wl_menu.h"
 #include "wl_iwad.h"
 #include "g_blake/blake_briefing.h"
+#include "g_blake/blake_gameswitches.h"
 #include "id_ca.h"
 #include "id_sd.h"
 #include "id_in.h"
@@ -62,6 +63,7 @@ Menu soundBase(24, 45, 284, 24);
 Menu controlBase(CTL_X, CTL_Y, CTL_W, 56, EnterControlBase);
 Menu displayMenu(20, 75, 285, 56);
 Menu automapMenu(40, 55, 260, 56);
+Menu gameSwitchesMenu(80, 80, 190, 28);
 Menu mouseSensitivity(20, 50, 300, 24);
 Menu joySensitivity(20, 30, 300, 24);
 Menu playerClasses(NM_X, NM_Y, NM_W, 24);
@@ -581,6 +583,14 @@ void CreateMenus()
 		optionsMenu.addItem(new MenuSwitcherMenuItem("SOUND", soundBase));
 		optionsMenu.addItem(new MenuSwitcherMenuItem("CONTROLS", controlBase));
 		optionsMenu.addItem(new MenuSwitcherMenuItem("CHANGE VIEW", displayMenu));
+		optionsMenu.addItem(new MenuSwitcherMenuItem("SWITCHES", gameSwitchesMenu));
+
+		// GAME SWITCHES (DOS CP_Switches, 3d_menu.c:136/1058).  LIGHTING and REBA
+		// ATTACK INFO gate live behaviour; SHOW CEILINGS / SHOW FLOORS await a gate
+		// in the floor/ceiling render path and are omitted rather than shown dead.
+		gameSwitchesMenu.setHeadText("GAME SWITCHES");
+		gameSwitchesMenu.addItem(new BooleanMenuItem("LIGHTING", Blake_SwitchRef(GS_LIGHTING)));
+		gameSwitchesMenu.addItem(new BooleanMenuItem("REBA ATTACK INFO", Blake_SwitchRef(GS_ATTACK_INFOAREA)));
 	}
 	else
 	{

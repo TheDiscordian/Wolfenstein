@@ -1047,6 +1047,28 @@ void CheckKeys (void)
 		}
 		else
 			dropDetReleased = true;
+
+		// Quick-turn (DOS Q=-90 / E=+90 / Enter=180, 3d_play.c:751): snap the
+		// player's facing.  Desktop = Q / E (two presses = a 180); DOS rotates
+		// smoothly, this snaps.  Pocket buttons still need assigning.
+		AActor * const pmo = players[ConsolePlayer].mo;
+		static bool qtLeftRel = true, qtRightRel = true;
+		if(Keyboard[sc_Q])
+		{
+			if(qtLeftRel && pmo)
+				pmo->angle += ANGLE_90;
+			qtLeftRel = false;
+		}
+		else
+			qtLeftRel = true;
+		if(Keyboard[sc_E])
+		{
+			if(qtRightRel && pmo)
+				pmo->angle -= ANGLE_90;
+			qtRightRel = false;
+		}
+		else
+			qtRightRel = true;
 	}
 
 	// [BL] Allow changing the screen size with the -/= keys a la Doom.

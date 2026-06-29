@@ -89,12 +89,9 @@ actor RapidAssaultWeapon : BlakeWeapon
 	}
 }
 
-/* Fun Fact: This weapon is supposed to fire two rounds per loop instead of
- * being just a faster version of the RAW, but the grenade malfunction code
- * was inserted at the wrong point and breaks the second fire function before
- * it falls through to actually fire.
- *
- * Seems like a classic case of improper indentation masking a critical flaw!
+/* The DND's DOS attack code 4 (ION row, 3d_agent.c:139) falls through into the
+ * wp_grenade malfunction check (case 0, 3d_agent.c:4687) instead of firing a
+ * second round, so it ends up just a faster version of the RAW.
  */
 actor DualNeutronDisruptor : BlakeWeapon
 {
@@ -179,10 +176,10 @@ actor AntiPlasmaShot : SmartAnimation
 	speed 14
 	damage (random(40, 167))
 	PROJECTILE
-	// bstone's BFG shot stops and explodes on the first BFG-solid actor, which is
-	// nearly every PS enemy (FL2_BFGSHOT_SOLID, 3d_act2.cpp:1125+); only pod,
+	// DOS BFG shot stops and explodes on the first BFG-solid actor, which is
+	// nearly every PS enemy (FL2_BFGSHOT_SOLID, 3d_act2.c:5494); only pod,
 	// genetic guard and the freed large-canister alien are ripped through. Not a
-	// blanket ripper -- it was over-piercing whole lines of enemies.
+	// blanket ripper.
 	action native A_BlakeBlastDoors();
 	states
 	{
@@ -191,9 +188,9 @@ actor AntiPlasmaShot : SmartAnimation
 			APCS C -1 bright
 			stop
 		Death:
-			// bstone BFG explosion: ExplodeRadius(BFG_DAMAGE, true), BFG_DAMAGE =
-			// (40 + rnd&0x7f) << 1 = 80..334, and it can hurt the firing player.
-			// (Was the PlasmaGrenade's 50..177 with no self-damage.)
+			// DOS BFG explosion: ExplodeRadius(BFG_DAMAGE, true) (3d_act2.c:1604),
+			// BFG_DAMAGE = (40 + rnd&0x7f) << 1 = 80..334, and it can hurt the
+			// firing player.
 			APCS E 0 bright A_Explode(random(80, 334), 128, XF_HURTSOURCE)
 			// DOS bfg_shotobj forces a hit door wall open (3d_act2.c:5476).
 			APCS E 0 bright A_BlakeBlastDoors

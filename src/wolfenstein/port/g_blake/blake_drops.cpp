@@ -29,10 +29,10 @@
 ** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **---------------------------------------------------------------------------
 **
-** PS reserved-item drops (bstone ScanInfoPlane FL2_DROP_* +
-** PlaceReservedItemNearTile).  Plane-0 cells 72-77 mark the enemy spawned
-** above them; the mark is carried in temp1's high byte and pays out where
-** the enemy dies.
+** PS reserved-item drops (DOS ScanInfoPlane FL2_DROP_* +
+** PlaceReservedItemNearTile, 3d_game.c:290 / 3d_act1.c:479).  Plane-0 cells
+** 72-77 mark the enemy spawned above them; the mark is carried in temp1's high
+** byte and pays out where the enemy dies.
 **
 */
 
@@ -45,7 +45,7 @@
 #include "thingdef/thingdef.h"
 #include "blake_drops.h"
 
-// bstone SpecialSpawnFlags order (RKEY_TILE = 72).
+// DOS SpecialSpawnFlags order (RKEY_TILE = 72, 3d_act2.c:264).
 static const char* const DropClasses[6] =
 {
 	"RedAccessCard",
@@ -105,8 +105,8 @@ void Blake_ReservedDropAttach()
 	dropCells.Clear();
 }
 
-// bstone PlaceItemNearTile: the death tile if it is clear, else the nearest
-// clear neighbour.
+// DOS PlaceReservedItemNearTile (3d_act1.c:479): the death tile if it is clear,
+// else the nearest clear neighbour.
 static void PlaceReservedItem(const ClassDef *cls, int tx, int ty)
 {
 	for(int radius = 0;radius < 3;++radius)

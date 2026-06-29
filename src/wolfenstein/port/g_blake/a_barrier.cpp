@@ -72,8 +72,8 @@ ACTION_FUNCTION(A_BarrierDamage)
 	return true;
 }
 
-// Anti-plasma cannon shutdown for an electric arc barrier (bstone
-// T_BarrierShutdown). The hit seeds health = the number of flickers remaining
+// Anti-plasma cannon shutdown for an electric arc barrier (DOS
+// T_BarrierShutdown, 3d_act2.c:2326). The hit seeds health = the number of flickers remaining
 // (15) and temp1 = the inter-flicker countdown. Each pass toggles the barrier
 // lit<->dark on a random interval, fading it out over ~15 flashes, then kills it
 // for good. hidden marks it permanently disabled so the wall-switch table

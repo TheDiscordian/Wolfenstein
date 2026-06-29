@@ -324,9 +324,9 @@ static AActor *FindBonusItem(bool &plural)
 	return NULL;
 }
 
-// FirstSighting equivalent (wl_state.cpp keeps it static). bstone only
-// clears FL_FRIENDLY and lets the next SightPlayer call aggro the mean
-// scientist; the port provokes him directly.
+// FirstSighting equivalent (wl_state.cpp keeps it static). DOS only
+// clears FL_FRIENDLY (3d_agent.c:2880) and lets the next SightPlayer call
+// aggro the mean scientist; the port provokes him directly.
 static void ProvokeScientist(AActor *ob, AActor *playerMo)
 {
 	PlaySoundLocActor(ob->seesound, ob);
@@ -468,7 +468,7 @@ bool Blake_TryInterrogate(AActor *playerMo)
 }
 
 // =============================================================================
-// Informant census (bstone stats.total_inf/accum_inf)
+// Informant census (DOS total_inf/accum_inf, 3d_game.c:2076)
 //
 // Per-floor totals for the panel's INFORMANTS ALIVE ratio, keyed by
 // LevelNumber.  AActor::Spawn counts informants as they spawn (covering the
@@ -547,8 +547,8 @@ void Blake_InformantSerialize(FArchive &arc)
 	}
 }
 
-// Shown when an informant is killed; once per level plus a 25/256 chance
-// on repeats (bstone tracks the once-flag per game instead).
+// Shown when an informant is killed: guaranteed the first time per game,
+// then a 25/256 chance on repeats (DOS GS_KILL_INF_WARN, 3d_state.c:971).
 ACTION_FUNCTION(A_InformantDeath)
 {
 	static const char* const dkiMsg =

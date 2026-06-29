@@ -35,9 +35,9 @@
 
 class AActor;
 
-// PS reserved-item markers (bstone FL2_DROP_*): plane-0 tiles 72-77 under an
-// enemy spawn make it drop a key/weapon/detonator where it dies.  The code
-// rides the high byte of temp1 so it survives saves and floor snapshots.
+// PS reserved-item markers (DOS FL2_DROP_*, 3d_act2.c:264): plane-0 tiles 72-77
+// under an enemy spawn make it drop a key/weapon/detonator where it dies.  The
+// code rides the high byte of temp1 so it survives saves and floor snapshots.
 void Blake_ReservedDropClear();
 void Blake_ReservedDropCell(unsigned int x, unsigned int y, unsigned int tile);
 void Blake_ReservedDropAttach();

@@ -46,7 +46,7 @@
 // and reset by the map loader.
 bool blakeSecAlerted = false;
 
-// A_SecurityLook: bstone T_Security (3d_act2.cpp:5668) trips the light's alert
+// A_SecurityLook: DOS T_Security (3d_act2.c:4722) trips the light's alert
 // only once the player has made combat noise (`alerted`) AND occupies a connected
 // area (areabyplayer[areanumber]) -- not on silent presence.  The port's areas are
 // sound zones, so map->CheckLink mirrors areabyplayer.  Detection jumps to See,

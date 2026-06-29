@@ -29,11 +29,11 @@
 ** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **---------------------------------------------------------------------------
 **
-** The global barrier switch table (bstone gamestate.barrier_table). Wall
+** The global barrier switch table (DOS gamestate.barrier_table). Wall
 ** switches key barrier groups by their link coordinate; the table holds the
 ** group state across level loads so cross-floor switches and floor revisits
 ** keep their effect, and barrier actors are converged to it after spawning
-** (bstone ConnectBarriers plus the T_BarrierTransition table checks).
+** (DOS ConnectBarriers plus the T_BarrierTransition table checks).
 **
 */
 

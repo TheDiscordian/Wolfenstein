@@ -160,7 +160,7 @@ static void VWB_Bar(int x, int y, int w, int h, uint8_t color)
 }
 
 // CycleColors: the DOS LINC "shimmer".  Rotate palette indices 0xF0-0xFE in
-// five sub-ranges each frame (bstone 3d_main.cpp), driven by `tics`.  The
+// five sub-ranges each frame (DOS 3d_main.c), driven by `tics`.  The
 // backend re-applies the palette through a per-index LUT (device) / re-blits
 // the indexed buffer (PC) on the next present, so a static menu/briefing page
 // recolours -- this is what animates the mission pics and the briefing text.

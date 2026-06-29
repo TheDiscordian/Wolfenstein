@@ -3,7 +3,7 @@
 
 class FArchive;
 
-// Global barrier switch table (bstone gamestate.barrier_table): maps
+// Global barrier switch table (DOS gamestate.barrier_table): maps
 // (level, link x, link y) to a barrier group's on/off state. It outlives
 // level loads so cross-floor switches work, and is carried in save games.
 

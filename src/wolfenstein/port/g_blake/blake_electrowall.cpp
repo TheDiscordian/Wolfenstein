@@ -29,8 +29,8 @@
 ** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **---------------------------------------------------------------------------
 **
-** Planet Strike electro-alien spawning walls (bstone CheckSpawnEA / the tile-24
-** PLASMSP wall + 0xFA quantity byte).  Certain PS walls continuously emit
+** Planet Strike electro-alien spawning walls (DOS CheckSpawnEA, 3d_act1.c:2113 /
+** the tile-24 PLASMSP wall + 0xFA quantity byte).  Certain PS walls continuously emit
 ** ElectroAliens, up to a per-skill cap, while the player is in a connected area;
 ** killing one frees a slot.  Modelled on blake_goldstern.cpp, the canonical Blake
 ** per-sim-step spawner.
@@ -65,7 +65,7 @@ static struct
 } eaList[MAXEAWALLS];
 static int numEAWalls;
 
-// bstone no-byte interval: 8..30 seconds.
+// DOS no-byte interval: 8..30 seconds (3d_act1.c:2212).
 static int DefaultDelay() { return 60*8 + pr_ea(60*22); }
 
 void ElectroWall_Clear()
@@ -92,7 +92,7 @@ bool ElectroWall_SetDelay(unsigned int x, unsigned int y, int qtyByte)
 		if(eaList[w].tilex == x && eaList[w].tiley == y)
 		{
 			eaList[w].byteVal = qtyByte & 0xFF;
-			eaList[w].delay = 60 * eaList[w].byteVal;	// bstone 3d_game.cpp
+			eaList[w].delay = 60 * eaList[w].byteVal;	// DOS 3d_game.c:2327
 			eaList[w].fixedByte = true;
 			return true;
 		}
@@ -111,9 +111,9 @@ static bool TileOccupied(int tx, int ty)
 	return false;
 }
 
-// bstone CheckSight(player, site): close range is automatic, otherwise the site
+// DOS CheckSight (3d_state.c:1747): close range is automatic, otherwise the site
 // must be in the player's facing half-plane (cardinals only) with a clear line.
-// (Copied from blake_goldstern.cpp's PlayerSeesSite.)
+// Same as blake_goldstern.cpp's PlayerSeesSite.
 static bool PlayerSeesSite(AActor *playerMo, int tx, int ty)
 {
 	static const fixed MINSIGHT = 0x18000l*64;
@@ -211,7 +211,7 @@ void ElectroWall_Tick()
 
 		eaList[w].aliensOut++;
 		eaList[w].delay = eaList[w].fixedByte ? 60 * eaList[w].byteVal : DefaultDelay();
-		break;	// one spawn per tick (bstone breaks)
+		break;	// one spawn per tick (DOS breaks)
 	}
 }
 

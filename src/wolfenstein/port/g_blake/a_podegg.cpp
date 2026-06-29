@@ -43,9 +43,9 @@
 static FRandom pr_podegg("PodEgg");
 
 // Pod eggs hatch on a timer that runs only while the egg is drawn on screen, not
-// on line-of-sight (DOS T_OfsThink podegg case, 3d_act2.cpp:874).  temp1 is that
+// on line-of-sight (DOS T_OfsThink podegg case, 3d_act2.c:874).  temp1 is that
 // countdown.  DOS seeds it from the egg's scan_value byte (the 0xFA object-plane
-// word, 3d_act2.cpp:585): temp1 = scan_value*60 tics, or a random 300..1440 when
+// word, 3d_act2.c:585): temp1 = scan_value*60 tics, or a random 300..1440 when
 // the map placed no byte (60*5 + 60*(US_RndT()%20)).  A scan_value of 0xff also
 // makes the egg unshootable.
 ACTION_FUNCTION(A_PodEggInit)

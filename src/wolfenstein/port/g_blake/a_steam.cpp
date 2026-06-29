@@ -41,7 +41,7 @@
 
 static FRandom pr_steam("SteamGrate");
 
-// A_SteamWait: bstone T_SteamObj (3d_act2.cpp:5932).  The grate only releases
+// A_SteamWait: DOS T_SteamObj (3d_act2.c:4947).  The grate only releases
 // steam while it is drawn on screen (FL_VISIBLE); off screen the timer is frozen,
 // so distant grates do not hiss.  temp1 is the countdown; when it expires the
 // grate jumps to its Release animation and re-arms with a fresh random delay

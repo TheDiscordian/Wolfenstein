@@ -35,13 +35,13 @@
 
 class FArchive;
 
-// Floor lock table (bstone gamestuff.level[].locked); keyed by LevelNumber.
+// Floor lock table (DOS gamestuff.level[].locked); keyed by LevelNumber.
 void Blake_FloorLocksNewGame();
 void Blake_FloorEntered();
 void Blake_FloorLockSerialize(FArchive &arc);
 void Blake_FloorLocksLoadLegacy();
 
-// PS teleport security (bstone gamestuff.level[].locked, inverted sense:
+// PS teleport security (DOS gamestuff.level[].locked, inverted sense:
 // floors start locked until their Security Cube is destroyed).
 bool Blake_PsFloorUnlocked(int lvl);
 void Blake_PsUnlockFloor(int lvl);
@@ -58,7 +58,7 @@ void Blake_ElevatorCheck();
 // a no-op unless an AOG elevator ride armed it.
 void Blake_AlignPlayerInElevator();
 
-// Overall mission ratio for the high-score table (bstone ss_justcalc).
+// Overall mission ratio for the high-score table (DOS ss_justcalc).
 int Blake_MissionRatio();
 
 #endif

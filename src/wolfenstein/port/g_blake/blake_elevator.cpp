@@ -84,7 +84,7 @@ enum
 // =============================================================================
 // Floor lock table
 //
-// bstone gamestuff.level[].locked + overall_floor, keyed by LevelNumber.
+// DOS gamestuff.level[].locked + overall_floor (3d_def.h:2105), keyed by LevelNumber.
 // Floors start locked, unlock on entry; the red access card unlocks exactly
 // the floor after the highest unlocked one.  overallFloor caches the panel's
 // per-floor stats sum for the OVERALL MISSION row.
@@ -130,8 +130,8 @@ void Blake_FloorLocksNewGame()
 {
 	memset(floorMeta, 0, sizeof(floorMeta));
 
-	// bstone seeds every stats floor's overall_floor to the raw value 100 at
-	// NewGame (3d_main.cpp:7952).  overallFloor is the sum of three 0-100 ratios
+	// DOS seeds every stats floor's overall_floor to the raw value 100 at
+	// NewGame (3d_main.c:267).  overallFloor is the sum of three 0-100 ratios
 	// on a 0-300 scale (300 == 100%), so the seed is 33%, not 100% -- the OVERALL
 	// MISSION row reads 33% on a fresh game and tracks the real average as floors
 	// are completed.
@@ -322,7 +322,7 @@ static void ElevDrawTopInfo()
 	ElevShadowText(SmallFont, lives, 267, 5, CR_WHITE);
 }
 
-// Bottom message box (bstone BMAmsg): centred shadowed lines.
+// Bottom message box (DOS BMAmsg, 3d_game.c:2458): centred shadowed lines.
 static void ElevDrawBottomBox(const FString &text)
 {
 	word w, h;
@@ -389,7 +389,7 @@ void Blake_DrawPausedScreen()
 // OV_KEYS|OV_WHOLE_MAP): floors 0x55, doors by state, player 0xF0, keys
 // 0xF3; walls and unrevealed tiles keep the unmapped colour.  Revealed AOG
 // hidden-area floor cells (MapZone::hidden) shade darker (0x52).  The grid render
-// is split out so the PS panel can snapshot it per floor (bstone SaveOverheadChunk).
+// is split out so the PS panel can snapshot it per floor (DOS SaveOverheadChunk, 3d_agent.c:3225).
 static void ElevOverheadGrid(BYTE *grid, bool playerDot, BYTE unmappedColor)
 {
 	const BYTE MAPPED_COLOR = 0x55;
@@ -501,7 +501,7 @@ static void ElevDrawOverhead(int bx, int by)
 }
 
 // =============================================================================
-// Stats bars (bstone ShowStats/ShowRatio)
+// Stats bars (DOS ShowStats/ShowRatio, 3d_agent.c:3316/3380)
 // =============================================================================
 
 static bool statsQuick;
@@ -540,7 +540,7 @@ static int ElevShowRatio(int bx, int by, int total, int accum)
 
 	ElevBar(0x07, bx, by, BAR_W, BAR_H);
 
-	// bstone PrintStatPercent: seed the readout with 0% so a stale N/A from
+	// DOS PrintStatPercent (3d_agent.c:3462): seed the readout with 0% so a stale N/A from
 	// the previous selection cannot linger when no bars are drawn.
 	ElevBar(0, nx, by, 19, BAR_H);
 	PrintX = nx + 9;
@@ -626,7 +626,7 @@ static void ElevShowStats(int bx, int by)
 	ElevShowRatio(bx, by + 33, total, mission);
 }
 
-// Calc-only ElevShowRatio (bstone ss_justcalc); no totals = a free 100.
+// Calc-only ElevShowRatio (DOS ss_justcalc); no totals = a free 100.
 static int ElevCalcRatio(int total, int accum)
 {
 	if(!total)
@@ -634,8 +634,8 @@ static int ElevCalcRatio(int total, int accum)
 	return (int)(((long)100 * (((long)accum << 10) / total)) >> 10);	// DOS LRATIO
 }
 
-// Overall mission ratio for the high-score table (bstone CheckHighScore's
-// ss_justcalc ShowStats): refresh the current floor's cached sum, then
+// Overall mission ratio for the high-score table (DOS CheckHighScore's
+// ss_justcalc ShowStats, 3d_inter.c:291): refresh the current floor's cached sum, then
 // average the episode's stats floors.
 int Blake_MissionRatio()
 {
@@ -929,9 +929,9 @@ static int ElevInputFloor()
 }
 
 // =============================================================================
-// The PS teleport panel (bstone ps_input_floor)
+// The PS teleport panel (DOS InputFloor, 3d_agent.c:2934)
 //
-// Per-floor snapshots (bstone OverheadChunk): radar grid plus the stats the
+// Per-floor snapshots (DOS OverheadChunk, 3d_agent.c:3177): radar grid plus the stats the
 // panel replays for floors other than the current one, and the departure
 // pad so travelling back to a visited floor lands on its transporter.
 // =============================================================================
@@ -997,7 +997,7 @@ static const int PS_TELE_X[PS_FLOORS] =
 static const int PS_TELE_Y[PS_FLOORS] =
 	{13,26,9,50,50,50,50,62,42,17,26,35,41,50,62,62,62,10,10,30};
 
-// Radar viewport (bstone TOV_X/TOV_Y).
+// Radar viewport (DOS TOV_X/TOV_Y, 3d_agent.c:2928).
 static const int PS_TOV_X = 16;
 static const int PS_TOV_Y = 132;
 
@@ -1010,7 +1010,7 @@ static void PsDrawPic(const char *name, int x, int y)
 		VWB_DrawGraphic(TexMan(texid), x, y);
 }
 
-// bstone VWB_DrawMPic: the unit and arrow pics are masked, palette index 255
+// DOS VWB_DrawMPic (id_vh.c:269): the unit and arrow pics are masked, palette index 255
 // is transparent.  The textures are opaque, so blit column runs around the
 // mask colour instead of using VWB_DrawGraphic.
 static void PsDrawPicMasked(const char *name, int x, int y)
@@ -1059,7 +1059,7 @@ static void PsDrawArrows(int dir)
 	PsDrawPicMasked(dir > 0 ? "TELEDNON" : "TELEDNOF", 270, 104);
 }
 
-// bstone if_noImage: placeholder text for floors without a radar snapshot.
+// DOS if_noImage (3d_agent.c:2917): placeholder text for floors without a radar snapshot.
 static void PsDrawNoImage()
 {
 #if OF_DEVICE_BEHAVIOR
@@ -1083,7 +1083,7 @@ static void PsDrawNoImage()
 	}
 }
 
-// Locked floors show static on the radar (bstone ShowOverhead zoom<0 snow).
+// Locked floors show static on the radar (DOS ShowOverhead zoom<0 snow, 3d_draw.c:2005).
 static void PsDrawNoise()
 {
 	for(int my = 0;my < 64;++my)
@@ -1093,7 +1093,7 @@ static void PsDrawNoise()
 	}
 }
 
-// bstone DisplayTeleportName: location bar between the two backgrounds.
+// DOS DisplayTeleportName (3d_agent.c:3261): location bar between the two backgrounds.
 static void PsDrawTeleportName(int tp, bool locked)
 {
 	static const EColorRange lockedColor = V_FindFontColor("BlakeTeleBright");
@@ -1124,7 +1124,7 @@ static void PsDrawTeleportName(int tp, bool locked)
 	ElevShadowText(SmallFont, text, 160 - w/2, 103, color);
 }
 
-// PS stats column (bstone ShowStats at 235,138): three ratio bars, the
+// PS stats column (DOS ShowStats at 235,138, 3d_agent.c:3137): three ratio bars, the
 // floor total, and the 20-floor mission total.  statsLvl >= 1 caches the
 // floor sum like the AOG panel does.  Informant counts come straight from
 // the census table (it is per-floor already, so no snapshot copy needed).
@@ -1161,7 +1161,7 @@ static int PsInputFloor()
 	int tpNum = lvl - 1;
 	int lastTpNum = tpNum;
 
-	// Snapshot the current floor for later visits (bstone SaveOverheadChunk).
+	// Snapshot the current floor for later visits (DOS SaveOverheadChunk, 3d_agent.c:3225).
 	PsChunk &cur = psChunks[lvl];
 	cur.valid = 1;
 	cur.treasureTotal = gamestate.treasuretotal;
@@ -1446,7 +1446,7 @@ static void ElevatorCheckPS()
 		AActor *playermo = players[ConsolePlayer].mo;
 
 		// Departure pad: travelling back to this floor lands here, facing
-		// away from the pad (bstone select_floor).
+		// away from the pad (DOS pangle = angle-180, 3d_agent.c:2635).
 		PsChunk &cur = psChunks[lvl];
 		cur.padValid = 1;
 		cur.padX = playermo->x;

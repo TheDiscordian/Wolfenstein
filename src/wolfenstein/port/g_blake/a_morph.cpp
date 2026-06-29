@@ -40,8 +40,8 @@
 #include "thingdef/thingdef.h"
 #include "blake_scanvalue.h"
 
-// A_BlakeMorphWake: bstone converts a finished morph post in place straight into
-// an actively-chasing enemy (NewState(s_ofs_chase1), 3d_act2.cpp:2311).  The port
+// A_BlakeMorphWake: DOS converts a finished morph post in place straight into
+// an actively-chasing enemy (NewState(s_ofs_chase1), 3d_act2.c:1516).  The port
 // spawns the real enemy fresh, which lands dormant in its Look state and has to
 // re-sight the player.  The morphed-awake actor calls this from its Spawn state
 // before falling into See, mirroring FirstSighting (wl_state.cpp:1195): target
@@ -61,8 +61,8 @@ ACTION_FUNCTION(A_BlakeMorphWake)
 	return false;
 }
 
-// bstone locks the player's weapon (noShots = true) while Goldfire morphs on the
-// final level (3d_state.cpp:1524), so the morph cutscene can't be shot through.
+// DOS locks the player's weapon (noShots = true) while Goldfire morphs on the
+// final level (3d_state.c:1287), so the morph cutscene can't be shot through.
 // A_WeaponReady honours this flag; cleared when the morphed boss appears and at
 // every level setup (Blake_NoShotsReset) so a death mid-morph never leaves the
 // weapon stuck.
@@ -120,7 +120,7 @@ ACTION_FUNCTION(A_BlakeMorphTick)
 	}
 
 	// Timer up: morph (the Death state runs the morph animation, which spawns the
-	// real enemy).  bstone clears FL_SHOOTABLE as the morph begins.
+	// real enemy).  DOS clears FL_SHOOTABLE as the morph begins.
 	self->flags &= ~FL_SHOOTABLE;
 	const Frame *death = self->FindState("Death");
 	if(death)

@@ -3,8 +3,8 @@
 // Blake Stone mission briefing entry points.  Render the BRIEFI<cluster>
 // (pre-mission intro) and BRIEFW<cluster> (mission win debrief) VGAGRAPH text
 // chunks through the JAM Text Presenter (jm_tp.cpp), mirroring the PresenterInfo
-// setup of bstone's HelpPresenter (3d_menu.cpp:1664) and the Breifing()
-// dispatch (3d_inter.cpp:42).
+// setup of DOS HelpPresenter (3d_menu.c:297) and the Breifing()
+// dispatch (3d_inter.c:57).
 
 #include <string.h>
 #include <stdio.h>
@@ -41,21 +41,21 @@ static void Blake_PresentBriefingLump(const char *lumpname, bool fadeOutAfter = 
 	memset(&pi, 0, sizeof(pi));
 
 	// Briefings let ENTER advance pages; the Instructions / Story / Ordering
-	// screens do not (DOS continue_keys=false, 3d_menu.cpp:287/561/576).  ESC
+	// screens do not (DOS continue_keys=false, 3d_menu.c:287/561/576).  ESC
 	// always aborts.
 	pi.flags = TPF_SHOW_PAGES | (continueKeys ? TPF_CONTINUE : 0) | TPF_ABORTABLE;
 
 	VW_FadeOut();
 
 	// TP_Presenter only fills its text region (xl..xh / yl..yh), not the whole
-	// screen, and bstone's HelpPresenter draws a full-screen help-window border
+	// screen, and DOS HelpPresenter draws a full-screen help-window border
 	// the port lacks -- so without this the previous menu's LINC frame bleeds
 	// through around the briefing.  Clear the framebuffer to the briefing bg
 	// (0x7d, == pi.bgcolor below).  Still faded to black, so no flicker.
 	VWB_Clear(0x7d, 0, 0, screenWidth, screenHeight);
 
-	// HelpPresenter frames the text with a full-screen help-window border
-	// (3d_menu.cpp:318); the four edge pics ship in the Blake data (vsimap/bs6map).
+	// DOS HelpPresenter frames the text with a full-screen help-window border
+	// (3d_menu.c:321); the four edge pics ship in the Blake data (vsimap/bs6map).
 	static const FTextureID winPics[4] = {
 		TexMan.GetTexture("TOPWINDW", FTexture::TEX_Any),
 		TexMan.GetTexture("LFTWINDW", FTexture::TEX_Any),
@@ -67,7 +67,7 @@ static void Blake_PresentBriefingLump(const char *lumpname, bool fadeOutAfter = 
 		if(FTexture *t = TexMan(winPics[i]))
 			VWB_DrawGraphic(t, winPos[i][0], winPos[i][1], MENU_NONE);
 
-	// Text region + colours, copied from HelpPresenter (3d_menu.cpp:1704).
+	// Text region + colours, copied from DOS HelpPresenter (3d_menu.c:329).
 	// The script's own ^BC/^LC/^DC/^SC codes override these per page; these are
 	// the defaults used before the first such code fires.
 	pi.xl = 8;
@@ -93,8 +93,8 @@ static void Blake_PresentBriefingLump(const char *lumpname, bool fadeOutAfter = 
 	TP_FreeScript(&pi);
 
 	// Briefings omit a trailing VW_FadeOut(): GameLoop (wl_game.cpp) fades to
-	// black before SetupGameLevel, so a fade here was a duplicate, visible
-	// 30-step fade-to-black (VW_FadeOut is unguarded).  Menu-driven screens pass
+	// black before SetupGameLevel, so a fade here would be a redundant, visible
+	// fade-to-black (VW_FadeOut is unguarded).  Menu-driven screens pass
 	// fadeOutAfter to return on a black screen for the caller to fade the menu in.
 	if (fadeOutAfter)
 		VW_FadeOut();
@@ -122,7 +122,7 @@ void Blake_ShowBriefing(int cluster)
 }
 
 // BRIEFW<cluster>: the mission win debriefing, shown by Victory() when a mission
-// completes -- bstone Breifing(BT_WIN) at ex_victorious (3d_inter.cpp:42).
+// completes -- DOS Breifing(BT_WIN) at ex_victorious (3d_inter.c:57).
 void Blake_ShowWinBriefing(int cluster)
 {
 	// Inert unless this is a Blake game.
@@ -142,7 +142,7 @@ void Blake_ShowWinBriefing(int cluster)
 }
 
 // The defeat screen: the LOSEPIC background art with the lose message scrolled in
-// the bottom band -- bstone LoseScreen() (3d_game.cpp:3247).  In the AOG VGAGRAPH
+// the bottom band -- DOS LoseScreen() (3d_game.c:3104).  In the AOG VGAGRAPH
 // the lump bs6map calls "LOSEART" holds the lose presenter script (the "REBA:
 // INCOMING TRANSMISSION" message); "LOSEPIC" is the full-screen backdrop.
 void Blake_ShowLoseScreen()
@@ -168,7 +168,7 @@ void Blake_ShowLoseScreen()
 		PresenterInfo pi;
 		memset(&pi, 0, sizeof(pi));
 
-		// bstone LoseScreen flags + region (3d_game.cpp:3249): keep the cached
+		// DOS LoseScreen flags + region (3d_game.c:3111): keep the cached
 		// LOSEPIC as the backdrop (TPF_USE_CURRENT) and scroll the message in the
 		// bottom band.
 		pi.flags = TPF_USE_CURRENT | TPF_SHOW_CURSOR | TPF_SCROLL_REGION |
@@ -202,7 +202,7 @@ void Blake_ShowLoseScreen()
 }
 
 // The STORY screen: presents the Saga text (the "SAGAART" lump in this data holds
-// the saga presenter script) -- bstone CP_BlakeStoneSaga -> HelpPresenter(SAGATEXT).
+// the saga presenter script) -- DOS CP_BlakeStoneSaga -> HelpPresenter(SAGATEXT) (3d_menu.c:572).
 void Blake_ShowStory()
 {
 	if (!IWad::CheckGameFilter("Blake"))
@@ -213,7 +213,7 @@ void Blake_ShowStory()
 }
 
 // The ORDERING INFO screen: presents the ordering text ("ORDERART" lump) --
-// bstone CP_OrderingInfo -> HelpPresenter(ORDERTEXT).
+// DOS CP_OrderingInfo -> HelpPresenter(ORDERTEXT) (3d_menu.c:557).
 void Blake_ShowOrdering()
 {
 	if (!IWad::CheckGameFilter("Blake"))
@@ -225,7 +225,7 @@ void Blake_ShowOrdering()
 
 // The INSTRUCTIONS screen: presents the help text ("HELPART" lump, which holds
 // the character-profile presenter script with the ^AN enemy/device animations) --
-// bstone CP_ReadThis -> HelpScreens -> HelpPresenter(HELPTEXT).  The port's
+// DOS CP_ReadThis -> HelpScreens -> HelpPresenter(HELPTEXT) (3d_menu.c:546).  The port's
 // generic ECWolf HelpScreens() runs ShowArticle, which doesn't understand the
 // Blake presenter codes, so Blake routes here instead.
 void Blake_ShowInstructions()
@@ -237,7 +237,7 @@ void Blake_ShowInstructions()
 	Blake_PresentBriefingLump("HELPART", true, false);
 }
 
-// bstone TerminateStr: trim at the "^XX" end marker.
+// DOS TerminateStr (3d_menu.c:3545): trim at the "^XX" end marker.
 static bool Blake_LoadQuickInfoLump(const char *name, FString &out)
 {
 	int ln = Wads.CheckNumForName(name, ns_global);
@@ -251,7 +251,7 @@ static bool Blake_LoadQuickInfoLump(const char *name, FString &out)
 	return true;
 }
 
-// First-time QUICK_INFO instructions (bstone ShowQuickInstructions, 3d_play.cpp).
+// First-time QUICK_INFO instructions (DOS ShowQuickInstructions, 3d_play.c:1849).
 // On a brand-new game's first floor, two text pages (QUIKINF1/QUIKINF2) pop over
 // the live view; page 1 auto-advances after ~120 tics if the player is idle, and
 // any key dismisses.  One-shot per new game (g_showQuickInfo); inert outside
@@ -285,5 +285,5 @@ void Blake_ShowQuickInfo()
 	}
 
 	IN_ClearKeysDown();
-	DrawPlayScreen();	// wipe the box (bstone CleanDrawPlayBorder)
+	DrawPlayScreen();	// wipe the box (DOS CleanDrawPlayBorder)
 }

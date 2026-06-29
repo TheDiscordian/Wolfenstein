@@ -29,7 +29,7 @@
 ** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **---------------------------------------------------------------------------
 **
-** Blake Stone 'JAM' secret cheat: full arsenal (bstone 3d_play.cpp).
+** Blake Stone 'JAM' secret cheat: full arsenal (DOS 3d_play.c).
 **
 */
 

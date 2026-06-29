@@ -180,8 +180,8 @@ private:
 	FString InfoMessage;
 	int InfoMessagePriority;
 	int InfoMessageTics;
-	// PS radar magnification (bstone rzoom 0=1x/1=2x/2=4x) + key edge state +
-	// the per-Tick drain phase (a device-safe replacement for bstone's frameon&1,
+	// PS radar magnification (DOS rzoom 0=1x/1=2x/2=4x) + key edge state +
+	// the per-Tick drain phase (a device-safe replacement for DOS frameon&1,
 	// whose parity freezes under the Pocket's even fixed step).
 	int RadarZoom;
 	bool RadarPlusUp, RadarMinusUp, RadarDrainPhase;
@@ -342,7 +342,7 @@ void Blake_ShowAttackerInfo(const char *msg, int priority, int tics, const Class
 }
 
 // LINC "ACCESS DENIED" message when a locked door is tried without the key
-// (bstone OperateDoor, 3d_act1.cpp:1215).  lock 1..5 = red/yellow/blue/green/
+// (DOS OperateDoor, 3d_act1.c:1020).  lock 1..5 = red/yellow/blue/green/
 // gold (lockdefs.txt "Lock N Blake"); anything else = permanently locked.
 // Blake-only -- the strings are wrong for Wolfenstein's gold/silver keys.
 void Blake_DoorDeniedMsg(AActor *activator, int lock)
@@ -683,8 +683,8 @@ void BlakeStatusBar::DrawLed(double percent, double x, double y) const
 		TAG_DONE);
 }
 
-// Radar dot colour for a live enemy: bstone tints by 0x10 + obclass, so map each
-// Blake actor class to its bstone classtype index (3d_def.h).  Checked
+// Radar dot colour for a live enemy: DOS tints by 0x10 + obclass, so map each
+// Blake actor class to its DOS classtype index (3d_def.h).  Checked
 // most-derived first so the PS guard variants and morph/awake forms win over the
 // AoG/base class they inherit.  0 = not a radar enemy.
 static uint8_t RadarEnemyColor(const AActor *ob)
@@ -742,7 +742,7 @@ static uint8_t RadarEnemyColor(const AActor *ob)
 	return 0;
 }
 
-// PS in-game radar: the rotated overhead blip map (bstone ShowOverhead, called as
+// PS in-game radar: the rotated overhead blip map (DOS ShowOverhead 3d_draw.c:2005, called as
 // ShowOverhead(192,156,16, rzoom, OV_KEYS|OV_PUSHWALLS|OV_ACTORS)).  Samples a
 // player-rotated window of the map into the status bar: floor 0x55, unmapped/wall
 // 0x52, player 0xF0, locked door 0x18, closed door 0x58, keys 0xF3, and (at >=2x)
@@ -757,7 +757,7 @@ void BlakeStatusBar::DrawRadarOverhead(int rzoom)
 	extern fixed *finecosine;
 
 	const int z = 1 << rzoom;			// 1, 2 or 4
-	const double radius = 16.0 / z;		// bstone radius 16 / zoom
+	const double radius = 16.0 / z;		// DOS radius 16 / zoom
 	const int diameter = (int)(radius * 2.0);
 	if(diameter <= 0)
 		return;
@@ -840,9 +840,9 @@ void BlakeStatusBar::DrawRadarOverhead(int rzoom)
 									open = true;
 							color = locked ? 0x18 : (open ? 0x55 : 0x58);
 						}
-						// else: solid wall stays UNMAPPED, like bstone
+						// else: solid wall stays UNMAPPED, like the original
 
-						// Overlays, in bstone order, each overriding the last:
+						// Overlays, in DOS order, each overriding the last:
 						// keys, then enemies (>=2x), then secret pushwalls (4x).
 						if(hasKey[mx][my])
 							color = 0xF3;
@@ -905,9 +905,8 @@ void BlakeStatusBar::DrawStatusBar()
 	int topy = xs_ToInt(static_cast<real64>(sth));
 	const double topStw = stw, topSth = sth;
 
-	// Re-rendering the whole bar (~30 text glyphs + several blits) every frame
-	// dominated the frame (~28ms / 36%), though the readouts rarely change.
-	// Cache the whole composited bar keyed on the readout values: when nothing
+	// The whole bar is ~30 text glyphs + several blits, though the readouts rarely
+	// change.  Cache the composited bar keyed on the readout values: when nothing
 	// changed, restore it with a memcpy and redraw only the ECG heartbeat (which
 	// animates every frame).  Full-width only -- a narrow view has side borders
 	// the band cache wouldn't capture, so it redraws fully.
@@ -967,8 +966,8 @@ void BlakeStatusBar::DrawStatusBar()
 	sbarKey[1] = (uint32_t)players[ConsolePlayer].lives;
 	sbarKey[2] = (uint32_t)levelInfo->LevelNumber;
 	// NOT CurrentScore: it rolls up a little every frame (Tick) after any score
-	// change, so keying on it churned the cache every frame in combat (a full
-	// ~25ms redraw each frame).  The score is redrawn per-frame via drawScore().
+	// change, so keying on it would churn the cache every frame in combat.  The
+	// score is redrawn per-frame via drawScore().
 	// Reused to key the PS idle objective hint (next-floor lock + detonator
 	// possession; the level is already in sbarKey[2]) so it can't go stale.
 	sbarKey[3] = 0;
@@ -986,7 +985,7 @@ void BlakeStatusBar::DrawStatusBar()
 	}
 	// Key on the info-area message CONTENT, not InfoMessageTics: the timer ticks
 	// down every frame while a message shows, but the drawn text is unchanged,
-	// so keying on the timer churned the cache the whole time a message was up.
+	// so keying on the timer would churn the cache the whole time a message is up.
 	// Idle (no message) keys to 0; the token count is in sbarKey[5].
 	uint32_t infoKey = 0;
 	if(InfoMessageTics != 0)
@@ -996,8 +995,7 @@ void BlakeStatusBar::DrawStatusBar()
 			infoKey = (infoKey ^ (unsigned char)*c) * 16777619u;
 		// Fold in the icon class (gold-bar variants share the text but differ in
 		// sprite).  NOT iconFrame -- the walk animation is drawn live by
-		// drawInfoIcon() every frame, so it must not bust the cache (a per-frame
-		// full-bar redraw is what tripped the device white lines).
+		// drawInfoIcon() every frame, so it must not bust the cache.
 		infoKey = (infoKey ^ (uint32_t)iconKey) * 16777619u;
 		if(infoKey == 0)
 			infoKey = 1;
@@ -1082,7 +1080,7 @@ void BlakeStatusBar::DrawStatusBar()
 	}
 
 	// Top-bar location label, derived from the per-episode floor slot to match
-	// bstone ShadowPrintLocationText (3d_game.cpp:2951): AOG names floors "FLOOR:",
+	// DOS ShadowPrintLocationText (3d_game.c:2554): AOG names floors "FLOOR:",
 	// PS "AREA:", and secret floors show "SECRET <index>".  No Blake map sets the
 	// mapinfo `secret` flag, so the label must be derived (same slot maths as
 	// blake_barrier.cpp).
@@ -1199,7 +1197,7 @@ void BlakeStatusBar::DrawStatusBar()
 			DrawLed(0, 235, 155);
 		const char *magPic = RadarZoom == 2 ? "STMAG4X" : RadarZoom == 1 ? "STMAG2X" : "STMAG1X";
 		VWB_DrawGraphic(TexMan(magPic), 176, 152);
-		// With no energy the map still draws, frozen at 1x (bstone DrawRadar).
+		// With no energy the map still draws, frozen at 1x (DOS DrawRadar).
 		DrawRadarOverhead((radarPack && radarPack->amount > 0) ? RadarZoom : 0);
 	}
 
@@ -1364,8 +1362,7 @@ void BlakeStatusBar::SetInfoMessageIcon(const ClassDef *cls)
 // Draws the info-area icon: the 37x37 black box (bstone VW_Bar) with the current
 // frame's sprite scaled into it (uniform 37/64, centred on the opaque-content
 // bounds).  Called LIVE every frame (after the status-bar cache snapshot/restore,
-// like drawScore) so the walk animation never busts the cache -- a per-frame
-// full-bar redraw is what tripped the device's 3D-view white lines.  Single write
+// like drawScore) so the walk animation never busts the cache.  Single write
 // pass over the box; raw-blitted from set-time-baked buffers (never touches a
 // sprite texture during the GPU frame).
 void BlakeStatusBar::drawInfoIcon()
@@ -1460,8 +1457,8 @@ void BlakeStatusBar::DrawInfoArea()
 
 	// The icon box+sprite is drawn LIVE every frame by drawInfoIcon() (called after
 	// the status-bar cache snapshot/restore, like the ECG and score) so the walk
-	// animation never busts the cache -- a per-frame full-bar redraw is what tripped
-	// the device white lines.  Here we only need showIcon to indent the message text.
+	// animation never busts the cache.  Here we only need showIcon to indent the
+	// message text.
 	const bool showIcon = (InfoMessageTics != 0 && iconNF > 0);
 
 	// With the icon box present, text indents past it (bstone left_margin advances
@@ -1482,8 +1479,8 @@ void BlakeStatusBar::DrawInfoArea()
 		}
 		msg.Format("\r    NO MESSAGES.\r    FOOD TOKENS: %u", tokens);
 
-		// PS objective hint while the next floor is still locked (bstone
-		// DisplayNoMoMsgs).  AoG shows none.  bstone keys on mapon (0-based);
+		// PS objective hint while the next floor is still locked (DOS
+		// DisplayNoMoMsgs).  AoG shows none.  DOS keys on mapon (0-based);
 		// our LevelNumber is 1-based, so mapon 19 (goldfire) = LevelNumber 20.
 		static const bool isPS = IWad::GetGame().Name.CompareNoCase("Planet Strike") == 0;
 		if(isPS && levelInfo)
@@ -1777,7 +1774,7 @@ void BlakeStatusBar::Tick()
 	}
 
 	// PS radar magnification: +/- change the zoom level and drain the radar
-	// energy store (the RadarPack item) while magnified (bstone DrawRadar +
+	// energy store (the RadarPack item) while magnified (DOS DrawRadar +
 	// CheckKeys zoom). 1x never drains; energy runs out -> back to 1x.
 	if(IWad::GetGame().Name.CompareNoCase("Planet Strike") == 0 && players[ConsolePlayer].mo)
 	{
@@ -1795,7 +1792,7 @@ void BlakeStatusBar::Tick()
 		else
 			RadarZoom = 0;
 
-		// The per-Tick phase toggle stands in for bstone's frameon&1, whose parity
+		// The per-Tick phase toggle stands in for DOS frameon&1, whose parity
 		// freezes under the device's even fixed step.
 		RadarDrainPhase = !RadarDrainPhase;
 		if(energy > 0 && RadarZoom != 0 && !godmode && RadarDrainPhase)

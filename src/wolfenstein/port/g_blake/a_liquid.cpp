@@ -42,14 +42,14 @@
 
 static FRandom pr_liquid("LiquidAlien");
 
-// A_LiquidStand: bstone T_LiquidStand (3d_act2.cpp:3990).  While risen the fluid
+// A_LiquidStand: DOS T_LiquidStand (3d_act2.c:3040).  While risen the fluid
 // alien is solid + shootable and fires up to five times (80/255 each shot); once
 // the player is more than a tile away it submerges (40/255 per check, or forced
 // after the fifth shot), resetting the counter.  Standing adjacent resets the
-// counter so it keeps firing.  temp1 is the shot counter (bstone's temp2).
+// counter so it keeps firing.  temp1 is the shot counter (DOS's temp2).
 // While the player is more than a tile away the alien also submerges immediately
 // if it has left the player's view (FL_VISIBLE clear), on top of the 40/255 roll
-// and the five-shot cap -- matching bstone T_LiquidStand (3d_act2.cpp:4008).
+// and the five-shot cap -- matching DOS T_LiquidStand (3d_act2.c:3058).
 ACTION_FUNCTION(A_LiquidStand)
 {
 	self->flags |= FL_SHOOTABLE | FL_SOLID;

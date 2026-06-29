@@ -29,7 +29,7 @@
 ** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **---------------------------------------------------------------------------
 **
-** Per-floor world snapshots (bstone's saved level states). Leaving a floor
+** Per-floor world snapshots (DOS SaveLevel/LoadLevel, 3d_main.c:617/428). Leaving a floor
 ** by elevator compresses the whole world -- thinkers, map state, per-floor
 ** stats -- into a memory file keyed by map name; coming back restores it
 ** over the freshly parsed map instead of spawning things. The traveling

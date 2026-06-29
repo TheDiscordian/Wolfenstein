@@ -1050,8 +1050,8 @@ actor SteamGrate
 	action native A_SteamWait();
 	states
 	{
-		// Only release steam while on screen (bstone T_SteamObj gates on
-		// FL_VISIBLE); A_SteamWait counts down and jumps to Release.
+		// Only release steam while on screen (DOS T_SteamObj gates on
+		// FL_VISABLE, 3d_act2.c:4947); A_SteamWait counts down and jumps to Release.
 		Spawn:
 			GRAT A 1 A_SteamWait
 			loop

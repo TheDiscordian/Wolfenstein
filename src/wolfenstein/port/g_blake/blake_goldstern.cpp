@@ -29,7 +29,7 @@
 ** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **---------------------------------------------------------------------------
 **
-** Dr. Goldfire's hunt (bstone CheckSpawnGoldstern and friends). Map code
+** Dr. Goldfire's hunt (DOS CheckSpawnGoldstern, 3d_act1.c:2221). Map code
 ** 124 registers a teleport site; while he is off the map a timer counts
 ** down and he warps in at a site the player can see. Killing him is only
 ** an escape -- except on the PS final level, where he morphs instead.
@@ -99,8 +99,8 @@ void Goldstern_Clear()
 // on load runs Goldstern_Clear + Goldstern_AddSite first, resetting the hunt
 // timer/flags and bossKeyDropped; this chunk loads afterwards and restores them.
 // Without it a reload restarts the hunt and wipes bossKeyDropped, so killing
-// Goldfire again drops a SECOND gold access card (bstone saves GoldsternInfo +
-// GoldieList + gamestate.boss_key_dropped).
+// Goldfire again drops a SECOND gold access card (DOS saves GoldsternInfo +
+// GoldieList + gamestate.boss_key_dropped, 3d_main.c:697).
 void Blake_GoldsternSerialize(FArchive &arc)
 {
 	arc << gold.lastIndex << gold.spawnCnt << gold.flags << gold.waitTime
@@ -193,7 +193,7 @@ static void SpawnGoldfire()
 	gf->health = hp;
 }
 
-// bstone CheckSight(player, site): close range is automatic, otherwise the
+// DOS CheckSight (3d_state.c:1747): close range is automatic, otherwise the
 // site must be in the player's facing half-plane (cardinals only) with a
 // clear line to it.
 static bool PlayerSeesSite(AActor *playerMo, int tx, int ty)
@@ -314,7 +314,7 @@ ACTION_FUNCTION(A_GoldfireDie)
 	gold.waitTime = MIN_GOLDIE_WAIT + pr_goldstern(MAX_GOLDIE_WAIT - MIN_GOLDIE_WAIT);
 
 	// add_to_stats=false: Goldstern is excluded from the per-level points total
-	// (bstone 3d_state.cpp:1321), so its kill must not count toward accum either.
+	// (DOS 3d_state.c:1138), so its kill must not count toward accum either.
 	if(self->target && self->target->player)
 		self->target->player->GivePoints(GOLDIE_POINTS, false);
 	else

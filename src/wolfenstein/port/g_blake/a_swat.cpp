@@ -29,7 +29,7 @@
 ** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **---------------------------------------------------------------------------
 **
-** STAR Trooper / Alien Protector wound-knockdown (bstone swat actor).
+** STAR Trooper / Alien Protector wound-knockdown (DOS swat actor).
 **
 ** The trooper can be knocked off its feet a fixed number of times before it
 ** dies.  DamageActor drives the knockdown when a damage hit crosses a "wound
@@ -47,7 +47,7 @@
 
 static FRandom pr_swat("SwatWound");
 
-// A_SwatWound: bstone T_SwatWound (3d_act2.cpp:4024).  Runs on the looping
+// A_SwatWound: DOS T_SwatWound (3d_act2.c:3076).  Runs on the looping
 // knocked-down frame.  movecount is the stay-down timer DamageActor armed; count
 // it down by this frame's tics, and once it expires and the player has stepped
 // back more than a tile (so the trooper does not rise into Blake's face), become
@@ -77,7 +77,7 @@ ACTION_FUNCTION(A_SwatWound)
 	return false;
 }
 
-// Blake_CheckSwatWound: bstone DamageActor wound check (3d_state.cpp:1546).
+// Blake_CheckSwatWound: DOS DamageActor wound check (3d_state.c:1314).
 // Called from DamageActor when a still-alive trooper takes a hit.  If the hit
 // dropped it across a wound boundary, knock it down -- clear solid/shootable, arm
 // the stay-down timer in movecount, jump to KnockedDown -- and report that we
@@ -92,7 +92,7 @@ bool Blake_CheckSwatWound(AActor *ob, int oldHealth)
 	const int startHp = ob->SpawnHealth();
 
 	// Seed the wound count on the trooper's first hit (health still at full).
-	// bstone rolls it at spawn (SpawnStand/SpawnPatrol); rolling it here covers
+	// DOS rolls it at spawn (SpawnStand/SpawnPatrol); rolling it here covers
 	// both stand and patrol troopers without a spawn-frame action -- the engine
 	// enters the initial state with actions suppressed, so a 0-tic Spawn frame
 	// would never fire for a patrol trooper.  Half the troopers (temp1 0) can

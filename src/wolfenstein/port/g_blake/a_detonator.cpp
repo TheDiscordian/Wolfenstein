@@ -29,7 +29,7 @@
 ** THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **---------------------------------------------------------------------------
 **
-** PS fission detonator chain (bstone TryDropPlasmaDetonator): dropping an
+** PS fission detonator chain (DOS TryDropPlasmaDetonator): dropping an
 ** armed detonator next to the Security Cube destroys it and unlocks the
 ** next floor's teleport unit.
 **
@@ -48,7 +48,7 @@
 #include "thingdef/thingdef.h"
 #include "blake_elevator.h"
 
-// bstone 3d_msgs.cpp
+// DOS 3d_msgs.c
 static const char* const pd_dropped =
 	"^FC19\r       WARNING:\r"
 	"^FCA6   FISSION DETONATOR\r"
@@ -103,7 +103,7 @@ static int CubeTileDistance(AActor *a, AActor *b)
 	return MAX(dx, dy);
 }
 
-// bstone's plasma-detonator prompts carry a ^SH icon (the Security Cube, or the
+// DOS's plasma-detonator prompts carry a ^SH icon (the Security Cube, or the
 // detonator itself for "no fission detonators") the info area can't draw inline,
 // so set it through the pickup-icon path after the message.
 extern void Blake_SetInfoMessageIcon(const ClassDef *);
@@ -118,7 +118,7 @@ static void DetBombIcon()
 	Blake_SetInfoMessageIcon(cls);
 }
 
-// bstone TryDropPlasmaDetonator: gates run in order, then the armed bomb
+// DOS TryDropPlasmaDetonator (3d_act1.c:1223): gates run in order, then the armed bomb
 // spawns at the player's feet.  Free function so a dedicated input (Blake_DropKey
 // in wl_play) can drop a detonator without switching to it as a weapon, as DOS
 // does (sc_Tilde, 3d_play.c:883) -- PS treats it as a non-weapon item.
@@ -194,7 +194,7 @@ ACTION_FUNCTION(A_BlakeDropDetonator)
 }
 
 // The explosion takes the Security Cube with it and unlocks the next floor
-// (bstone ExplodeRadius rotating_cubeobj case).
+// (DOS ExplodeRadius rotating_cubeobj case, 3d_act2.c:5722).
 ACTION_FUNCTION(A_BlakeDetonatorExplode)
 {
 	AActor *cube = FindSecurityCube();
@@ -212,7 +212,7 @@ ACTION_FUNCTION(A_BlakeDetonatorExplode)
 	return true;
 }
 
-// End of the cube's death animation (bstone anim-complete handler).
+// End of the cube's death animation (DOS rotating_cubeobj anim completion, 3d_act2.c:1527).
 ACTION_FUNCTION(A_BlakeCubeUnlocked)
 {
 	StatusBar->DisplayInfoMessage(pd_floorunlocked, 0x3000, 300);

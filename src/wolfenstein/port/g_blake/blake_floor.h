@@ -3,7 +3,7 @@
 
 class FArchive;
 
-// Per-floor world snapshots (bstone's saved level states): leaving a floor
+// Per-floor world snapshots (DOS SaveLevel/LoadLevel): leaving a floor
 // by elevator stores its world, and returning restores it so enemies,
 // doors, and pickups stay as left. A snapshot is consumed when restored,
 // so a death restart plays the floor fresh. Carried in save games.

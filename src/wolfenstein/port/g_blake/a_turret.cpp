@@ -45,12 +45,11 @@ static FRandom pr_turret("CeilingTurret");
 
 static const int SEEK_TURN_DELAY = 30;	// tics between sweep steps (DOS 3d_act2.c:32)
 
-// A_TurretSeek: DOS T_Seek (3d_act2.cpp:5063).  The hanging turret fires only when
+// A_TurretSeek: DOS T_Seek (3d_act2.c:5063).  The hanging turret fires only when
 // the player is within its ~45 deg facing cone with line of sight (CheckView) and
 // inside fifteen tiles, on a distance-weighted chance -- point-blank always fires.
 // While it has not found the player it sweeps, advancing one of eight facings
 // every SEEK_TURN_DELAY (30) tics; the directional TURRA1..8 sprite shows the turn.
-// (The port previously fired on any line of sight and never rotated.)
 ACTION_FUNCTION(A_TurretSeek)
 {
 	AActor *p = players[ConsolePlayer].mo;

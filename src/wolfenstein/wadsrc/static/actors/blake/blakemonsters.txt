@@ -453,7 +453,7 @@ actor FloatingBomb : WolfensteinMonster
 			FSCT A 0 A_JumpIfCloser(96, "Death")
 			loop
 		Death:
-			// bstone floatingbomb is a contact kamikaze (DoAttack: dist<=1 ->
+			// DOS floatingbomb is a contact kamikaze (DoAttack: dist<=1 ->
 			// KillActor) and its death anim explodes either way (T_ExplodeDamage,
 			// EXPLODE_DAMAGE 20) -- so detonate on reaching the player or when shot.
 			FSCT E 0 bright A_Fall
@@ -483,7 +483,7 @@ actor VolatileTransport : WolfensteinMonster
 			GSCT A 7.5 NOP A_Chase("*", "*", CHF_NOSIGHTCHECK)
 			wait
 		Death:
-			// bstone volatiletransport death (T_SmartThought frame 2): explode
+			// DOS volatiletransport death (3d_act2.c:1656, death-anim frame 2): explode
 			// (EXPLODE_DAMAGE 20) and ~50% of the time leave a green ooze puddle.
 			GSCT E 0 bright A_Fall
 			GSCT E 2.5 bright A_Scream
@@ -676,8 +676,8 @@ actor SpiderMutantMorphed
 	states
 	{
 		Spawn:
-			// bstone morphs on an on-screen timer (FL_VISIBLE), not on the post's
-			// line-of-sight to the player.
+			// DOS morphs on an on-screen timer (FL_VISABLE, 3d_act2.c:903), not on
+			// the post's line-of-sight to the player.
 			MSUP N 0 A_BlakeMorphInit
 		MorphWait:
 			MSUP N 7 A_BlakeMorphTick
@@ -686,7 +686,7 @@ actor SpiderMutantMorphed
 		Death:
 			MSUP O 2 A_ChangeFlag("SHOOTABLE", false)
 			MSUP PQRSTUV 2
-			// bstone plays the alien's halt sound the instant the morph completes.
+			// DOS plays the alien's halt sound the instant the morph completes (3d_act2.c:1511).
 			MSUP V 0 A_PlaySound("spidermutant/sight")
 			MSUP V 0 A_SpawnItemEx("SpiderMutantMorphAwake", 0, 0, 0, 0, 0, 0, 0, SXF_TRANSFERPOINTERS)
 			stop
@@ -918,7 +918,7 @@ actor ReptilianWarriorMorphed
 		Death:
 			REPW O 2 A_ChangeFlag("SHOOTABLE", false)
 			REPW PQRSTUV 2
-			// bstone plays the alien's halt sound the instant the morph completes.
+			// DOS plays the alien's halt sound the instant the morph completes (3d_act2.c:1511).
 			REPW V 0 A_PlaySound("reptilianwarrior/sight")
 			REPW V 0 A_SpawnItemEx("ReptilianWarriorMorphAwake", 0, 0, 0, 0, 0, 0, 0, SXF_TRANSFERPOINTERS)
 			stop
@@ -1037,7 +1037,7 @@ actor MutantHumanMorphed
 		Death:
 			MHUM R 2 A_ChangeFlag("SHOOTABLE", false)
 			MHUM STUVWX 2
-			// bstone plays the alien's halt sound the instant the morph completes.
+			// DOS plays the alien's halt sound the instant the morph completes (3d_act2.c:1511).
 			MHUM Y 0 A_PlaySound("mutanthuman/sight")
 			MHUM Y 0 A_SpawnItemEx("MutantHumanMorphAwake", 0, 0, 0, 0, 0, 0, 0, SXF_TRANSFERPOINTERS)
 			stop
@@ -1045,7 +1045,7 @@ actor MutantHumanMorphed
 }
 
 // Morph-spawned variants: the real enemy, but woken straight into the chase
-// (bstone converts the morph post in place to active chase, s_ofs_chase1).
+// (DOS converts the morph post in place to active chase, s_ofs_chase1, 3d_act2.c:1516).
 actor SpiderMutantMorphAwake : SpiderMutant
 {
 	action native A_BlakeMorphWake();
@@ -1636,7 +1636,7 @@ actor DrGoldfire : WolfensteinMonster
 			DGLD P 20
 			stop
 		Morph:
-			// bstone locks the player's weapon through the morph (noShots).
+			// DOS locks the player's weapon through the morph (noShots, 3d_state.c:1287).
 			DGLD J 30 A_BlakeWeaponLock
 			DGLD QRSTUVWX 5
 			DGLD X 0 A_SpawnItemEx("MorphedGoldfire", 0, 0, 0, 0, 0, 0, 0, SXF_TRANSFERPOINTERS)
@@ -1699,8 +1699,8 @@ actor MorphedGoldfire : WolfensteinMonster
 			MGLD K 12.5
 			MGLD L 12.5
 			MGLD M 12.5
-			// bstone: gold_morphobj death is the Planet Strike win condition
-			// (ex_victorious). Fire the level's Exit_Victory specialaction.
+			// gold_morphobj death is the Planet Strike win condition (DOS sets
+			// ex_victorious, 3d_act2.c:1544). Fire the level's Exit_Victory specialaction.
 			MGLD N -1 A_BossDeath
 			stop
 	}
@@ -1875,7 +1875,7 @@ actor LiquidAlien : WolfensteinMonster
 			LIQA EF 6
 			LIQA F 0 A_ChangeFlag("SHOOTABLE", true)
 		Stand:
-			// A_LiquidStand (a_liquid.cpp) = bstone T_LiquidStand: fire up to 5x
+			// A_LiquidStand (a_liquid.cpp) = DOS T_LiquidStand (3d_act2.c:3040): fire up to 5x
 			// (80/255 each), then submerge once the player is more than a tile
 			// away (40/255, or forced after the fifth shot). Runs once per tic
 			// cycle, jumping to Missile or Fall.

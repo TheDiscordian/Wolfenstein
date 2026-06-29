@@ -199,7 +199,7 @@ ACTION_FUNCTION(A_SphereBounce)
 			// DOS plays the arc-zap (ELECARCDAMAGESND), not the shot sample
 			// (3d_act2.cpp:1042).
 			PlaySoundLocActor("barrier/zap", self);
-			// bstone arcs 4/tic at 70 Hz; this thinker runs once per sim step,
+			// DOS arcs 4/tic at 70 Hz; this thinker runs once per sim step,
 			// so scale by simStepMult to keep the health-drain rate.
 			DamageActor(p, self, 4 * simStepMult);
 		}
@@ -213,7 +213,7 @@ ACTION_FUNCTION(A_SphereBounce)
 			return true;
 	}
 
-	// bstone T_OfsBounce travels speed*tics per game-tic; under the device fixed
+	// DOS T_OfsBounce (3d_act2.c:1026) travels speed*tics per game-tic; under the device fixed
 	// step this thinker runs once per sim step (simStepMult tics), so scale to
 	// keep the bounce speed (the native chase code does the same, wl_act2.cpp).
 	int32_t move = self->speed * simStepMult;

@@ -22,8 +22,8 @@ void Blake_AddHint(unsigned int type, unsigned int x, unsigned int y, unsigned i
 // Returns false if there was nobody to question.
 bool Blake_TryInterrogate(AActor *playerMo);
 
-// Per-floor informant census for the panel stats (bstone total_inf/accum_inf),
-// keyed by LevelNumber.  Spawns count via AActor::Spawn; deaths decrement.
+// Per-floor informant census for the panel stats (DOS total_inf/accum_inf,
+// 3d_game.c:2076), keyed by LevelNumber.  Spawns count via AActor::Spawn; deaths decrement.
 void Blake_InformantsClear();
 void Blake_InformantsReset();
 void Blake_InformantSpawned(AActor *actor);

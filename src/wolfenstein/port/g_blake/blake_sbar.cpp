@@ -229,6 +229,14 @@ const BlakeAttackMsg blakeAttackMsgs[] = {
 	{ "CeilingTurretRotate",     "^FC17  ATTACKING:\r^FCA6  AUTOMATED\rHEAVY ARMORED\r ROBOT TURRET" },
 	{ "CeilingTurretStatic",     "^FC17  ATTACKING:\r^FCA6  AUTOMATED\rHEAVY ARMORED\r ROBOT TURRET" },
 	{ "GiantStalker",            "^FC17  ATTACKING:\r^FCA6  THE GIANT\r   STALKER" },
+	{ "ElectroAlien",            "^FC17\r  ATTACKING:\r^FCA6 HIGH ENERGY\r PLASMA ALIEN" },
+	{ "ElectroSphere",           "^FC17\r\r  ATTACKING:\r^FCA6PLASMA SPHERE" },
+	{ "LiquidAlien",             "^FC17\r\r  ATTACKING:\r^FCA6 FLUID ALIEN" },
+	{ "DrGoldfire",              "^FC17\r\r  ATTACKING:\r^FCA6 DR GOLDFIRE" },
+	{ "MorphedGoldfire",         "^FC17\r\r  ATTACKING:\r^FCA6   MORPHED\r DR GOLDFIRE" },
+	{ "SpectorDemon",            "^FC17\r  ATTACKING:\r^FCA6 THE SPECTOR\r   DEMON" },
+	{ "ArmoredStalker",          "^FC17\r  ATTACKING:\r^FCA6 THE ARMORED\r   STALKER" },
+	{ "CrawlerBeast",            "^FC17\r  ATTACKING:\r^FCA6 THE CRAWLER\r    BEAST" },
 };
 
 // The DOS pickup info-area message per Blake pickup class (bstone BonusMsg,

@@ -1030,6 +1030,23 @@ void CheckKeys (void)
 		}
 		else
 			jam_enterReleased = true;
+
+		// Dedicated drop-detonator input (DOS sc_Tilde, 3d_play.c:883): drop a
+		// fission/plasma detonator at the player's feet without switching weapons.
+		// Desktop = the ` / ~ key; a Pocket button still needs assigning, so the
+		// detonator weapon slot is kept for now.
+		static bool dropDetReleased = true;
+		if(Keyboard[sc_Grave])
+		{
+			if(dropDetReleased && players[ConsolePlayer].mo)
+			{
+				extern void Blake_DropDetonator(AActor *);
+				Blake_DropDetonator(players[ConsolePlayer].mo);
+			}
+			dropDetReleased = false;
+		}
+		else
+			dropDetReleased = true;
 	}
 
 	// [BL] Allow changing the screen size with the -/= keys a la Doom.

@@ -119,12 +119,14 @@ static void DetBombIcon()
 }
 
 // bstone TryDropPlasmaDetonator: gates run in order, then the armed bomb
-// spawns at the player's feet.
-ACTION_FUNCTION(A_BlakeDropDetonator)
+// spawns at the player's feet.  Free function so a dedicated input (Blake_DropKey
+// in wl_play) can drop a detonator without switching to it as a weapon, as DOS
+// does (sc_Tilde, 3d_play.c:883) -- PS treats it as a non-weapon item.
+void Blake_DropDetonator(AActor *self)
 {
-	player_t *player = self->player;
+	player_t *player = self ? self->player : NULL;
 	if(!player || !levelInfo)
-		return false;
+		return;
 
 	const int lvl = levelInfo->LevelNumber;
 
@@ -132,14 +134,14 @@ ACTION_FUNCTION(A_BlakeDropDetonator)
 	{
 		StatusBar->DisplayInfoMessage(pd_floornotlocked, 0x200, 300);
 		DetCubeIcon();
-		return true;
+		return;
 	}
 
 	if(lvl > 20)
 	{
 		StatusBar->DisplayInfoMessage(pd_no_computer, 0x200, 300);
 		DetCubeIcon();
-		return true;
+		return;
 	}
 
 	static const ClassDef * const ammoCls = ClassDef::FindClass("PlasmaDetonator");
@@ -148,7 +150,7 @@ ACTION_FUNCTION(A_BlakeDropDetonator)
 	{
 		StatusBar->DisplayInfoMessage(pd_donthaveany, 0x200, 300);
 		DetBombIcon();
-		return true;
+		return;
 	}
 
 	AActor *cube = FindSecurityCube();
@@ -156,33 +158,38 @@ ACTION_FUNCTION(A_BlakeDropDetonator)
 	{
 		StatusBar->DisplayInfoMessage(pd_no_computer, 0x200, 300);
 		DetCubeIcon();
-		return true;
+		return;
 	}
 
 	if(cube->GetZone() != self->GetZone())
 	{
 		StatusBar->DisplayInfoMessage(pd_notnear, 0x200, 300);
 		DetCubeIcon();
-		return true;
+		return;
 	}
 
 	if(CubeTileDistance(self, cube) > 2)
 	{
 		StatusBar->DisplayInfoMessage(pd_getcloser, 0x200, 300);
 		DetCubeIcon();
-		return true;
+		return;
 	}
 
 	// DropPlasmaDetonator
 	static const ClassDef * const dropCls = ClassDef::FindClass("PlasmaDetonatorDrop");
 	if(!dropCls)
-		return false;
+		return;
 
 	AActor *bomb = AActor::Spawn(dropCls, self->x, self->y, 0, SPAWN_AllowReplacement);
 	bomb->target = self;
 	PlaySoundLocActor("misc/plasmadetonator/drop", bomb);
 	--ammo->amount;
 	StatusBar->DisplayInfoMessage(pd_dropped, 0x200, 300);
+}
+
+ACTION_FUNCTION(A_BlakeDropDetonator)
+{
+	Blake_DropDetonator(self);
 	return true;
 }
 
